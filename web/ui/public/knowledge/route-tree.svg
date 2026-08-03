@@ -1,0 +1,66 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#22d3ee"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- faint field: sideline + yard lines -->
+  <line x1="115" y1="50" x2="115" y2="430" stroke="#22c55e" stroke-opacity="0.18" stroke-width="3"/>
+  <line x1="115" y1="300" x2="740" y2="300" stroke="#22c55e" stroke-opacity="0.10" stroke-width="1.5"/>
+  <line x1="115" y1="180" x2="740" y2="180" stroke="#22c55e" stroke-opacity="0.10" stroke-width="1.5"/>
+  <line x1="115" y1="60"  x2="740" y2="60"  stroke="#22c55e" stroke-opacity="0.10" stroke-width="1.5"/>
+  <text x="128" y="296" fill="#cbd5e1" fill-opacity="0.45" font-size="11">10 yd</text>
+  <text x="128" y="176" fill="#cbd5e1" fill-opacity="0.45" font-size="11">20 yd</text>
+
+  <!-- line of scrimmage -->
+  <line x1="115" y1="420" x2="740" y2="420" stroke="#94a3b8" stroke-width="2"/>
+  <text x="128" y="438" fill="#cbd5e1" fill-opacity="0.6" font-size="11">line of scrimmage</text>
+
+  <!-- receiver + stem -->
+  <circle cx="400" cy="420" r="8" fill="#f472b6"/>
+  <line x1="400" y1="412" x2="400" y2="150" stroke="#94a3b8" stroke-width="3"/>
+
+  <!-- 1 Flat (outside, toward left sideline) -->
+  <line x1="400" y1="402" x2="192" y2="392" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="182" y="380" fill="#cbd5e1" font-size="13" text-anchor="start">1 · Flat</text>
+
+  <!-- 2 Slant (inside) -->
+  <line x1="400" y1="398" x2="614" y2="312" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="624" y="310" fill="#cbd5e1" font-size="13">2 · Slant</text>
+
+  <!-- 5 Out -->
+  <line x1="400" y1="310" x2="192" y2="310" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="182" y="330" fill="#cbd5e1" font-size="13" text-anchor="start">5 · Out</text>
+
+  <!-- 6 Dig / In -->
+  <line x1="400" y1="278" x2="642" y2="278" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="652" y="282" fill="#cbd5e1" font-size="13">6 · Dig</text>
+
+  <!-- 3 Comeback (up, back down toward sideline) -->
+  <line x1="400" y1="232" x2="332" y2="262" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="316" y="248" fill="#cbd5e1" font-size="13" text-anchor="end">3 · Comeback</text>
+
+  <!-- 4 Curl (back down inside) -->
+  <line x1="400" y1="212" x2="462" y2="240" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="472" y="252" fill="#cbd5e1" font-size="13">4 · Curl</text>
+
+  <!-- 7 Corner -->
+  <line x1="400" y1="168" x2="262" y2="82" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="252" y="72" fill="#cbd5e1" font-size="13" text-anchor="end">7 · Corner</text>
+
+  <!-- 8 Post -->
+  <line x1="400" y1="155" x2="548" y2="80" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="558" y="76" fill="#cbd5e1" font-size="13">8 · Post</text>
+
+  <!-- 9 Go -->
+  <line x1="400" y1="150" x2="400" y2="68" stroke="#22d3ee" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="410" y="62" fill="#cbd5e1" font-size="13">9 · Go</text>
+
+  <!-- legend -->
+  <text x="740" y="438" fill="#cbd5e1" fill-opacity="0.6" font-size="12" text-anchor="end">even = inside break · odd = outside break</text>
+  <text x="740" y="52" fill="#cbd5e1" fill-opacity="0.6" font-size="12" text-anchor="end">← sideline</text>
+</svg>

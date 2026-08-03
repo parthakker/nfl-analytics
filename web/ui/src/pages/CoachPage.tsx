@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import {
-  PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer,
-} from "recharts";
+import FingerprintRadar from "../components/FingerprintRadar";
 import GlassPanel from "../components/GlassPanel";
 import { useMeta } from "../lib/MetaContext";
 import { hexToRgba } from "../lib/color";
@@ -91,17 +89,7 @@ export default function CoachPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <GlassPanel title={`Scheme fingerprint — ${d.fingerprint_note}`}>
-          <div style={{ filter: "drop-shadow(0 0 6px var(--accent-glow))" }}>
-            <ResponsiveContainer width="100%" height={280}>
-              <RadarChart data={d.fingerprint.filter((f) => f.pct != null)}>
-                <PolarGrid stroke="var(--stroke)" />
-                <PolarAngleAxis dataKey="metric"
-                                tick={{ fill: "var(--muted)", fontSize: 11 }} />
-                <Radar dataKey="pct" stroke="var(--accent)"
-                       fill="var(--accent)" fillOpacity={0.25} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+          <FingerprintRadar data={d.fingerprint} />
           <p className="text-xs" style={{ color: "var(--muted)" }}>
             Each axis is a league percentile (100 = most extreme). Pass defense
             is inverted: higher = better defense.

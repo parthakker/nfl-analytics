@@ -19,6 +19,7 @@ export interface DivisionStanding {
 }
 
 export interface ScheduleGame {
+  game_id: string;
   date: string;
   gametime: string | null;
   away: string;
@@ -55,7 +56,7 @@ export interface RosterPlayer {
 }
 
 export interface TeamScheduleGame {
-  week: number; date: string; opponent: string; home: boolean;
+  game_id: string; week: number; date: string; opponent: string; home: boolean;
   home_score: number | null; away_score: number | null;
   line_text: string | null; total: number | null;
 }

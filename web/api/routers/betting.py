@@ -63,7 +63,7 @@ def board(season: int = 2026, week: int | None = None) -> dict:
             SELECT any_value(name) AS name,
                    round(sum(over_rate*games)/sum(games), 3) AS over_rate,
                    round(sum(pen_per_game*games)/sum(games), 2) AS pen_per_game
-            FROM v_referee_seasons GROUP BY official_id
+            FROM v_referee_seasons GROUP BY ref_key
         """)}
         coach_ats = {r["coach"]: r for r in rows_to_dicts(con, """
             SELECT coach, sum(ats_wins)::int AS w, sum(ats_games)::int AS g

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api, type ScheduleGame } from "../lib/api";
 import GlassPanel from "../components/GlassPanel";
 
 const SEASONS = Array.from({ length: 20 }, (_, i) => 2026 - i);
 
 export default function SchedulePage() {
+  const nav = useNavigate();
   const [season, setSeason] = useState(2026);
   const [week, setWeek] = useState<number | undefined>(undefined);
   const [weeks, setWeeks] = useState<number[]>([]);
@@ -50,7 +52,8 @@ export default function SchedulePage() {
           </thead>
           <tbody>
             {games.map((g, i) => (
-              <tr key={i} className="border-t transition-colors hover:bg-white/5"
+              <tr key={i} onClick={() => g.game_id && nav(`/matchup/${g.game_id}`)}
+                  className="cursor-pointer border-t transition-colors hover:bg-white/5"
                   style={{ borderColor: "var(--stroke)" }}>
                 <td className="py-2 pr-3 text-xs" style={{ color: "var(--muted)" }}>{g.date}</td>
                 <td className="py-2 pr-3 font-medium">{g.away} @ {g.home}</td>

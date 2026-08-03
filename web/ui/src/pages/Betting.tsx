@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import Chip from "../components/Chip";
 import GlassPanel from "../components/GlassPanel";
 import { useMeta } from "../lib/MetaContext";
 
@@ -19,16 +21,6 @@ interface BoardGame {
 
 const pct = (v: number | null | undefined) =>
   v != null ? `${(v * 100).toFixed(1)}%` : "—";
-
-function Chip({ children, tone = "muted" }: { children: React.ReactNode; tone?: string }) {
-  const color = tone === "hot" ? "#ec835a" : tone === "arc" ? "var(--arc)" : "var(--muted)";
-  return (
-    <span className="rounded-full border px-2 py-0.5 text-[11px]"
-          style={{ borderColor: "var(--stroke)", color }}>
-      {children}
-    </span>
-  );
-}
 
 export default function Betting() {
   const meta = useMeta();
@@ -87,7 +79,9 @@ export default function Betting() {
               <GlassPanel key={g.game_id}>
                 <div className="flex items-center gap-3">
                   {logo(g.away_team) && <img src={logo(g.away_team)} className="h-8 w-8" alt="" />}
-                  <span className="font-semibold">{g.away_team} @ {g.home_team}</span>
+                  <Link to={`/matchup/${g.game_id}`} className="font-semibold hover:underline">
+                    {g.away_team} @ {g.home_team}
+                  </Link>
                   {logo(g.home_team) && <img src={logo(g.home_team)} className="h-8 w-8" alt="" />}
                   <span className="ml-auto text-xs" style={{ color: "var(--muted)" }}>{g.date}</span>
                 </div>

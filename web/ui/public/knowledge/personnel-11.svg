@@ -1,0 +1,79 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+  <!-- ============ left mini-field: 11 personnel ============ -->
+  <text x="210" y="40" fill="#cbd5e1" font-size="16" font-weight="600" text-anchor="middle">11 Personnel</text>
+  <text x="210" y="60" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">1 RB · 1 TE · 3 WR — spread</text>
+
+  <rect x="35" y="80" width="350" height="290" rx="10" fill="#22c55e" fill-opacity="0.09" stroke="#94a3b8" stroke-opacity="0.35"/>
+  <line x1="35" y1="250" x2="385" y2="250" stroke="#94a3b8" stroke-width="1.5" stroke-opacity="0.7"/>
+
+  <!-- offensive line -->
+  <circle cx="154" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="182" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="199" y="251" width="22" height="22" rx="3" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="238" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="266" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- QB shotgun + RB offset -->
+  <circle cx="210" cy="318" r="10" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="210" y="322" fill="#cbd5e1" font-size="10" text-anchor="middle">Q</text>
+  <circle cx="252" cy="318" r="10" fill="#22d3ee"/>
+  <text x="252" y="343" fill="#cbd5e1" font-size="11" text-anchor="middle">RB</text>
+
+  <!-- TE attached right -->
+  <circle cx="296" cy="262" r="10" fill="#f472b6"/>
+  <text x="296" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">TE</text>
+
+  <!-- 3 WR: X wide left, slot left, Z wide right -->
+  <circle cx="70" cy="262" r="10" fill="#22d3ee"/>
+  <text x="70" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">X</text>
+  <circle cx="115" cy="272" r="10" fill="#22d3ee"/>
+  <text x="115" y="298" fill="#cbd5e1" font-size="11" text-anchor="middle">slot</text>
+  <circle cx="352" cy="272" r="10" fill="#22d3ee"/>
+  <text x="352" y="298" fill="#cbd5e1" font-size="11" text-anchor="middle">Z</text>
+
+  <text x="210" y="395" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">3 WRs force nickel — five DBs,</text>
+  <text x="210" y="412" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">lighter box to run against</text>
+
+  <!-- ============ right mini-field: 12 personnel ============ -->
+  <text x="590" y="40" fill="#cbd5e1" font-size="16" font-weight="600" text-anchor="middle">12 Personnel</text>
+  <text x="590" y="60" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">1 RB · 2 TE · 2 WR — ace</text>
+
+  <rect x="415" y="80" width="350" height="290" rx="10" fill="#22c55e" fill-opacity="0.09" stroke="#94a3b8" stroke-opacity="0.35"/>
+  <line x1="415" y1="250" x2="765" y2="250" stroke="#94a3b8" stroke-width="1.5" stroke-opacity="0.7"/>
+
+  <!-- offensive line -->
+  <circle cx="534" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="562" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <rect x="579" y="251" width="22" height="22" rx="3" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="618" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="646" cy="262" r="11" fill="none" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- QB under center, RB singleback -->
+  <circle cx="590" cy="290" r="10" fill="none" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="590" y="294" fill="#cbd5e1" font-size="10" text-anchor="middle">Q</text>
+  <circle cx="590" cy="330" r="10" fill="#22d3ee"/>
+  <text x="590" y="355" fill="#cbd5e1" font-size="11" text-anchor="middle">RB</text>
+
+  <!-- 2 TE attached both sides -->
+  <circle cx="506" cy="262" r="10" fill="#f472b6"/>
+  <text x="506" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">TE</text>
+  <circle cx="674" cy="262" r="10" fill="#f472b6"/>
+  <text x="674" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">TE</text>
+
+  <!-- 2 WR wide -->
+  <circle cx="450" cy="262" r="10" fill="#22d3ee"/>
+  <text x="450" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">X</text>
+  <circle cx="730" cy="262" r="10" fill="#22d3ee"/>
+  <text x="730" y="288" fill="#cbd5e1" font-size="11" text-anchor="middle">Z</text>
+
+  <text x="590" y="395" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">Two attached TEs add gaps — defense</text>
+  <text x="590" y="412" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">must choose base sturdiness or nickel speed</text>
+
+  <!-- legend -->
+  <circle cx="270" cy="437" r="6" fill="#22d3ee"/>
+  <text x="282" y="441" fill="#cbd5e1" fill-opacity="0.75" font-size="12">WR / RB</text>
+  <circle cx="370" cy="437" r="6" fill="#f472b6"/>
+  <text x="382" y="441" fill="#cbd5e1" fill-opacity="0.75" font-size="12">TE</text>
+  <circle cx="440" cy="437" r="6" fill="none" stroke="#94a3b8" stroke-width="2"/>
+  <text x="452" y="441" fill="#cbd5e1" fill-opacity="0.75" font-size="12">OL / QB</text>
+</svg>

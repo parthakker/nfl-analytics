@@ -1,0 +1,93 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#22d3ee"/>
+    </marker>
+  </defs>
+  <!-- title -->
+  <text x="400" y="30" fill="#cbd5e1" font-size="16" text-anchor="middle" font-weight="600">Dynamic Kickoff (2024+) — alignment and coverage lanes</text>
+
+  <!-- field strip -->
+  <rect x="40" y="100" width="616" height="250" fill="#22c55e" fill-opacity="0.08"/>
+  <rect x="656" y="100" width="88" height="250" fill="#22c55e" fill-opacity="0.16"/>
+  <rect x="40" y="100" width="704" height="250" fill="none" stroke="#94a3b8" stroke-width="2"/>
+
+  <!-- landing zone -->
+  <rect x="480" y="100" width="176" height="250" fill="#22d3ee" fill-opacity="0.10" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+  <!-- setup zone -->
+  <rect x="348" y="100" width="44" height="250" fill="#94a3b8" fill-opacity="0.12"/>
+
+  <!-- yard lines of interest -->
+  <g stroke="#94a3b8" stroke-width="1" opacity="0.7">
+    <line x1="84" y1="100" x2="84" y2="350"/>
+    <line x1="216" y1="100" x2="216" y2="350"/>
+    <line x1="304" y1="100" x2="304" y2="350"/>
+    <line x1="348" y1="100" x2="348" y2="350"/>
+    <line x1="392" y1="100" x2="392" y2="350"/>
+    <line x1="480" y1="100" x2="480" y2="350"/>
+  </g>
+  <line x1="656" y1="100" x2="656" y2="350" stroke="#94a3b8" stroke-width="2.5"/>
+  <g fill="#cbd5e1" font-size="12" text-anchor="middle">
+    <text x="84" y="368">own 35</text>
+    <text x="216" y="368">50</text>
+    <text x="304" y="368">40</text>
+    <text x="348" y="368">35</text>
+    <text x="392" y="368">30</text>
+    <text x="480" y="368">20</text>
+    <text x="656" y="368">G</text>
+  </g>
+
+  <!-- kicker -->
+  <circle cx="84" cy="225" r="14" stroke="#22d3ee" stroke-width="2.5" fill="none"/>
+  <text x="84" y="230" fill="#cbd5e1" font-size="12" text-anchor="middle">K</text>
+  <text x="84" y="130" fill="#94a3b8" font-size="12" text-anchor="middle">kicker alone</text>
+  <text x="84" y="145" fill="#94a3b8" font-size="12" text-anchor="middle">at his own 35</text>
+
+  <!-- kick trajectory -->
+  <path d="M 96 218 Q 330 60 555 200" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrow)"/>
+  <text x="330" y="82" fill="#22d3ee" font-size="12" text-anchor="middle">must reach the landing zone</text>
+
+  <!-- coverage unit: 10 players on the receiving team's 40 -->
+  <g stroke="#94a3b8" stroke-width="2" fill="none">
+    <circle cx="304" cy="118" r="9"/><circle cx="304" cy="142" r="9"/><circle cx="304" cy="166" r="9"/>
+    <circle cx="304" cy="190" r="9"/><circle cx="304" cy="214" r="9"/><circle cx="304" cy="238" r="9"/>
+    <circle cx="304" cy="262" r="9"/><circle cx="304" cy="286" r="9"/><circle cx="304" cy="310" r="9"/>
+    <circle cx="304" cy="334" r="9"/>
+  </g>
+
+  <!-- coverage lanes -->
+  <g stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.85">
+    <line x1="318" y1="118" x2="470" y2="130"/>
+    <line x1="318" y1="166" x2="470" y2="172"/>
+    <line x1="318" y1="214" x2="470" y2="214"/>
+    <line x1="318" y1="262" x2="470" y2="262"/>
+    <line x1="318" y1="310" x2="470" y2="304"/>
+  </g>
+
+  <!-- return team blockers in setup zone -->
+  <g stroke="#94a3b8" stroke-width="2" fill="none" opacity="0.8">
+    <circle cx="370" cy="125" r="9"/><circle cx="370" cy="152" r="9"/><circle cx="370" cy="179" r="9"/>
+    <circle cx="370" cy="206" r="9"/><circle cx="370" cy="233" r="9"/><circle cx="370" cy="260" r="9"/>
+    <circle cx="370" cy="287" r="9"/><circle cx="370" cy="314" r="9"/><circle cx="370" cy="338" r="9"/>
+  </g>
+
+  <!-- returners -->
+  <circle cx="600" cy="185" r="12" stroke="#22d3ee" stroke-width="2.5" fill="none"/>
+  <text x="600" y="190" fill="#cbd5e1" font-size="11" text-anchor="middle">R</text>
+  <circle cx="600" cy="270" r="12" stroke="#22d3ee" stroke-width="2.5" fill="none"/>
+  <text x="600" y="275" fill="#cbd5e1" font-size="11" text-anchor="middle">R</text>
+
+  <!-- zone labels -->
+  <text x="304" y="92" fill="#94a3b8" font-size="12" text-anchor="middle">coverage unit at the receiving 40</text>
+  <text x="370" y="392" fill="#94a3b8" font-size="12" text-anchor="middle">setup zone (30–35): 9+ blockers</text>
+  <line x1="370" y1="380" x2="370" y2="354" stroke="#94a3b8" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="568" y="120" fill="#22d3ee" font-size="13" text-anchor="middle" font-weight="600">landing zone</text>
+  <text x="568" y="136" fill="#22d3ee" font-size="12" text-anchor="middle">goal line to 20</text>
+  <text x="700" y="130" fill="#94a3b8" font-size="12" text-anchor="middle">end</text>
+  <text x="700" y="145" fill="#94a3b8" font-size="12" text-anchor="middle">zone</text>
+
+  <!-- rules footnotes -->
+  <text x="400" y="415" fill="#cbd5e1" font-size="13" text-anchor="middle">Only the kicker and returners may move until the ball is caught or hits the landing zone.</text>
+  <text x="400" y="435" fill="#94a3b8" font-size="12" text-anchor="middle">Kick short of the landing zone: receiving team ball at its 40. Touchback in the end zone: the 35 (2025).</text>
+</svg>

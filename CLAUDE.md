@@ -49,8 +49,8 @@ Always connect `read_only=True` for analysis. Rebuild scripts:
 
 | Table | Grain | Seasons |
 |---|---|---|
-| play_by_play | play (372 cols) | 2007–2025 |
-| games | game (derived: coaches, scores, spread/total, roof, weather) | 2007–2025 |
+| play_by_play | play (372 cols) | 1999–2025 |
+| games | game (derived: coaches, scores, spread/total, roof, weather) | 1999–2025 |
 | schedules | game incl. UPCOMING; odds, rest, QBs, refs (see dictionary) | 1999–2026 |
 | player_stats_week / _season | player-week / player-season(type) offense | 2007–2024 |
 | player_stats_week_v2 / _season_v2 | unified 145-col v2 format (off+def+kicking) | 2025+ |
@@ -66,6 +66,15 @@ Always connect `read_only=True` for analysis. Rebuild scripts:
 | injuries | player-week injury report | 2009–2025 |
 | draft_picks | draft slot | 1980–2026 |
 | officials | official-game | 2015–2025 |
+| snap_counts | player-game snap counts (off/def/ST + pct) | 2012–2025 |
+| depth_charts | team-week depth chart slots | 2001–2025 |
+| participation | play (personnel, defenders_in_box, pass rushers; joins pbp on nflverse_game_id+play_id) | 2016–2024 (2016–23 reliable; feed discontinued) |
+| ftn_charting | play (play-action, screen, RPO, motion, blitzers) | 2022–2025 |
+| combine | prospect-year | 2000–2026 |
+| espn_qbr_week / _season | QB-week / QB-season QBR | 2006–2025 |
+| stadiums / stadium_aliases / game_venues / team_home_venues | curated venue db (data/stadiums.json, HAND EDITED) + per-game venue resolution incl. internationals | 1999–2026 |
+| game_weather_parsed | game (structured parse of pbp weather text: sky/temp/humidity/wind/gusts) | 1999–2025 |
+| weather_openmeteo | game (Open-Meteo archive gaps + forecasts; scripts/fetch_weather.py → data/weather/openmeteo.csv) | sparse |
 | team_aliases / team_timezones | lookup | — |
 
 **Refresh:** `python scripts/refresh_data.py` (weekly in-season; `--full` for
@@ -86,20 +95,34 @@ gsis_id). Attached read-only by MCP tools; never part of the warehouse rebuild.
 **Model status:** built and validated but PAUSED per Parth — don't surface it
 proactively; kalshi_edge_scan intentionally not built yet.
 
-Derived views: `v_team_games` (team-game with win, rest_days, tz_shift_hours),
+Derived views: `v_team_games` (team-game with win, rest_days + rest_days_sched/
+is_off_bye/short_week, **travel_miles** via haversine from curated venue coords,
+venue cols, tz_shift_hours recomputed from real venues incl. internationals),
 `v_strength_of_schedule`, `v_team_epa_season`, `v_team_def_epa_season`,
-`v_coach_matchups`, `v_redzone_usage_week`, `v_player_stats_week_all` (incl.
-`fantasy_points_half_ppr`), `v_coach_seasons` (records+ATS+playoffs),
-`v_coach_tendencies` (4th-down go rate, PROE, tempo — rbsdm-style),
+`v_coach_matchups` (now + ATS + last_meeting_game_id), `v_redzone_usage_week`,
+`v_player_stats_week_all` (incl. `fantasy_points_half_ppr`), `v_coach_seasons`
+(records+ATS+playoffs), `v_coach_tendencies` (4th-down go rate, PROE, tempo),
 `v_coach_def_tendencies`, `v_referee_games`/`v_referee_seasons` (head refs
-2015+: penalties, over rate, home bias). Curated scheme metadata (HC/OC/DC +
+**1999+** — officials 2015+ coalesced with schedules.referee; aggregate on
+`ref_key`, not name/official_id), `v_referee_team_splits` (ref × team W%/ATS/
+pen diff), `v_matchup_games`/`v_team_matchups` (team-pair series 1999+,
+franchise-canonicalized, venue+ATS splits, signed current_streak),
+`v_team_travel_season`, `v_game_weather` (one weather answer per game:
+indoor → pbp parse → open-meteo → schedules; forecasts for upcoming). Curated scheme metadata (HC/OC/DC +
 offense/defense identity per team) lives in `data/coaches_meta.json` — HAND
 EDITED, never overwritten by refresh; OC/DC mostly unrecorded, fill freely.
 News store has `category` (injury/trade-signing/depth-chart/legal/general)
 and a DuckDB FTS index (news_search MCP tool / /api/news/search). Kalshi db
 also holds `line_snapshots` (Vegas line history, appended each refresh).
 Jarvis pages now include Coaches, Refs, Betting (market-vs-market
-dislocations only — the model remains paused).
+dislocations only — the model remains paused), **Matchup**
+(`/matchup/:gameId` — ESPN-style card for any 1999+ or upcoming game: travel,
+rest, ref history+team splits, coach h2h, weather/forecast, market, injuries,
+series; linked from Schedule rows, Betting cards, TeamHUD strip), **H2H**
+(`/h2h/:a/:b` — all-time series explorer w/ era/venue/site splits), and
+**Knowledge** (`/knowledge` — 15-chapter ebook served from `docs/knowledge/*.md`
+via react-markdown; chapters are hand-editable, no rebuild needed; SVG diagrams
+in `web/ui/public/knowledge/`).
 
 ## Join keys
 
@@ -150,6 +173,10 @@ dislocations only — the model remains paused).
   unless the question says otherwise; state the filter used.
 - Rate stats: apply sensible minimums (e.g. 160 att for QB season rates) and
   say what minimum was applied.
-- Travel questions: `v_team_games.tz_shift_hours` (positive = traveling east;
-  home-team timezone stands in for stadium; international games not modeled).
+- Travel questions: `v_team_games.travel_miles` (haversine from the team's
+  home venue that season to the real game venue — internationals ARE modeled,
+  incl. the 7 mislabeled 2025 international rows fixed via
+  `data/stadiums.json` game_overrides) and `tz_shift_hours` (positive =
+  traveling east). Prefer `rest_days_sched` over `rest_days` (populated wk 1).
+  Travel is home-base distance, not itinerary-chained.
 - Cite seasons/filters in every answer so results are reproducible.

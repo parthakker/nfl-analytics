@@ -7,9 +7,11 @@ const LINKS = [
   ["/coaches", "Coaches"],
   ["/refs", "Refs"],
   ["/schedule", "Schedule"],
+  ["/h2h", "H2H"],
   ["/betting", "Betting"],
   ["/markets", "Markets"],
   ["/news", "News"],
+  ["/knowledge", "Knowledge"],
 ] as const;
 
 export default function Shell() {

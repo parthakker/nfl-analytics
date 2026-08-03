@@ -18,7 +18,7 @@ def schedule(season: int = 2026, week: int | None = None) -> dict:
             """, [season]).fetchone()
             week = row[0] if row and row[0] is not None else (weeks[-1] if weeks else 1)
         games = rows_to_dicts(con, """
-            SELECT strftime(gameday, '%a %b %d') AS date, gametime,
+            SELECT game_id, strftime(gameday, '%a %b %d') AS date, gametime,
                    away_team AS away, away_score, home_team AS home, home_score,
                    spread_line AS spread, total_line AS total,
                    home_moneyline AS home_ml

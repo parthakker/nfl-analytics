@@ -1,0 +1,17 @@
+[
+  {"slug": "the-game", "title": "The Game", "part": "I — Foundations", "summary": "The field, downs, scoring, and how a football game actually flows.", "updated": "2026-08-03"},
+  {"slug": "positions-offense", "title": "Offensive Positions", "part": "I — Foundations", "summary": "QB, RB, WR, TE, and the five offensive linemen — what each actually does.", "updated": "2026-08-03"},
+  {"slug": "positions-defense", "title": "Defensive Positions", "part": "I — Foundations", "summary": "Defensive line, linebackers, and the secondary — roles and alignments.", "updated": "2026-08-03"},
+  {"slug": "special-teams", "title": "Special Teams", "part": "I — Foundations", "summary": "Kicks, punts, returns, and the hidden yardage battle.", "updated": "2026-08-03"},
+  {"slug": "offensive-formations", "title": "Offensive Formations & Personnel", "part": "II — Scheme", "summary": "Personnel groupings (11, 12, 21...), formation families, and what motion tells you.", "updated": "2026-08-03"},
+  {"slug": "route-tree", "title": "The Route Tree & Passing Concepts", "part": "II — Scheme", "summary": "Routes 0–9 and the concepts built from them: mesh, smash, flood, dagger.", "updated": "2026-08-03"},
+  {"slug": "defensive-fronts-coverages", "title": "Defensive Fronts & Coverages", "part": "II — Scheme", "summary": "4-3 vs 3-4 fronts, Cover 0 through Cover 6, man vs zone vs match.", "updated": "2026-08-03"},
+  {"slug": "offensive-scheme-families", "title": "Offensive Scheme Families", "part": "II — Scheme", "summary": "West Coast, Air Raid, Shanahan wide zone, spread/option — lineages and tells.", "updated": "2026-08-03"},
+  {"slug": "defensive-scheme-families", "title": "Defensive Scheme Families", "part": "II — Scheme", "summary": "Seattle Cover 3, Fangio two-high, pressure packages — how defenses evolved.", "updated": "2026-08-03"},
+  {"slug": "rules-and-penalties", "title": "Rules & Penalties", "part": "III — The Rulebook", "summary": "The penalties that matter, what they cost, and the ones that swing games.", "updated": "2026-08-03"},
+  {"slug": "clock-and-situations", "title": "Clock & Situational Football", "part": "III — The Rulebook", "summary": "Timeouts, the two-minute drill, and modern 4th-down decision logic.", "updated": "2026-08-03"},
+  {"slug": "league-structure", "title": "How the League Works", "part": "III — The Rulebook", "summary": "Season calendar, playoff seeding, the draft, and the salary cap.", "updated": "2026-08-03"},
+  {"slug": "analytics-primer", "title": "The Analytics Primer", "part": "IV — Numbers", "summary": "EPA, win probability, CPOE, PROE, success rate, air yards, WOPR — what they mean and when to trust them.", "updated": "2026-08-03"},
+  {"slug": "betting-primer", "title": "The Betting Primer", "part": "IV — Numbers", "summary": "Spreads, totals, moneylines, vig and devigging, ATS, CLV, and Kalshi mechanics.", "updated": "2026-08-03"},
+  {"slug": "fantasy-primer", "title": "The Fantasy Primer", "part": "IV — Numbers", "summary": "Scoring formats, snap share, target share, and the usage metrics that predict points.", "updated": "2026-08-03"}
+]

@@ -33,7 +33,8 @@ CHECKS = {
     "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
     "/api/players/search?q=mahomes": lambda js: len(js.get("hits", [])) > 0,
     "/api/leaders?cat=rushing&season=2025": lambda js: len(js.get("rows", [])) == 25,
-    "/api/schedule?season=2026&week=1": lambda js: len(js.get("games", [])) >= 14,
+    "/api/schedule?season=2026&week=1": lambda js: len(js.get("games", [])) >= 14
+        and js["games"][0].get("game_id"),
     "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
     "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
     "/api/leaders?cat=half_ppr&season=2025": lambda js: len(js.get("rows", [])) == 25,
@@ -46,6 +47,18 @@ CHECKS = {
     "/api/betting/situations": lambda js: len(js.get("division_dogs", [])) > 0,
     "/api/news/search?q=injury": lambda js: len(js.get("items", [])) > 0,
     "/api/news?category=injury&limit=5": lambda js: len(js.get("items", [])) > 0,
+    # matchup center (enrichment wave 2026-08)
+    "/api/matchup/2024_01_BAL_KC": lambda js: js.get("series", {}).get("games", 0) > 0
+        and js["teams"]["away"]["travel_miles"] is not None
+        and js.get("weather", {}).get("temp_f") is not None
+        and js.get("referee", {}).get("career"),
+    "/api/matchup/2026_01_DEN_KC": lambda js: js.get("game", {}).get("final") is False
+        and js["teams"]["home"]["rest_days"] is not None
+        and js["teams"]["away"]["travel_miles"] is not None,
+    "/api/matchup/h2h/BUF/MIA": lambda js: js.get("summary", {}).get("games", 0) >= 50
+        and len(js.get("games", [])) >= 50,
+    "/api/knowledge": lambda js: len(js.get("chapters", [])) >= 10,
+    "/api/knowledge/analytics-primer": lambda js: len(js.get("markdown", "")) > 1000,
 }
 
 

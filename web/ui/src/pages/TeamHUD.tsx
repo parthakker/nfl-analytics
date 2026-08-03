@@ -111,15 +111,16 @@ export default function TeamHUD() {
       <GlassPanel title="2026 schedule">
         <div className="flex gap-2 overflow-x-auto pb-1">
           {sched.map((g) => (
-            <div key={g.week} className="min-w-32 rounded-xl border p-2.5 text-center text-xs"
-                 style={{ borderColor: "var(--stroke)" }}>
+            <Link key={g.week} to={`/matchup/${g.game_id}`}
+                  className="min-w-32 rounded-xl border p-2.5 text-center text-xs transition-colors hover:bg-white/5"
+                  style={{ borderColor: "var(--stroke)" }}>
               <div className="font-bold" style={{ color: "var(--muted)" }}>WK {g.week}</div>
               <div className="mt-1 font-semibold">{g.home ? "vs" : "@"} {g.opponent}</div>
               <div className="mt-0.5" style={{ color: "var(--muted)" }}>{g.date}</div>
               {g.line_text && (
                 <div className="mt-1" style={{ color: "var(--accent)" }}>{g.line_text}</div>
               )}
-            </div>
+            </Link>
           ))}
         </div>
       </GlassPanel>

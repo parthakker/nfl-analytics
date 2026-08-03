@@ -80,7 +80,7 @@ def schedule(code: str, season: int = 2026) -> dict:
     code = _canon(code)
     with read_conn() as con:
         games = rows_to_dicts(con, """
-            SELECT week, strftime(gameday, '%a %b %d') AS date,
+            SELECT game_id, week, strftime(gameday, '%a %b %d') AS date,
                    CASE WHEN home_team=$t THEN away_team ELSE home_team END AS opponent,
                    home_team=$t AS home,
                    home_score, away_score,

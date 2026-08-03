@@ -1,0 +1,96 @@
+<svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
+  <text x="400" y="42" fill="#cbd5e1" font-size="16" font-weight="600" text-anchor="middle">Defensive technique alignments (0–9)</text>
+  <text x="400" y="64" fill="#cbd5e1" fill-opacity="0.7" font-size="12" text-anchor="middle">Even = head-up on a blocker · odd &amp; "i" shades = offset into a gap</text>
+
+  <!-- faint turf band around the line -->
+  <rect x="60" y="150" width="700" height="120" rx="10" fill="#22c55e" fill-opacity="0.08"/>
+
+  <!-- gap letters above the line -->
+  <text x="360" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">A</text>
+  <text x="440" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">A</text>
+  <text x="280" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">B</text>
+  <text x="520" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">B</text>
+  <text x="200" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">C</text>
+  <text x="600" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">C</text>
+  <text x="690" y="140" fill="#f472b6" font-size="14" font-weight="600" text-anchor="middle">D</text>
+  <text x="740" y="140" fill="#f472b6" fill-opacity="0.7" font-size="11">gaps</text>
+
+  <!-- offensive line: LT LG C RG RT TE -->
+  <circle cx="240" cy="200" r="19" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+  <text x="240" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">LT</text>
+  <circle cx="320" cy="200" r="19" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+  <text x="320" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">LG</text>
+  <rect x="381" y="181" width="38" height="38" rx="5" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+  <text x="400" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">C</text>
+  <circle cx="480" cy="200" r="19" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+  <text x="480" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">RG</text>
+  <circle cx="560" cy="200" r="19" fill="none" stroke="#94a3b8" stroke-width="2.5"/>
+  <text x="560" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">RT</text>
+  <circle cx="645" cy="200" r="16" fill="#f472b6" fill-opacity="0.85"/>
+  <text x="645" y="205" fill="#0f172a" font-size="12" font-weight="600" text-anchor="middle">TE</text>
+
+  <!-- tick marks + technique numbers below the line (right side fully annotated) -->
+  <!-- 0 head-up center -->
+  <line x1="400" y1="228" x2="400" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="400" y="270" fill="#22d3ee" font-size="15" font-weight="600" text-anchor="middle">0</text>
+  <!-- 1 shade of center -->
+  <line x1="428" y1="228" x2="428" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="428" y="270" fill="#22d3ee" font-size="14" text-anchor="middle">1</text>
+  <!-- 2i inside shoulder of guard -->
+  <line x1="455" y1="228" x2="455" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="455" y="270" fill="#22d3ee" font-size="13" text-anchor="middle">2i</text>
+  <!-- 2 head-up guard -->
+  <line x1="480" y1="228" x2="480" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="480" y="270" fill="#22d3ee" font-size="14" text-anchor="middle">2</text>
+  <!-- 3 outside shoulder of guard -->
+  <line x1="508" y1="228" x2="508" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="508" y="270" fill="#22d3ee" font-size="15" font-weight="600" text-anchor="middle">3</text>
+  <!-- 4i inside shoulder of tackle -->
+  <line x1="535" y1="228" x2="535" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="535" y="270" fill="#22d3ee" font-size="13" text-anchor="middle">4i</text>
+  <!-- 4 head-up tackle -->
+  <line x1="560" y1="228" x2="560" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="560" y="270" fill="#22d3ee" font-size="14" text-anchor="middle">4</text>
+  <!-- 5 outside shoulder of tackle -->
+  <line x1="588" y1="228" x2="588" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="588" y="270" fill="#22d3ee" font-size="15" font-weight="600" text-anchor="middle">5</text>
+  <!-- 7 inside shoulder of TE -->
+  <line x1="618" y1="228" x2="618" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="618" y="270" fill="#22d3ee" font-size="14" text-anchor="middle">7</text>
+  <!-- 6 head-up TE -->
+  <line x1="645" y1="228" x2="645" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="645" y="270" fill="#22d3ee" font-size="14" text-anchor="middle">6</text>
+  <!-- 9 wide outside TE -->
+  <line x1="695" y1="228" x2="695" y2="248" stroke="#22d3ee" stroke-width="2"/>
+  <text x="695" y="270" fill="#22d3ee" font-size="15" font-weight="600" text-anchor="middle">9</text>
+
+  <!-- mirrored (faded) left side -->
+  <line x1="372" y1="228" x2="372" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="372" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">1</text>
+  <line x1="345" y1="228" x2="345" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="345" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="13" text-anchor="middle">2i</text>
+  <line x1="320" y1="228" x2="320" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="320" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">2</text>
+  <line x1="292" y1="228" x2="292" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="292" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">3</text>
+  <line x1="265" y1="228" x2="265" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="265" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="13" text-anchor="middle">4i</text>
+  <line x1="240" y1="228" x2="240" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="240" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">4</text>
+  <line x1="212" y1="228" x2="212" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="212" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">5</text>
+  <line x1="165" y1="228" x2="165" y2="248" stroke="#22d3ee" stroke-opacity="0.4" stroke-width="2"/>
+  <text x="165" y="270" fill="#22d3ee" fill-opacity="0.4" font-size="14" text-anchor="middle">9</text>
+
+  <!-- callouts -->
+  <text x="130" y="330" fill="#cbd5e1" font-size="13" font-weight="600">Landmarks</text>
+  <text x="130" y="352" fill="#cbd5e1" fill-opacity="0.75" font-size="12">0 — nose, head-up on the center (3-4 NT)</text>
+  <text x="130" y="372" fill="#cbd5e1" fill-opacity="0.75" font-size="12">3 — outside shoulder of the guard (pass-rush DT)</text>
+  <text x="130" y="392" fill="#cbd5e1" fill-opacity="0.75" font-size="12">5 — outside shoulder of the tackle (base DE)</text>
+  <text x="450" y="330" fill="#cbd5e1" font-size="13" font-weight="600">Notes</text>
+  <text x="450" y="352" fill="#cbd5e1" fill-opacity="0.75" font-size="12">6, 7, 9 exist only where a TE aligns</text>
+  <text x="450" y="372" fill="#cbd5e1" fill-opacity="0.75" font-size="12">9 = the "wide-9" speed-rush alignment</text>
+  <text x="450" y="392" fill="#cbd5e1" fill-opacity="0.75" font-size="12">Gaps: A (C–G), B (G–T), C (T–TE), D (outside TE)</text>
+
+  <text x="400" y="432" fill="#cbd5e1" fill-opacity="0.6" font-size="12" text-anchor="middle">Sound run defense = exactly one defender responsible for every gap</text>
+</svg>

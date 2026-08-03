@@ -118,27 +118,25 @@ def main() -> int:
 
 | Source | Starts | Why |
 |---|---|---|
-| Play-by-play EPA/WP | 2007 (loaded) | nflverse pbp actually goes back to **1999** — loadable, see below |
-| CPOE / xpass | 2006/2007+ | model-derived columns begin when tracking allows |
+| Play-by-play | 1999 (loaded 2026-08) | nflverse floor |
+| Play-by-play EPA/WP | 1999; CPOE/xpass 2006/2007+ | model-derived columns begin when tracking allows |
 | Next Gen Stats | 2016 | NFL player-tracking chips introduced leaguewide |
 | NGS rush-yards-over-expected | 2018 | model added later |
 | PFR advanced stats | 2018 | PFR began charting these |
+| Snap counts | 2012 | PFR source floor |
+| Participation (personnel/box) | 2016–2023 only | NFL discontinued the feed after 2023 |
+| FTN charting | 2022 | FTN began charting |
 | Injuries | 2009 | league injury-report data availability |
-| Officials | 2015 | source coverage |
+| Officials | 2015 (head refs 1999+ via schedules.referee) | source coverage |
 | Moneylines in schedules | ~68% missing pre-2010 | historical odds archives are spotty |
 | Weather (temp/wind) | outdoor games only | domes have no weather by definition |
 
 ### Fillable — published by nflverse but not yet loaded
 
-| Dataset | Coverage | Value |
-|---|---|---|
-| **Play-by-play 1999–2006** | 8 more seasons | doubles the pre-2010 sample; Brady/Manning prime years |
-| **Snap counts** | 2012+ | true usage % — better than games-played for fantasy |
-| **Depth charts** | 2001+ | who actually starts; useful for news context |
-| **Combine data** | 2000+ | athleticism profiles for draft analysis |
-| **ESPN QBR** | 2006+ | alternative QB metric |
-
-Say the word and any of these can be added to the bootstrap manifest.
+All previously listed fillable datasets (pbp 1999–2006, snap counts, depth
+charts, participation, FTN charting, combine, ESPN QBR) were loaded in the
+2026-08 enrichment wave. Remaining candidates: nflverse `contracts`,
+PFR season splits, `trades`.
 """)
 
     OUT.write_text("\n".join(md), encoding="utf-8")

@@ -61,6 +61,23 @@ TABLES = {
     "injuries": "injuries/injuries_*.csv",
     "draft_picks": "draft_picks/draft_picks.csv",
     "officials": "officals/officials.csv",
+    # usage / charting / context (enrichment wave 2026-08)
+    "snap_counts": "snap_counts/snap_counts_*.csv",
+    "depth_charts": "depth_charts/depth_charts_*.csv",
+    "participation": "participation/pbp_participation_*.csv",
+    "ftn_charting": "ftn_charting/ftn_charting_*.csv",
+    "combine": "combine/combine.csv",
+    "espn_qbr_week": "espn_qbr/qbr_week_level.csv",
+    "espn_qbr_season": "espn_qbr/qbr_season_level.csv",
+    # Open-Meteo backfill/forecast rows written by scripts/fetch_weather.py
+    "weather_openmeteo": "weather/openmeteo.csv",
+}
+
+# Tables whose source may legitimately be absent (mid-bootstrap, fresh clone
+# before the first fetch_weather run) — a missing glob is a skip, not a failure.
+OPTIONAL_TABLES = {
+    "snap_counts", "depth_charts", "participation", "ftn_charting",
+    "combine", "espn_qbr_week", "espn_qbr_season", "weather_openmeteo",
 }
 
 # Team relocations/renames. Raw tables keep original abbreviations; join this
@@ -80,7 +97,10 @@ def build() -> int:
     for table, glob in TABLES.items():
         paths = sorted(DATA.glob(glob))
         if not paths:
-            failures.append(f"{table}: no files match {glob}")
+            if table in OPTIONAL_TABLES:
+                print(f"  {table:28s} skipped (no files yet: {glob})")
+            else:
+                failures.append(f"{table}: no files match {glob}")
             continue
         t0 = time.time()
         try:

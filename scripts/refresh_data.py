@@ -43,9 +43,10 @@ LAST_SEASON = 2025
 def manifest(season: int) -> list[tuple[str, list[str], str]]:
     y = str(season)
     out = []
-    if season >= 2007:
+    if season >= 1999:
         out.append(("pbp", [f"play_by_play_{y}.csv"],
                     f"play_by_play/play_by_play_{y}.csv"))
+    if season >= 2007:
         out.append(("stats_team", [f"stats_team_regpost_{y}.csv"],
                     f"team_stats/stats_team_regpost_{y}.csv"))
     if 2007 <= season <= 2024:
@@ -68,6 +69,20 @@ def manifest(season: int) -> list[tuple[str, list[str], str]]:
         for kind in ("pass", "rush", "rec", "def"):
             out.append(("pfr_advstats", [f"advstats_week_{kind}_{y}.csv"],
                         f"advanced_stats/advstats_week_{kind}_{y}.csv"))
+    if season >= 2012:
+        out.append(("snap_counts", [f"snap_counts_{y}.csv"],
+                    f"snap_counts/snap_counts_{y}.csv"))
+    if season >= 2001:
+        out.append(("depth_charts", [f"depth_charts_{y}.csv"],
+                    f"depth_charts/depth_charts_{y}.csv"))
+    # NFL pulled the participation feed after 2023; 2024 asset exists but is
+    # unofficial — capped here, verified at load
+    if 2016 <= season <= 2024:
+        out.append(("pbp_participation", [f"pbp_participation_{y}.csv"],
+                    f"participation/pbp_participation_{y}.csv"))
+    if season >= 2022:
+        out.append(("ftn_charting", [f"ftn_charting_{y}.csv"],
+                    f"ftn_charting/ftn_charting_{y}.csv"))
     return out
 
 # cumulative files: re-download whole file every refresh (they span all seasons)
@@ -83,6 +98,9 @@ CUMULATIVE = [
     ("players", ["players.csv"], "player_info/players.csv"),
     ("officials", ["officials.csv"], "officals/officials.csv"),
     ("draft_picks", ["draft_picks.csv"], "draft_picks/draft_picks.csv"),
+    ("combine", ["combine.csv"], "combine/combine.csv"),
+    ("espn_data", ["qbr_week_level.csv"], "espn_qbr/qbr_week_level.csv"),
+    ("espn_data", ["qbr_season_level.csv"], "espn_qbr/qbr_season_level.csv"),
 ]
 
 
@@ -111,7 +129,7 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     ok = download(client, GAMES_URL, DATA / "schedules" / "games.csv")
     (fetched if ok else failures).append("schedules/games.csv")
 
-    seasons = (list(range(2002, CURRENT_SEASON + 1)) if bootstrap
+    seasons = (list(range(1999, CURRENT_SEASON + 1)) if bootstrap
                else [LAST_SEASON, CURRENT_SEASON])
     items = [(t, c, d) for s in seasons for (t, c, d) in manifest(s)] + CUMULATIVE
     for tag, candidates, rel_dest in items:
@@ -145,6 +163,13 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
 
     rc = 0
     if rebuild and not failures:
+        # weather: forecasts for upcoming games (+ archive gaps) into
+        # data/weather/openmeteo.csv BEFORE the rebuild loads it. Non-fatal.
+        w = subprocess.run([sys.executable, str(ROOT / "scripts" / "fetch_weather.py")],
+                           capture_output=True, text=True)
+        print((w.stdout or "").strip()[-500:])
+        if w.returncode != 0:
+            print(f"fetch_weather failed (non-fatal): {(w.stderr or '').strip()[-300:]}")
         for script in ("build_warehouse.py", "build_views.py"):
             r = subprocess.run([sys.executable, str(ROOT / "scripts" / script)],
                                capture_output=True, text=True)

@@ -13,6 +13,9 @@ import Betting from "./pages/Betting";
 import Coaches from "./pages/Coaches";
 import CoachPage from "./pages/CoachPage";
 import Referees from "./pages/Referees";
+import Matchup from "./pages/Matchup";
+import H2HExplorer from "./pages/H2HExplorer";
+import Knowledge from "./pages/Knowledge";
 
 export default function App() {
   return (
@@ -31,6 +34,11 @@ export default function App() {
             <Route path="/coaches" element={<Coaches />} />
             <Route path="/coach/:name" element={<CoachPage />} />
             <Route path="/refs" element={<Referees />} />
+            <Route path="/matchup/:gameId" element={<Matchup />} />
+            <Route path="/h2h" element={<H2HExplorer />} />
+            <Route path="/h2h/:a/:b" element={<H2HExplorer />} />
+            <Route path="/knowledge" element={<Knowledge />} />
+            <Route path="/knowledge/:slug" element={<Knowledge />} />
           </Route>
         </Routes>
       </ChatProvider>

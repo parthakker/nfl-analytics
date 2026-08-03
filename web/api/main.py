@@ -15,13 +15,14 @@ from fastapi.staticfiles import StaticFiles
 from nfl_analytics.db import StoreBusyError
 
 from .deps import ROOT, read_conn
-from .routers import (betting, chat, coaches, leaders, league, markets, meta,
-                      news, players, referees, schedule, teams)
+from .routers import (betting, chat, coaches, knowledge, leaders, league,
+                      markets, matchup, meta, news, players, referees,
+                      schedule, teams)
 
 app = FastAPI(title="NFL Jarvis", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
 for _r in (meta, league, teams, players, leaders, schedule, news, markets,
-           chat, coaches, referees, betting):
+           chat, coaches, referees, betting, matchup, knowledge):
     app.include_router(_r.router)
 
 
