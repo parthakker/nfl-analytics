@@ -156,7 +156,8 @@ export default function Leaders() {
   const sortLabel = d.columns.find((c) => c.key === activeSort)?.label ?? activeSort;
 
   return (
-    <div className="space-y-5">
+    // breakout: this page earns more width than the shell's max-w-7xl column
+    <div className="space-y-5" style={{ marginInline: "calc(50% - min(48vw, 55rem))" }}>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Stat leaders</h1>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
@@ -337,11 +338,13 @@ export default function Leaders() {
             )}
           </div>
           <div className="scroll-x">
-            <table className="w-max min-w-full whitespace-nowrap text-left text-sm">
+            <table className="w-max min-w-full whitespace-nowrap text-left text-[15px]">
               <thead>
                 <tr style={{ color: "var(--muted)" }}>
-                  <th className="sticky left-0 z-10 py-1.5 pr-2 font-medium" style={{ background: "var(--bg-1)" }}>#</th>
-                  <th className="sticky z-10 py-1.5 pr-3 font-medium" style={{ left: "2rem", background: "var(--bg-1)" }}>Player</th>
+                  <th className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 font-medium" style={{ background: "var(--bg-1)" }}>#</th>
+                  <th className="sticky z-10 min-w-56 py-2 pr-4 font-medium"
+                      style={{ left: "2.5rem", background: "var(--bg-1)",
+                               boxShadow: "8px 0 12px -8px rgba(0,0,0,0.7)" }}>Player</th>
                   {d.columns.map((c) => (
                     <th key={c.key} className="py-1.5 pr-3 font-medium">
                       <Tip text={c.help}>
@@ -358,9 +361,11 @@ export default function Leaders() {
                 {rows.map((r, i) => (
                   <tr key={r.player_id} className="border-t transition-colors hover:bg-white/5"
                       style={{ borderColor: "var(--stroke)" }}>
-                    <td className="sticky left-0 z-10 py-1.5 pr-2 text-xs tabular-nums"
+                    <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 text-xs tabular-nums"
                         style={{ color: "var(--muted)", background: "var(--bg-1)" }}>{i + 1}</td>
-                    <td className="sticky z-10 py-1.5 pr-3" style={{ left: "2rem", background: "var(--bg-1)" }}>
+                    <td className="sticky z-10 min-w-56 py-2 pr-4"
+                        style={{ left: "2.5rem", background: "var(--bg-1)",
+                                 boxShadow: "8px 0 12px -8px rgba(0,0,0,0.7)" }}>
                       <span className="flex items-center gap-2">
                         {r.headshot && (
                           <img src={r.headshot} alt="" className="h-7 w-7 rounded-full object-cover"
@@ -384,7 +389,7 @@ export default function Leaders() {
                         ? Math.max(0, (v / colMax[c.key]) * 100) : 0;
                       return (
                         <td key={c.key}
-                            className={`py-1.5 pr-3 tabular-nums ${leader ? "font-bold" : ""}`}
+                            className={`py-2 pr-4 tabular-nums ${leader ? "font-bold" : ""}`}
                             style={{
                               ...(isSort ? {
                                 background: `linear-gradient(90deg, ${hexToRgba("#22d3ee", 0.13)} ${barPct}%, transparent ${barPct}%)`,
@@ -398,8 +403,9 @@ export default function Leaders() {
                   </tr>
                 ))}
                 <tr className="border-t italic" style={{ borderColor: "var(--stroke)", color: "var(--muted)" }}>
-                  <td className="sticky left-0 z-10 py-1.5 pr-2" style={{ background: "var(--bg-1)" }} />
-                  <td className="sticky z-10 py-1.5 pr-3 text-xs" style={{ left: "2rem", background: "var(--bg-1)" }}>
+                  <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2" style={{ background: "var(--bg-1)" }} />
+                  <td className="sticky z-10 min-w-56 py-2 pr-4 text-xs"
+                      style={{ left: "2.5rem", background: "var(--bg-1)" }}>
                     Lg avg (qualified)
                   </td>
                   {d.columns.map((c) => {
