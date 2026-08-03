@@ -3,11 +3,16 @@
 Run:  python web/run_web.py   (or double-click "NFL Jarvis.cmd")
 """
 
+import sys
 import threading
 import webbrowser
 from pathlib import Path
 
 import uvicorn
+
+# running as a script puts web/ (not the project root) on sys.path — fix that
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
 
 DIST = Path(__file__).resolve().parent / "ui" / "dist"
 
