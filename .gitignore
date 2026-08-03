@@ -1,6 +1,9 @@
 # data lives in nflverse releases, not in git — rebuild with:
 #   python scripts/refresh_data.py --bootstrap
-data/
+# EXCEPT the two hand-curated files, which exist nowhere else.
+data/*
+!data/stadiums.json
+!data/coaches_meta.json
 *.duckdb
 *.duckdb.wal
 logs/
@@ -12,6 +15,12 @@ logs/
 # frontend build artifacts
 web/ui/node_modules/
 web/ui/dist/
+web/ui/test-results/
+web/ui/playwright-report/
+
+# claude code local-only config
+.claude/settings.local.json
+CLAUDE.local.md
 
 # python
 __pycache__/

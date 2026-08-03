@@ -1,0 +1,450 @@
+{
+  "ARI": {
+    "head_coach": "Jonathan Gannon",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "ATL": {
+    "head_coach": "Raheem Morris",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "Fangio tree",
+      "fact": "Two-high, simulated pressures"
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "BAL": {
+    "head_coach": "Jesse Minter",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "BUF": {
+    "head_coach": "Sean McDermott",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "Carolina/McDermott zone",
+      "fact": "Zone-heavy, disciplined shell"
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "CAR": {
+    "head_coach": "Dave Canales",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "CHI": {
+    "head_coach": "Ben Johnson",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Johnson hybrid",
+      "fact": "Motion-heavy, exotic shifts, aggressive downfield shots"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "CIN": {
+    "head_coach": "Zac Taylor",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "CLE": {
+    "head_coach": "Todd Monken",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "DAL": {
+    "head_coach": "Brian Schottenheimer",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "DEN": {
+    "head_coach": "Sean Payton",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Payton West Coast",
+      "fact": "Option routes, RB screens, red-zone specials"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "DET": {
+    "head_coach": "Dan Campbell",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Physical/downhill identity",
+      "fact": "Aggressive 4th-down culture, heavy sets"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "GB": {
+    "head_coach": "Matt LaFleur",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "McVay/Shanahan wide zone",
+      "fact": "Wide zone + bootleg series"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "HOU": {
+    "head_coach": "DeMeco Ryans",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "Fangio-influenced 4-3",
+      "fact": "Two-high shells, four-man rush"
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "IND": {
+    "head_coach": "Shane Steichen",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "JAX": {
+    "head_coach": "Liam Coen",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "KC": {
+    "head_coach": "Andy Reid",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "West Coast (Reid tree)",
+      "fact": "Spread-influenced West Coast; heavy motion, option routes"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "LA": {
+    "head_coach": "Sean McVay",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "McVay/Shanahan wide zone",
+      "fact": "Outside zone run game, play-action keepers, condensed sets"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "LAC": {
+    "head_coach": "Jim Harbaugh",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Power gap run game",
+      "fact": "Multiple TEs, downhill power, play-action off it"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "LV": {
+    "head_coach": "Klint Kubliak",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "MIA": {
+    "head_coach": "Jeff Hafley",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "MIN": {
+    "head_coach": "Kevin O'Connell",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "McVay tree",
+      "fact": "Pass-first, layered dropback game"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "NE": {
+    "head_coach": "Mike Vrabel",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "NO": {
+    "head_coach": "Kellen Moore",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "NYG": {
+    "head_coach": "John Harbaugh",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Roman/Monken influence",
+      "fact": "QB-run element, vertical shots"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "NYJ": {
+    "head_coach": "Aaron Glenn",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "PHI": {
+    "head_coach": "Nick Sirianni",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "PIT": {
+    "head_coach": "Mike McCarthy",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "SEA": {
+    "head_coach": "Mike Macdonald",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "SF": {
+    "head_coach": "Kyle Shanahan",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "Shanahan wide zone",
+      "fact": "The wide-zone/play-action system half the league copies"
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "TB": {
+    "head_coach": "Todd Bowles",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "Bowles pressure",
+      "fact": "One of the league's highest blitz rates"
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "TEN": {
+    "head_coach": "Robert Saleh",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "varies by coordinator",
+      "fact": ""
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  },
+  "WAS": {
+    "head_coach": "Dan Quinn",
+    "offensive_coordinator": null,
+    "defensive_coordinator": null,
+    "offense_scheme": {
+      "family": "unclassified",
+      "fact": ""
+    },
+    "defense_scheme": {
+      "family": "Seattle-3 descendant",
+      "fact": "Single-high, fast flow"
+    },
+    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+  }
+}
