@@ -89,6 +89,21 @@ def test_adrian_peterson_regression(client):
     assert minn["team"] == "MIN"
 
 
+def test_columns_carry_help_text(client):
+    d = client.get("/api/leaders?family=fantasy").json()
+    assert all(c.get("help") for c in d["columns"])
+
+
+def test_position_aware_columns(client):
+    qb = client.get("/api/leaders?family=fantasy&position=QB").json()
+    qb_keys = [c["key"] for c in qb["columns"]]
+    assert "pass_yds" in qb_keys and "tgt" not in qb_keys
+    db = client.get("/api/leaders?family=defense&position=DB").json()
+    assert [c["key"] for c in db["columns"]][1:3] == ["ints", "pd"]
+    overall = client.get("/api/leaders?family=fantasy").json()
+    assert [c["key"] for c in overall["columns"]][1] == "std"  # standard order
+
+
 def test_games_never_exceed_weeks(client, max_season):
     d = client.get(f"/api/leaders?family=fantasy&season={max_season}&limit=100").json()
     assert all(r["games"] <= 22 for r in d["rows"])

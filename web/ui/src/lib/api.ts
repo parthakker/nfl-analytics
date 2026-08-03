@@ -55,7 +55,10 @@ export interface RosterPlayer {
   status: string | null; college: string | null; exp: number | null;
 }
 
-export interface LeaderColumn { key: string; label: string; kind: "count" | "count_g" | "rate" | "pct" }
+export interface LeaderColumn {
+  key: string; label: string; kind: "count" | "count_g" | "rate" | "pct";
+  help: string;
+}
 export interface LeaderRow {
   player_id: string; player: string; pos: string | null; team: string;
   headshot: string | null; games: number;

@@ -46,6 +46,19 @@ const SCATTER: Record<string, { x: string; y: string }> = {
 const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
+/** Pure-CSS hover tooltip — no deps, keyboard-friendly via title fallback. */
+function Tip({ text, children }: { text: string; children: React.ReactNode }) {
+  return (
+    <span className="group relative inline-block" title={text}>
+      {children}
+      <span className="pointer-events-none absolute left-1/2 top-full z-50 mt-1 hidden w-max max-w-56 -translate-x-1/2 rounded-lg border px-2.5 py-1.5 text-left text-[11px] font-normal normal-case leading-snug group-hover:block"
+            style={{ background: "var(--bg-1)", borderColor: "var(--stroke)", color: "var(--text)" }}>
+        {text}
+      </span>
+    </span>
+  );
+}
+
 export default function Leaders() {
   const meta = useMeta();
   const nav = useNavigate();
@@ -60,6 +73,7 @@ export default function Leaders() {
   const [perGame, setPerGame] = useState(false);
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"table" | "scatter">("table");
+  const [qualOpen, setQualOpen] = useState(false);
   const [d, setD] = useState<LeadersResponse | null>(null);
   const debounce = useRef<number>(undefined);
 
@@ -161,21 +175,6 @@ export default function Leaders() {
             {label}
           </button>
         ))}
-        <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
-        <select value={d.season}
-                onChange={(e) => setSeason(+e.target.value)}
-                className="rounded-lg border bg-transparent px-2 py-1.5 text-sm"
-                style={{ borderColor: "var(--stroke)" }}>
-          {d.seasons.map((s) => <option key={s} value={s} style={{ color: "#000" }}>{s}</option>)}
-        </select>
-        {(["REG", "POST", "ALL"] as const).map((st) => (
-          <button key={st} onClick={() => setSeasonType(st)}
-            className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
-            style={{ borderColor: seasonType === st ? "var(--arc)" : "var(--stroke)",
-                     color: seasonType === st ? "var(--arc)" : "var(--muted)" }}>
-            {st}
-          </button>
-        ))}
         {POSITIONS[family].length > 0 && (
           <>
             <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
@@ -191,37 +190,50 @@ export default function Leaders() {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <label className="flex items-center gap-2" style={{ color: "var(--muted)" }}>
-          {qcfg.label}
-          <input type="range" min={0} max={qcfg.max} step={qcfg.step} value={qual}
-                 onChange={(e) => setQual(+e.target.value)} className="w-36" />
-          <span className="tabular-nums font-semibold" style={{ color: "var(--text)" }}>{qual}</span>
-        </label>
-        <span className="text-xs" style={{ color: "var(--arc)" }}>
-          {d.qualified.toLocaleString()} of {d.total_players.toLocaleString()} qualify
-        </span>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <select value={d.season}
+                onChange={(e) => setSeason(+e.target.value)}
+                className="rounded-lg border bg-transparent px-2 py-1 text-sm"
+                style={{ borderColor: "var(--stroke)" }}>
+          {d.seasons.map((s) => <option key={s} value={s} style={{ color: "#000" }}>{s}</option>)}
+        </select>
+        {(["REG", "POST", "ALL"] as const).map((st) => (
+          <Tip key={st} text={st === "REG" ? "Regular season only" : st === "POST" ? "Playoffs only" : "Regular season + playoffs"}>
+            <button onClick={() => setSeasonType(st)}
+              className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
+              style={{ borderColor: seasonType === st ? "var(--arc)" : "var(--stroke)",
+                       color: seasonType === st ? "var(--arc)" : "var(--muted)" }}>
+              {st}
+            </button>
+          </Tip>
+        ))}
         <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
-        {[25, 50, 100].map((l) => (
-          <button key={l} onClick={() => setLimit(l)}
-            className="rounded-lg border px-2 py-0.5 text-xs tabular-nums"
-            style={{ borderColor: limit === l ? "var(--arc)" : "var(--stroke)",
-                     color: limit === l ? "var(--arc)" : "var(--muted)" }}>
-            {l}
+        {(["table", "scatter"] as const).map((v) => (
+          <button key={v} onClick={() => setView(v)}
+            className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
+            style={{ borderColor: view === v ? "var(--arc)" : "var(--stroke)",
+                     color: view === v ? "var(--arc)" : "var(--muted)" }}>
+            {v === "table" ? "Table" : "Chart"}
           </button>
         ))}
-        <button onClick={() => setPerGame(!perGame)}
-          className="rounded-full border px-3 py-1 text-xs font-semibold"
-          style={{ borderColor: perGame ? "var(--arc)" : "var(--stroke)",
-                   color: perGame ? "var(--arc)" : "var(--muted)" }}>
-          per game
-        </button>
-        <button onClick={() => setView(view === "table" ? "scatter" : "table")}
-          className="rounded-full border px-3 py-1 text-xs font-semibold"
-          style={{ borderColor: view === "scatter" ? "var(--arc)" : "var(--stroke)",
-                   color: view === "scatter" ? "var(--arc)" : "var(--muted)" }}>
-          scatter
-        </button>
+        <Tip text="Show counting stats (yards, TDs, receptions…) per game played. True rates like Y/A are unaffected.">
+          <button onClick={() => setPerGame(!perGame)}
+            className="rounded-full border px-3 py-1 text-xs font-semibold"
+            style={{ borderColor: perGame ? "var(--arc)" : "var(--stroke)",
+                     color: perGame ? "var(--arc)" : "var(--muted)" }}>
+            Per game
+          </button>
+        </Tip>
+        <label className="flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
+          Show
+          <select value={limit} onChange={(e) => setLimit(+e.target.value)}
+                  className="rounded-lg border bg-transparent px-2 py-1 text-xs"
+                  style={{ borderColor: "var(--stroke)", color: "var(--text)" }}>
+            {[25, 50, 100].map((l) => (
+              <option key={l} value={l} style={{ color: "#000" }}>Top {l}</option>
+            ))}
+          </select>
+        </label>
         <input value={query} onChange={(e) => setQuery(e.target.value)}
                placeholder="find player…"
                className="ml-auto rounded-lg border bg-transparent px-2 py-1 text-sm outline-none"
@@ -294,19 +306,50 @@ export default function Leaders() {
           </p>
         </GlassPanel>
       ) : (
-        <GlassPanel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}${qual > 0 ? ` · min ${qual} ${qcfg.label.replace("min ", "")}` : ""}`}>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm" style={{ minWidth: "56rem" }}>
+        <GlassPanel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`}>
+          <div className="relative mb-2 flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
+            <span>
+              {d.qualified.toLocaleString()} of {d.total_players.toLocaleString()} players qualify
+              {qual > 0 ? ` (min ${qual} ${qcfg.label.replace("min ", "")})` : ""}
+            </span>
+            <button onClick={() => setQualOpen(!qualOpen)} className="hover:underline"
+                    style={{ color: "var(--arc)" }}>
+              adjust
+            </button>
+            {qualOpen && (
+              <div className="absolute left-0 top-5 z-40 rounded-xl border p-3"
+                   style={{ background: "var(--bg-1)", borderColor: "var(--stroke)" }}>
+                <label className="flex items-center gap-2">
+                  {qcfg.label}
+                  <input type="range" min={0} max={qcfg.max} step={qcfg.step} value={qual}
+                         onChange={(e) => setQual(+e.target.value)} className="w-40" />
+                  <span className="tabular-nums font-semibold" style={{ color: "var(--text)" }}>{qual}</span>
+                </label>
+                <div className="mt-1.5 flex gap-3">
+                  <button onClick={() => setQual(QUAL[family].auto)} className="hover:underline"
+                          style={{ color: "var(--arc)" }}>auto ({QUAL[family].auto})</button>
+                  <button onClick={() => setQual(0)} className="hover:underline"
+                          style={{ color: "var(--muted)" }}>everyone</button>
+                  <button onClick={() => setQualOpen(false)} className="ml-auto hover:underline"
+                          style={{ color: "var(--muted)" }}>done</button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="scroll-x">
+            <table className="w-max min-w-full whitespace-nowrap text-left text-sm">
               <thead>
                 <tr style={{ color: "var(--muted)" }}>
                   <th className="sticky left-0 z-10 py-1.5 pr-2 font-medium" style={{ background: "var(--bg-1)" }}>#</th>
                   <th className="sticky z-10 py-1.5 pr-3 font-medium" style={{ left: "2rem", background: "var(--bg-1)" }}>Player</th>
                   {d.columns.map((c) => (
                     <th key={c.key} className="py-1.5 pr-3 font-medium">
-                      <button onClick={() => pickSort(c.key)} className="hover:underline"
-                        style={{ color: activeSort === c.key ? "var(--arc)" : undefined }}>
-                        {c.label}{activeSort === c.key ? (d.dir === "desc" ? " ↓" : " ↑") : ""}
-                      </button>
+                      <Tip text={c.help}>
+                        <button onClick={() => pickSort(c.key)} className="hover:underline"
+                          style={{ color: activeSort === c.key ? "var(--arc)" : undefined }}>
+                          {c.label}{activeSort === c.key ? (d.dir === "desc" ? " ↓" : " ↑") : ""}
+                        </button>
+                      </Tip>
                     </th>
                   ))}
                 </tr>

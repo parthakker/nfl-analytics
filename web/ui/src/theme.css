@@ -111,3 +111,16 @@ body {
 .prose-knowledge code { background: rgba(148, 197, 255, 0.08); border-radius: 4px;
   padding: 0.1rem 0.35rem; font-size: 0.85em; }
 .prose-knowledge hr { border: none; border-top: 1px solid var(--stroke); margin: 2rem 0; }
+
+/* horizontal scroll container for wide tables (Leaders) */
+.scroll-x {
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--stroke) transparent;
+}
+.scroll-x::-webkit-scrollbar { height: 8px; }
+.scroll-x::-webkit-scrollbar-track { background: transparent; }
+.scroll-x::-webkit-scrollbar-thumb {
+  background: var(--stroke); border-radius: 4px;
+}
+.scroll-x::-webkit-scrollbar-thumb:hover { background: var(--muted); }

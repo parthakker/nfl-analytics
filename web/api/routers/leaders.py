@@ -131,6 +131,9 @@ FAMILIES: dict[str, dict] = {
             "touches": ("(sum(v.carries)+sum(v.receptions))::int", "Touches", "count"),
             "rush_yds": ("sum(v.rushing_yards)::int", "RushYds", "count"),
             "rec_yds": ("sum(v.receiving_yards)::int", "RecYds", "count"),
+            "pass_yds": ("sum(v.passing_yards)::int", "PassYds", "count"),
+            "pass_td": ("sum(v.passing_tds)::int", "PassTD", "count"),
+            "ints": ("sum(v.interceptions)::int", "Int", "count"),
             "total_td": (
                 "(sum(v.rushing_tds)+sum(v.receiving_tds)+sum(v.passing_tds))::int",
                 "TD",
@@ -194,6 +197,181 @@ LABELS = {
     "kicking": "Kicking",
 }
 LIMITS = (25, 50, 100)
+
+# hover help: key -> (full name, one-line explanation). Keys shared across
+# families get one entry; the UI shows "full name — explanation".
+STAT_HELP: dict[str, tuple[str, str]] = {
+    "games": (
+        "Games played",
+        "Weeks with at least one touch, attempt or target (activity-filtered)",
+    ),
+    # passing
+    "cmp": ("Completions", "Passes completed"),
+    "att": ("Attempts / Carries", "Pass attempts (passing) or rush attempts (rushing/fantasy)"),
+    "cmp_pct": ("Completion %", "Completions ÷ attempts"),
+    "pass_yds": ("Passing yards", "Total passing yards"),
+    "pass_ypg": ("Passing yards per game", "Passing yards ÷ games played"),
+    "ypa": ("Yards per attempt", "Passing yards ÷ pass attempts"),
+    "pass_td": ("Passing touchdowns", "Touchdown passes thrown"),
+    "ints": ("Interceptions", "Passes intercepted"),
+    "sacks": ("Sacks", "Times sacked (passing) or sacks recorded (defense)"),
+    "air_yds": ("Air yards", "Yards the ball traveled in the air on throws/targets"),
+    "epa_db": (
+        "EPA per dropback",
+        "Expected Points Added per dropback (attempts + sacks) — >0.15 is elite",
+    ),
+    "pacr": ("PACR", "Passing Air Conversion Ratio: passing yards ÷ air yards"),
+    "rush_yds": ("Rushing yards", "Total rushing yards"),
+    "rush_td": ("Rushing touchdowns", "Rushing touchdowns"),
+    # rushing
+    "rush_ypg": ("Rushing yards per game", "Rushing yards ÷ games played"),
+    "ypc": ("Yards per carry", "Rushing yards ÷ carries"),
+    "fum_lost": ("Fumbles lost", "Rushing fumbles lost to the defense"),
+    "first_downs": ("First downs", "First downs gained rushing/receiving"),
+    "epa_rush": (
+        "EPA per rush",
+        "Expected Points Added per carry — positive means the run game helps",
+    ),
+    "rec": ("Receptions", "Passes caught"),
+    "rec_yds": ("Receiving yards", "Total receiving yards"),
+    "ppr": ("PPR points", "Fantasy points, full point per reception scoring"),
+    # receiving
+    "tgt": ("Targets", "Passes thrown the player's way"),
+    "catch_pct": ("Catch %", "Receptions ÷ targets"),
+    "rec_ypg": ("Receiving yards per game", "Receiving yards ÷ games played"),
+    "ypr": ("Yards per reception", "Receiving yards ÷ receptions"),
+    "rec_td": ("Receiving touchdowns", "Receiving touchdowns"),
+    "yac": ("Yards after catch", "Yards gained after the catch"),
+    "epa_tgt": ("EPA per target", "Expected Points Added per target — receiving efficiency"),
+    "tgt_share": ("Target share", "Average share of the team's targets per week"),
+    "wopr": (
+        "Weighted Opportunity Rating",
+        "1.5×target share + 0.7×air-yards share — usage that predicts fantasy value",
+    ),
+    # fantasy
+    "std": ("Standard points", "Fantasy points, no points for receptions"),
+    "half_ppr": ("Half-PPR points", "Fantasy points, half point per reception"),
+    "std_pg": ("Standard points per game", "Standard fantasy points ÷ games played"),
+    "half_pg": ("Half-PPR points per game", "Half-PPR fantasy points ÷ games played"),
+    "ppr_pg": ("PPR points per game", "PPR fantasy points ÷ games played"),
+    "touches": ("Touches", "Carries + receptions"),
+    "total_td": ("Total touchdowns", "Rushing + receiving + passing touchdowns"),
+    # defense
+    "tackles": ("Combined tackles", "Solo tackles + assists"),
+    "solo": ("Solo tackles", "Unassisted tackles"),
+    "ast": ("Tackle assists", "Assisted tackles"),
+    "tfl": ("Tackles for loss", "Tackles behind the line of scrimmage"),
+    "qb_hits": ("QB hits", "Hits on the quarterback (includes sacks)"),
+    "pd": ("Passes defended", "Passes broken up or deflected"),
+    "ff": ("Forced fumbles", "Fumbles forced"),
+    "fr": ("Fumble recoveries", "Opponent fumbles recovered"),
+    "def_td": ("Defensive touchdowns", "Interception/fumble returns for TD"),
+    "safeties": ("Safeties", "Safeties recorded"),
+    "tkl_pg": ("Tackles per game", "Combined tackles ÷ games played"),
+    # kicking
+    "fg_made": ("Field goals made", "Field goals converted"),
+    "fg_att": ("Field goal attempts", "Field goals attempted"),
+    "fg_pct": ("Field goal %", "FG made ÷ FG attempted"),
+    "fg_long": ("Longest field goal", "Longest made field goal (yards)"),
+    "fg_40_49": ("FG made 40-49", "Field goals made from 40-49 yards"),
+    "fg_50_plus": ("FG made 50+", "Field goals made from 50+ yards"),
+    "pat_made": ("Extra points made", "Extra points converted"),
+    "pat_att": ("Extra point attempts", "Extra points attempted"),
+    "points": ("Kicking points", "3 × FG made + extra points made"),
+    "pts_pg": ("Kicking points per game", "Kicking points ÷ games played"),
+}
+
+# position-aware display order: (family, position) -> ordered column keys.
+# Rows always carry the family superset; this only changes WHICH columns show
+# and in what order. No entry = the family's standard order.
+POSITION_COLUMNS: dict[tuple[str, str], list[str]] = {
+    ("fantasy", "QB"): [
+        "ppr",
+        "ppr_pg",
+        "std",
+        "std_pg",
+        "pass_yds",
+        "pass_td",
+        "ints",
+        "att",
+        "rush_yds",
+        "total_td",
+    ],
+    ("fantasy", "RB"): [
+        "ppr",
+        "ppr_pg",
+        "half_ppr",
+        "half_pg",
+        "att",
+        "rush_yds",
+        "touches",
+        "rec",
+        "rec_yds",
+        "total_td",
+    ],
+    ("fantasy", "WR"): [
+        "ppr",
+        "ppr_pg",
+        "half_ppr",
+        "half_pg",
+        "tgt",
+        "rec",
+        "rec_yds",
+        "rush_yds",
+        "total_td",
+    ],
+    ("fantasy", "TE"): [
+        "ppr",
+        "ppr_pg",
+        "half_ppr",
+        "half_pg",
+        "tgt",
+        "rec",
+        "rec_yds",
+        "total_td",
+    ],
+    ("defense", "DL"): [
+        "sacks",
+        "qb_hits",
+        "tfl",
+        "tackles",
+        "solo",
+        "ast",
+        "ff",
+        "fr",
+        "def_td",
+        "safeties",
+    ],
+    ("defense", "DB"): [
+        "ints",
+        "pd",
+        "tackles",
+        "solo",
+        "ast",
+        "tfl",
+        "sacks",
+        "ff",
+        "fr",
+        "def_td",
+    ],
+}
+
+
+def columns_for(family: str, position: str | None) -> list[dict]:
+    fam = FAMILIES[family]
+    order = POSITION_COLUMNS.get((family, position or ""), list(fam["cols"].keys()))
+    specs = [
+        {"key": "games", "label": "G", "kind": "count_g", "help": " — ".join(STAT_HELP["games"])}
+    ]
+    for key in order:
+        if key not in fam["cols"]:
+            continue
+        _, label, kind = fam["cols"][key]
+        full, expl = STAT_HELP.get(key, (label, ""))
+        specs.append(
+            {"key": key, "label": label, "kind": kind, "help": f"{full} — {expl}" if expl else full}
+        )
+    return specs
 
 
 def _base_sql(fam: dict, position: str | None, season_type: str) -> str:
@@ -325,10 +503,7 @@ def leaders(
         "seasons": seasons,
         "total_players": counts["total_players"],
         "qualified": counts["qualified"],
-        "columns": [
-            {"key": "games", "label": "G", "kind": "count_g"},
-            *[{"key": k, "label": lbl, "kind": kind} for k, (_, lbl, kind) in fam["cols"].items()],
-        ],
+        "columns": columns_for(family, position),
         "league_avg": league_avg,
         "p10": p10,
         "p90": p90,
