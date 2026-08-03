@@ -5,110 +5,98 @@ keys needed for the core experience.
 
 ## 1. Prerequisites
 
-- **Python 3.12 or newer** — check with `python --version`; install from
-  [python.org](https://www.python.org/downloads/) (Windows: tick "Add to PATH")
+- **Python 3.12 or newer** — check with `python --version`
+  (Windows: tick "Add to PATH" when installing)
+- **Node 20+** — for the Jarvis web UI ([nodejs.org](https://nodejs.org))
 - **Git** — [git-scm.com](https://git-scm.com/downloads)
-- **~4 GB free disk** (2 GB download + 0.6 GB database + headroom)
+- **~4 GB free disk** (2 GB download + ~1 GB database + headroom)
 
 Works on Windows, macOS, and Linux.
 
 ## 2. Install
 
 ```bash
-git clone https://github.com/parthakker/nfl-analytics.git
+git clone https://github.com/parthakker/nfl-analytics
 cd nfl-analytics
-pip install -e .
+uv sync --extra dev          # recommended (install uv: pip install uv)
+# — or, plain pip:
+pip install -e ".[dev]"
 ```
 
-## 3. Download the data (one time, ~2 GB)
+The `legacy` extra (`--extra legacy` / `".[dev,legacy]"`) adds Streamlit for
+the old dashboard; skip it unless you want that.
+
+## 3. Download the data (~2 GB, resumable)
 
 ```bash
-python scripts/refresh_data.py --bootstrap
+python -m nfl_analytics.cli refresh --bootstrap
 ```
 
-This pulls every season 2002–present from nflverse's public releases (play-by-
-play, player stats, rosters, injuries, advanced stats, Next Gen Stats,
-schedules with betting lines) and builds `nfl.duckdb`. It's resumable — if it
-fails midway, run it again and it continues where it left off.
+Downloads every nflverse season 1999→current, fetches weather, builds
+`nfl.duckdb`, and runs the sanity checks. Re-run it if it's interrupted —
+already-downloaded files are skipped. In-season, plain
+`python -m nfl_analytics.cli refresh` keeps it current.
 
-You should see it end with `All tables loaded, validation passed.`
+(`nfl <command>` also works anywhere the Python scripts directory is on PATH.)
 
-## 4. Launch the dashboard
+## 4. Build and launch Jarvis
 
 ```bash
-python -m streamlit run dashboard.py
+cd web/ui && npm ci && npm run build && cd ../..
+python web/run_web.py        # http://localhost:8000
 ```
 
-Your browser opens to the app: click through divisions → teams → rosters,
-coaching history, schedules with lines, league leaders, and news.
+Windows: double-click `NFL Jarvis.cmd` instead (auto-restarts on crashes).
+The legacy Streamlit dashboard is `legacy/NFL Dashboard.cmd`.
 
-*(Windows: you can also create a shortcut to a `.cmd` file containing that
-command — see `NFL Dashboard.cmd` for a template.)*
-
-## 4b. The Jarvis UI (optional — the futuristic one)
-
-A second, fancier front end (dark glass "command center" with team HUDs,
-live market board, and built-in AI chat). Requires Node.js
-([nodejs.org](https://nodejs.org) LTS, or `winget install OpenJS.NodeJS.LTS`):
+## 5. Verify
 
 ```bash
-cd web/ui
-npm install
-npm run build
-cd ../..
-python web/run_web.py
+python -m pytest tests/unit -q            # fast, no DB needed
+python -m pytest -m "warehouse or api" -q # invariants vs your freshly built DB
+python -m nfl_analytics.cli smoke         # live-HTTP endpoint check
+cd web/ui && npx playwright install chromium && npm run e2e   # browser e2e
 ```
 
-Opens at http://localhost:8000. The chat page additionally needs Claude Code
-(section 6). Note for OneDrive users: exclude `web/ui/node_modules` from sync.
+## 6. Claude Code integration (optional)
 
-## 5. Keep it fresh (optional but recommended)
+The repo ships its Claude Code config: opening it in Claude Code picks up
+`CLAUDE.md`, the path-scoped rules, skills (`/health-check`, `/rebuild`,
+`/new-page`…), hooks (auto-lint + a test gate), and the `nfl` MCP server via
+the committed `.mcp.json` (approve it on first use). If you previously added
+the server manually, remove the duplicate: `claude mcp remove nfl -s local`.
 
-During the season, data updates nightly at the source. Refresh yours with:
+## 7. Automation (optional, Windows)
 
-```bash
-python scripts/refresh_data.py     # stats + schedule (~1 min)
-python scripts/poll_news.py        # ESPN + all 32 team-site news
-python scripts/snapshot_kalshi.py  # prediction-market prices
-```
+Five Task Scheduler jobs keep everything fresh — create what you want:
 
-To automate: schedule those three commands with Task Scheduler (Windows) or
-cron (Mac/Linux). Suggested cadence: refresh weekly (Tuesday mornings), news
-and Kalshi every 6 hours.
+| Task | Schedule | Runs |
+|---|---|---|
+| NFL-WeeklyRefresh | Tue 08:00 | `scripts\refresh_data.py` |
+| NFL-NewsPoll | every 6h | `scripts\poll_news.py` |
+| NFL-KalshiSnapshot | every 6h | `scripts\snapshot_kalshi.py` |
+| NFL-SmokeTest | daily 07:30 | `scripts\smoke_test.py` |
+| NFL-NightlyHealth | daily 06:45 | `scripts\nightly_health.cmd` (headless Claude `/health-check`; needs Claude Code installed) |
 
-## 6. The AI analyst (optional — needs Claude)
+Example:
+`schtasks /Create /TN NFL-WeeklyRefresh /SC WEEKLY /D TUE /ST 08:00 /TR "C:\PathTo\pythonw.exe C:\PathTo\repo\scripts\refresh_data.py"`
 
-The chat page in the dashboard and the natural-language analyst run on
-[Claude Code](https://claude.com/claude-code). With it installed and logged in:
+All jobs append one line per run to `logs\*.log`; the `data_status` MCP tool
+surfaces the tails.
 
-```bash
-claude mcp add nfl -- python -m nfl_analytics.mcp_server
-```
+## 8. Maintainer bits
 
-Then either use the dashboard's **Chat** page, or just open `claude` in the
-project folder and ask football questions directly — it has 15 tools for
-querying the warehouse, checking Kalshi prices, and pulling news. Note: chat
-answers consume your Claude plan usage.
-
-## 7. The prediction model (optional)
-
-```bash
-python scripts/train_model.py   # ~3 min: tunes, backtests, writes docs/model_report.md
-```
-
-Read `docs/model_report.md` before trusting it with a dollar — the honest
-finding is that Vegas closing lines beat it, which is expected for public
-data. Its value is calibrated probabilities and knowing the error bar.
+- `nfl fixture` rebuilds the committed ~24 MB CI fixture DBs (do this a few
+  times a season).
+- `nfl audit` regenerates `docs/data_audit.md`.
+- Model training (paused feature): `nfl train`.
 
 ## Troubleshooting
 
-- **"file is being used by another process"** — the database is rebuilding
-  (refresh) or open elsewhere. Close the dashboard/refresh and retry in a
-  minute.
-- **Bootstrap fails on one file** — nflverse occasionally renames release
-  assets. Re-run first (transient errors happen); if it persists, open an
-  issue with the log line.
-- **Dashboard shows stale data** — it caches queries for 5 minutes; press
-  `R` (rerun) or wait.
-- **Chat page says CLI not found** — install Claude Code and ensure `claude`
-  works in a terminal, then restart the dashboard.
+- **"database is locked"** — close `explore.cmd` (DuckDB browser UI) before
+  any refresh/rebuild; the API retries briefly and returns 503s while
+  collectors write.
+- **A download fails with "no candidate matched"** — nflverse renamed an
+  asset; check their releases page and update `scripts/refresh_data.py`.
+- **`nfl` not found** — use `python -m nfl_analytics.cli` (PATH-independent).
+- **UI shows stale pages after edits** — rebuild: `cd web/ui && npm run build`.

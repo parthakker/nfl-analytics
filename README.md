@@ -1,64 +1,84 @@
 # 🏈 NFL Analytics
 
-A personal NFL analytics platform that runs entirely on your machine: a local
-warehouse of every NFL play since 2007, a visual dashboard, auto-updating data
-and news, a prediction-market price tracker, and an AI analyst you can ask
-questions in plain English.
+A personal NFL analytics platform that runs entirely on your machine: a DuckDB
+warehouse of every NFL play since 1999, a dark-glass web app ("Jarvis"), auto-
+updating data and news, a prediction-market tracker, and an AI analyst wired in
+through MCP. Questions get answered by running SQL against real data —
+computed answers, not vibes.
 
 **No API keys. No subscriptions for the core experience. One ~2 GB download.**
+
+![CI](https://github.com/parthakker/nfl-analytics/actions/workflows/ci.yml/badge.svg)
 
 ## What's inside
 
 | Piece | What it does |
 |---|---|
-| **Warehouse** (DuckDB) | 909k+ plays (2007–2025), player/team stats, rosters, injuries, officials, draft history, and the full 2026 schedule with betting lines — all queryable in milliseconds |
-| **Jarvis UI** (React + FastAPI) | A dark, glowing "command center": division constellation with all 32 team logos → per-team HUDs in team colors (stat rings, efficiency charts, roster, coach lineage) → live prediction-market board → **built-in streaming AI chat** (Ctrl-K) |
-| **Dashboard** (Streamlit) | The simpler original UI: division standings → team pages → players, league leaders, schedules & lines |
-| **News engine** | Auto-polls ESPN plus all 32 official team websites every 6 hours; headlines are tagged to players/teams in the warehouse |
-| **Kalshi tracker** | Records prediction-market prices (game winners, spreads, totals, win totals, Super Bowl futures) every 6 hours, building line-movement history |
-| **Prediction model** | Opponent-adjusted EPA ratings → win probabilities, honestly backtested against 18 years of closing lines (spoiler: Vegas wins — the model's value is calibration, and the [report](docs/model_report.md) shows exactly by how much) |
-| **AI analyst** | A chat page (and MCP server for Claude Code/Desktop) that writes and runs real SQL against your warehouse to answer questions like *"which QBs perform best traveling east?"* |
-
-## Quick start
-
-See **[SETUP.md](SETUP.md)** for the full guide. The short version:
-
-```bash
-git clone https://github.com/parthakker/nfl-analytics.git
-cd nfl-analytics
-pip install -e .
-python scripts/refresh_data.py --bootstrap   # ~2 GB from nflverse, one time
-python -m streamlit run dashboard.py
-```
+| **Warehouse** (`nfl.duckdb`) | 1.28M plays 1999–2025, schedules with odds through 2026, player/team stats across the v1/v2 nflverse eras, advanced stats, NGS, snap counts, depth charts, personnel/participation, FTN charting, combine, ESPN QBR — plus curated venue coordinates powering true travel distances |
+| **Jarvis web app** (`web/`) | FastAPI + React SPA: team HUDs, matchup cards (travel/rest/refs/coach-H2H/weather/market for any game 1999→upcoming), all-time H2H explorer, coaches with scheme fingerprints, referee intel, betting board (Vegas-vs-Kalshi dislocations), news, and a 15-chapter football Knowledge book |
+| **Derived views** | 20+ SQL views: team-game workhorse with haversine travel miles, H2H series with relocations merged, referee tendencies 1999+, coach PROE/4th-down aggression, one unified weather answer per game |
+| **News engine** (`news.duckdb`) | ESPN + team feeds polled 6-hourly, categorized, player-tagged by gsis_id, full-text searchable |
+| **Kalshi tracker** (`kalshi.duckdb`) | Market snapshots 6-hourly + Vegas line history per game |
+| **Prediction model** | Trained and validated, deliberately paused — betting surfaces are market-vs-market only |
+| **MCP server** | 20 tools (`query_warehouse`, `betting_board`, `coach_profile`, `referee_stats`, `news_search`…) exposing all of it to Claude |
+| **Legacy dashboard** (`legacy/`) | The original Streamlit UI, kept for friends — frozen |
 
 ## Architecture
 
 ```
-nflverse releases ─┐  (nightly-updated public data)
-ESPN + team sites ─┼─► scripts/refresh_data.py / poll_news.py / snapshot_kalshi.py
-Kalshi API ────────┘            │ (scheduled: weekly / 6h / 6h)
-                                ▼
-              nfl.duckdb + news.duckdb + kalshi.duckdb
-                                │
-              ┌─────────────────┼──────────────────┐
-              ▼                 ▼                  ▼
-        dashboard.py     MCP server (15 tools)   model/
-        (Streamlit UI)   (Claude Code/Desktop)   (ratings, backtest)
+nflverse releases ──► scripts/refresh_data.py ──► data/*.csv
+                                 │
+              Open-Meteo ──► fetch_weather.py
+                                 │
+        build_warehouse.py ──► nfl.duckdb ◄── build_views.py (views, venues, macros)
+                                 │
+     ┌───────────────────────────┼──────────────────────────┐
+     │                           │                          │
+ MCP server (20 tools)   FastAPI (web/api)        pytest invariants (tests/)
+     │                           │
+  Claude Code            React SPA (web/ui) ── Playwright e2e
+                                 │
+              kalshi.duckdb ── news.duckdb (sidecars, 6h pollers)
 ```
 
-Design principles: **compute, don't retrieve** (questions are answered by SQL
-over plays, not by searching documents); **verified semantic layer** (every
-data gotcha — and NFL data has many — is documented in `docs/dictionary/` and
-enforced in `CLAUDE.md`); **honest modeling** (walk-forward backtests with an
-untouched holdout, reported even when the answer is "the market is better").
+Five Windows Task Scheduler jobs keep it fresh: weekly data refresh, 6-hourly
+news + Kalshi pollers, a daily smoke test, and a nightly headless Claude
+health check that audits the data and runs the test suite.
+
+## Quick start
+
+See [SETUP.md](SETUP.md). Short version:
+
+```bash
+git clone https://github.com/parthakker/nfl-analytics && cd nfl-analytics
+uv sync --extra dev                               # or: pip install -e ".[dev]"
+python -m nfl_analytics.cli refresh --bootstrap   # ~2 GB nflverse download
+cd web/ui && npm ci && npm run build && cd ../..
+python web/run_web.py                             # Jarvis on http://localhost:8000
+```
+
+## Testing
+
+Three pytest tiers: `tests/unit` (no database), `tests/warehouse` (invariants
+against the real DB — travel distances, H2H symmetry, venue resolution, era
+continuity), `tests/api` (contract tests for every endpoint). CI runs the unit
+tier plus warehouse/api against committed ~24 MB fixture databases
+(`nfl fixture` rebuilds them). Playwright e2e (`web/ui/e2e/`) runs locally
+against the real server: `npm run e2e`.
+
+## Design principles
+
+- **Compute, don't retrieve** — every answer is SQL with its filters cited.
+- **Hand-curated where sources are wrong** — `data/stadiums.json` fixes venues
+  nflverse mislabels (all seven 2025 international games); curated files are
+  version-controlled and never overwritten by refreshes.
+- **Verification built in** — row floors and sanity checks in the build,
+  invariant tests in CI, a smoke test and an AI health loop on the scheduler.
+- **Keep it simple** — one machine, no cloud dependencies, boring tools.
 
 ## Data credits
 
-All stats data from the outstanding [nflverse](https://github.com/nflverse)
-project. News from ESPN and official team site feeds. Market data from
-[Kalshi](https://kalshi.com)'s public API. This is a personal, non-commercial
-project; all data remains property of its respective owners.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+[nflverse](https://github.com/nflverse) (play-by-play, stats, rosters),
+[nfldata](https://github.com/nflverse/nfldata) (schedules + odds),
+[Open-Meteo](https://open-meteo.com) (weather), ESPN (news, QBR), Kalshi
+(market data). MIT licensed; the data belongs to its sources.

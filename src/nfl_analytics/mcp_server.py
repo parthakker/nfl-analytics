@@ -11,7 +11,7 @@ import sys
 
 from mcp.server.mcpserver import MCPServer
 
-from .config import LOGS_DIR, ROOT
+from .config import LOGS_DIR, ROOT, SCHEDULED_TASKS
 from .db import read_conn, table_result
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -595,7 +595,7 @@ def data_status() -> dict:
         except Exception:
             snaps = (0, None)
     tails = {}
-    for name in ("refresh", "news", "kalshi", "smoke", "jarvis"):
+    for name in ("refresh", "news", "kalshi", "smoke", "health", "jarvis"):
         lf = LOGS_DIR / f"{name}.log"
         tails[name] = (
             "\n".join(lf.read_text(encoding="utf-8").splitlines()[-3:])
@@ -605,11 +605,7 @@ def data_status() -> dict:
     return {
         "coverage": cov,
         "kalshi_snapshots": {"count": snaps[0], "latest": str(snaps[1]) if snaps[1] else None},
-        "scheduled_jobs": {
-            "NFL-WeeklyRefresh": "Tuesdays 08:00",
-            "NFL-NewsPoll": "every 6h from 06:00",
-            "NFL-KalshiSnapshot": "every 6h from 06:30",
-        },
+        "scheduled_jobs": SCHEDULED_TASKS,
         "log_tails": tails,
     }
 
