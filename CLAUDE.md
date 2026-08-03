@@ -1,5 +1,10 @@
 # NFL Analytics Warehouse
 
+**Repo:** https://github.com/parthakker/nfl-analytics (public). Local git
+identity is Parth's personal email (repo-local config). `data/`, `*.duckdb`,
+and `logs/` are gitignored — fresh clones rebuild via
+`python scripts/refresh_data.py --bootstrap`. Commit when Parth asks.
+
 Personal NFL analyst project. All questions are answered by running SQL against
 `nfl.duckdb` (DuckDB, project root) — computed answers, not retrieval. Detailed
 per-table dictionaries live in `docs/dictionary/*.md`; read the relevant one
