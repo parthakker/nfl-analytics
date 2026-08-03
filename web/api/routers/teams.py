@@ -94,11 +94,12 @@ def roster(code: str) -> dict:
         players = rows_to_dicts(
             con,
             """
-            SELECT any_value(jersey_number)::int AS num, full_name AS name,
+            SELECT gsis_id AS gsis, any_value(jersey_number)::int AS num,
+                   any_value(full_name) AS name,
                    any_value(position) AS pos, any_value(status) AS status,
                    any_value(college) AS college, any_value(years_exp)::int AS exp
             FROM rosters_weekly WHERE season=2026 AND team=?
-            GROUP BY full_name ORDER BY pos, num
+            GROUP BY gsis_id ORDER BY pos, num
         """,
             [code],
         )

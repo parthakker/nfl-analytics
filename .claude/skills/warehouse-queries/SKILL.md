@@ -25,7 +25,7 @@ additions).
 | players | master ID bridge (gsis_id PK; pfr_id, espn_id) | all |
 | rosters_weekly | player-team-week | 2002–2026 |
 | injuries | player-week report | 2009–2025 |
-| snap_counts | player-game snaps + pct | 2012–2025 |
+| snap_counts | player-game snaps + pct | 2013–2025 |
 | depth_charts | team-week slots (2025 schema differs) | 2001–2025 |
 | participation | play: personnel, box, rushers | 2016–2023 (+2024 unofficial) |
 | ftn_charting | play: PA/screen/RPO/motion/blitz | 2022–2025 |
@@ -54,7 +54,10 @@ additions).
 - `v_game_weather` — the one weather answer per game (indoor → pbp parse →
   open-meteo → schedules; forecast for upcoming). Use this, not raw cols.
 - `v_player_stats_week_all` — cross-era weekly offense (v1+v2 under old
-  names, incl. fantasy_points_half_ppr). `v_redzone_usage_week`.
+  names, incl. fantasy_points_half_ppr). `v_player_stats_def_week_all` /
+  `v_player_stats_kicking_week_all` — same seam pattern for defense/kicking
+  (v2 arm activity-filtered; def_tackles recomputed solo+assists).
+  `v_redzone_usage_week`.
 - `v_team_epa_season` / `v_team_def_epa_season`, `v_strength_of_schedule`,
   `v_team_travel_season` (season travel totals).
 
@@ -94,3 +97,4 @@ or official_id (NULL pre-2015).
 8. `surface` has a `'grass '` (trailing space) variant.
 9. rosters_weekly pre-2017 has same-team dup rows — dedupe or use 2017+.
 10. participation ends at 2023 (2024 rows exist, unofficial); never expect 2025+.
+

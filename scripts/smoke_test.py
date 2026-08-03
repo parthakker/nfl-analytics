@@ -33,13 +33,26 @@ CHECKS = {
     "/api/teams/DET/schedule": lambda js: len(js.get("games", [])) >= 17,
     "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
     "/api/players/search?q=mahomes": lambda js: len(js.get("hits", [])) > 0,
-    "/api/leaders?cat=rushing&season=2025": lambda js: len(js.get("rows", [])) == 25,
+    "/api/leaders?family=rushing&sort=rush_yds": lambda js: (
+        len(js.get("rows", [])) == 25
+        and js["rows"][0].get("player_id")
+        and len({r["player_id"] for r in js["rows"]}) == 25
+    ),
     "/api/schedule?season=2026&week=1": lambda js: (
         len(js.get("games", [])) >= 14 and js["games"][0].get("game_id")
     ),
     "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
     "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
-    "/api/leaders?cat=half_ppr&season=2025": lambda js: len(js.get("rows", [])) == 25,
+    "/api/leaders?family=fantasy&sort=ppr_pg&position=RB&qual=8": lambda js: (
+        len(js.get("rows", [])) > 0
+        and all(r["pos"] == "RB" for r in js["rows"])
+        and js.get("qualified", 0) >= len(js["rows"])
+        and "league_avg" in js
+    ),
+    "/api/leaders?family=defense&sort=sacks": lambda js: len(js.get("rows", [])) == 25,
+    "/api/leaders?family=kicking": lambda js: (
+        len(js.get("rows", [])) >= 20 and js["rows"][0].get("points") is not None
+    ),
     "/api/referees?min_games=100": lambda js: len(js.get("referees", [])) >= 5,
     "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50,
     "/api/coaches/Andy%20Reid": lambda js: (

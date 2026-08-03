@@ -372,6 +372,55 @@ VIEWS = {
                fantasy_points_ppr - 0.5 * receptions AS fantasy_points_half_ppr
         FROM player_stats_week_v2
     """,
+    # all-era weekly DEFENSE: pre-2025 dedicated table + v2 def_* columns from
+    # the unified player_stats_week_v2, mapped to v1 names. Grain: player x
+    # season x week x team (v1 splits multi-team weeks by team). The v2 arm is
+    # filtered to rows with defensive activity OR a defensive position_group —
+    # v2 lists every rostered player, which would explode the grain. Identity
+    # def_tackles == solo + with_assist holds on 100% of v1 rows; v2 recomputes
+    # it that way. def_safety (v1) standardized to def_safeties.
+    "v_player_stats_def_week_all": """
+        CREATE OR REPLACE VIEW v_player_stats_def_week_all AS
+        SELECT player_id, player_display_name, position, position_group, team,
+               season, week, season_type,
+               def_tackles, def_tackles_solo, def_tackle_assists,
+               def_tackles_for_loss, def_sacks, def_qb_hits,
+               def_interceptions, def_pass_defended, def_fumbles_forced,
+               def_fumble_recovery_opp AS fumble_recovery_opp,
+               def_tds, def_safety AS def_safeties
+        FROM player_stats_def_week
+        UNION ALL
+        SELECT player_id, player_display_name, position, position_group, team,
+               season, week, season_type,
+               coalesce(def_tackles_solo, 0) + coalesce(def_tackle_assists, 0)
+                   AS def_tackles,
+               def_tackles_solo, def_tackle_assists,
+               def_tackles_for_loss, def_sacks, def_qb_hits,
+               def_interceptions, def_pass_defended, def_fumbles_forced,
+               fumble_recovery_opp, def_tds, def_safeties
+        FROM player_stats_week_v2
+        WHERE coalesce(def_tackles_solo, 0) + coalesce(def_tackle_assists, 0)
+              + coalesce(def_sacks, 0) + coalesce(def_interceptions, 0)
+              + coalesce(def_pass_defended, 0) + coalesce(def_qb_hits, 0) > 0
+           OR position_group IN ('DL', 'LB', 'DB')
+    """,
+    # all-era weekly KICKING: same seam pattern. v1/v2 column names match
+    # (verified). v2 arm filtered to kicking activity. Grain: player-week-team.
+    "v_player_stats_kicking_week_all": """
+        CREATE OR REPLACE VIEW v_player_stats_kicking_week_all AS
+        SELECT player_id, player_display_name, position, position_group, team,
+               season, week, season_type,
+               fg_made, fg_att, fg_long, fg_made_40_49, fg_made_50_59,
+               fg_made_60_, pat_made, pat_att
+        FROM player_stats_kicking_week
+        UNION ALL
+        SELECT player_id, player_display_name, position, position_group, team,
+               season, week, season_type,
+               fg_made, fg_att, fg_long, fg_made_40_49, fg_made_50_59,
+               fg_made_60_, pat_made, pat_att
+        FROM player_stats_week_v2
+        WHERE coalesce(fg_att, 0) + coalesce(pat_att, 0) > 0
+    """,
     # coach x season x team: records incl. playoffs and against-the-spread.
     # v_team_games.spread_line is already team-perspective (positive = favored).
     "v_coach_seasons": """

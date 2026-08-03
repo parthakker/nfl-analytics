@@ -151,10 +151,14 @@ export default function TeamHUD() {
               </thead>
               <tbody>
                 {roster.filter((p) => !posFilter || p.pos === posFilter).map((p) => (
-                  <tr key={p.name} className="border-t transition-colors hover:bg-white/5"
+                  <tr key={p.gsis ?? p.name} className="border-t transition-colors hover:bg-white/5"
                       style={{ borderColor: "var(--stroke)" }}>
                     <td className="py-1.5 pr-2 tabular-nums" style={{ color: "var(--muted)" }}>{p.num ?? ""}</td>
-                    <td className="py-1.5 pr-2 font-medium">{p.name}</td>
+                    <td className="py-1.5 pr-2 font-medium">
+                      {p.gsis ? (
+                        <Link to={`/player/${p.gsis}`} className="hover:underline">{p.name}</Link>
+                      ) : p.name}
+                    </td>
                     <td className="py-1.5 pr-2">{p.pos}</td>
                     <td className="py-1.5 text-xs" style={{ color: "var(--muted)" }}>{p.college}</td>
                   </tr>

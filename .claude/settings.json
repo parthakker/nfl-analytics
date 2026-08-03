@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/post_edit.py",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/post_edit.py\"",
             "timeout": 90
           }
         ]
@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/stop_gate.py",
+            "command": "python \"${CLAUDE_PROJECT_DIR}/.claude/hooks/stop_gate.py\"",
             "timeout": 150
           }
         ]

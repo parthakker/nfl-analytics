@@ -51,8 +51,23 @@ export interface TeamDetail {
 }
 
 export interface RosterPlayer {
-  num: number | null; name: string; pos: string | null;
+  gsis: string | null; num: number | null; name: string; pos: string | null;
   status: string | null; college: string | null; exp: number | null;
+}
+
+export interface LeaderColumn { key: string; label: string; kind: "count" | "count_g" | "rate" | "pct" }
+export interface LeaderRow {
+  player_id: string; player: string; pos: string | null; team: string;
+  headshot: string | null; games: number;
+  [stat: string]: string | number | null;
+}
+export interface LeadersResponse {
+  family: string; season: number; season_type: string; position: string | null;
+  sort: string; dir: string; label: string; qual: number; qual_key: string;
+  limit: number; seasons: number[]; total_players: number; qualified: number;
+  columns: LeaderColumn[]; league_avg: Record<string, number | null>;
+  p10: Record<string, number | null>; p90: Record<string, number | null>;
+  rows: LeaderRow[];
 }
 
 export interface TeamScheduleGame {
@@ -103,14 +118,26 @@ export const api = {
     get<{ hits: { gsis_id: string; name: string; pos: string; team: string }[] }>(
       `/api/players/search?q=${encodeURIComponent(q)}`),
   player: (gsis: string) => get<{
-    info: { name: string; pos: string; team: string; headshot: string | null };
+    info: { name: string; pos: string; team: string; headshot: string | null;
+            rookie_season: number | null; last_season: number | null;
+            draft_year: number | null; draft_round: number | null };
     seasons: Record<string, number | string | null>[];
     weekly: { season: number; week: number; ppr: number | null; opp: string }[];
     news: NewsItem[];
   }>(`/api/players/${gsis}`),
-  leaders: (season: number, cat: string, minGames: number) =>
-    get<{ label: string; rows: Record<string, string | number | null>[] }>(
-      `/api/leaders?season=${season}&cat=${cat}&min_games=${minGames}`),
+  leaders: (p: { family: string; season?: number; seasonType?: string;
+                 position?: string; sort?: string; dir?: string;
+                 qual?: number; limit?: number }) => {
+    const q = new URLSearchParams({ family: p.family });
+    if (p.season != null) q.set("season", String(p.season));
+    if (p.seasonType) q.set("season_type", p.seasonType);
+    if (p.position) q.set("position", p.position);
+    if (p.sort) q.set("sort", p.sort);
+    if (p.dir) q.set("dir", p.dir);
+    if (p.qual != null) q.set("qual", String(p.qual));
+    if (p.limit != null) q.set("limit", String(p.limit));
+    return get<LeadersResponse>(`/api/leaders?${q}`);
+  },
   markets: (kind = "game") => get<{ kind: string; markets: MarketRow[] }>(`/api/markets?kind=${kind}`),
   marketHistory: (ticker: string) =>
     get<{ ticker: string; title: string; points: { ts: string; prob: number | null }[] }>(

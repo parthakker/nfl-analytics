@@ -2,9 +2,9 @@
 
 New tables loaded 2026-08-03. Verified row counts and join keys below.
 
-## snap_counts (2012–2025, ~325k rows)
+## snap_counts (2013–2025, ~325k rows)
 
-Grain: player-game. Source: PFR via nflverse `snap_counts` release.
+Grain: player-game. Source: PFR via nflverse `snap_counts` release (docs said 2012; warehouse min season is 2013).
 Key cols: `game_id` (standard `2024_01_ARI_BUF` format), `pfr_game_id`,
 `season`, `week`, `player` (name), `pfr_player_id`, `position`, `team`,
 `offense_snaps`, `offense_pct`, `defense_snaps`, `defense_pct`, `st_snaps`,
@@ -73,3 +73,4 @@ Query **`v_game_weather`** for "what was/will be the weather": one row per
 game with `weather_source` ∈ indoor/pbp/openmeteo/schedules/forecast.
 Roof rule: a venue whose curated roof is `outdoors` can never be indoor —
 this overrides the (sometimes wrong for neutral games) schedules.roof.
+

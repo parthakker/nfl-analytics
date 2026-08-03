@@ -14,6 +14,7 @@ import Coaches from "./pages/Coaches";
 import CoachPage from "./pages/CoachPage";
 import Referees from "./pages/Referees";
 import Matchup from "./pages/Matchup";
+import PlayerPage from "./pages/PlayerPage";
 import H2HExplorer from "./pages/H2HExplorer";
 import Knowledge from "./pages/Knowledge";
 
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/coach/:name" element={<CoachPage />} />
             <Route path="/refs" element={<Referees />} />
             <Route path="/matchup/:gameId" element={<Matchup />} />
+            <Route path="/player/:gsis" element={<PlayerPage />} />
             <Route path="/h2h" element={<H2HExplorer />} />
             <Route path="/h2h/:a/:b" element={<H2HExplorer />} />
             <Route path="/knowledge" element={<Knowledge />} />

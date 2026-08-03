@@ -24,6 +24,6 @@ def test_h2h_rejects_bad_params(client):
     assert client.get("/api/matchup/h2h/KC/LV?site=moon").status_code == 400
 
 
-def test_leaders_rejects_unknown_cat(client):
-    r = client.get("/api/leaders?cat=definitely_not_a_cat")
-    assert r.status_code in (400, 404, 422)
+def test_leaders_rejects_unknown_family(client):
+    r = client.get("/api/leaders?family=definitely_not_a_family")
+    assert r.status_code == 400

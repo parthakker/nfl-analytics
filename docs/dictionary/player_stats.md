@@ -211,3 +211,18 @@ WHERE season_type = 'REG' AND fg_made_list IS NOT NULL
 ORDER BY fg50 DESC LIMIT 5;
 -- Aubrey 2024: 14, Boswell 2024: 13, Fairbairn 2024: 13, ...
 ```
+
+## v_player_stats_def_week_all / v_player_stats_kicking_week_all (added 2026-08-03)
+
+Cross-era weekly defense and kicking, same seam pattern as
+v_player_stats_week_all: pre-2025 dedicated tables UNION the v2 columns from
+player_stats_week_v2. Use the views, never union raw tables.
+
+Grain: player x season x week x team (v1 splits multi-team weeks by team; the
+v2 arm is filtered to rows with actual defensive/kicking activity or a
+defensive position_group, because v2 lists every rostered player).
+
+v1 -> view rename map (defense): def_tackles is recomputed as
+def_tackles_solo + def_tackle_assists in the v2 arm (identity verified on
+100% of v1 rows); def_safety -> def_safeties; def_fumble_recovery_opp ->
+fumble_recovery_opp. Kicking column names match across eras (verified).
