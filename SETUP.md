@@ -15,7 +15,7 @@ Works on Windows, macOS, and Linux.
 ## 2. Install
 
 ```bash
-git clone https://github.com/parththakker/nfl-analytics.git
+git clone https://github.com/parthakker/nfl-analytics.git
 cd nfl-analytics
 pip install -e .
 ```

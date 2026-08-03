@@ -23,7 +23,7 @@ questions in plain English.
 See **[SETUP.md](SETUP.md)** for the full guide. The short version:
 
 ```bash
-git clone https://github.com/parththakker/nfl-analytics.git
+git clone https://github.com/parthakker/nfl-analytics.git
 cd nfl-analytics
 pip install -e .
 python scripts/refresh_data.py --bootstrap   # ~2 GB from nflverse, one time
