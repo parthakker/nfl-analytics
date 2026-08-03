@@ -7,8 +7,8 @@ WEB_DIR = Path(__file__).resolve().parent.parent
 ROOT = WEB_DIR.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from nfl_analytics.db import read_conn  # noqa: E402,F401  (re-exported)
 from nfl_analytics import teams_meta  # noqa: E402,F401
+from nfl_analytics.db import read_conn  # noqa: E402,F401  (re-exported)
 
 
 def rows_to_dicts(con, sql: str, params=None) -> list[dict]:
@@ -17,7 +17,7 @@ def rows_to_dicts(con, sql: str, params=None) -> list[dict]:
     out = []
     for row in cur.fetchall():
         d = {}
-        for k, v in zip(cols, row):
+        for k, v in zip(cols, row, strict=False):
             if v != v:  # NaN
                 v = None
             elif hasattr(v, "isoformat"):
@@ -31,16 +31,15 @@ def rows_to_dicts(con, sql: str, params=None) -> list[dict]:
 
 def _luminance(hex_color: str) -> float:
     h = hex_color.lstrip("#")
-    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
-    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
-           for c in (r, g, b)]
+    r, g, b = (int(h[i : i + 2], 16) / 255 for i in (0, 2, 4))
+    lin = [c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in (r, g, b)]
     return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
 
 
 def glow_safe(hex_color: str, floor: float = 0.35) -> str:
     """Lighten near-black team colors until they can visibly glow."""
     h = hex_color.lstrip("#")
-    r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = (int(h[i : i + 2], 16) for i in (0, 2, 4))
     for _ in range(12):
         if _luminance(f"#{r:02x}{g:02x}{b:02x}") >= floor:
             break

@@ -25,20 +25,22 @@ if os.environ.get("NFL_TEST_USE_FIXTURE") == "1":
     os.environ["KALSHI_DB"] = str(FIXTURE_DIR / "kalshi_fixture.duckdb")
     os.environ["NEWS_DB"] = str(FIXTURE_DIR / "news_fixture.duckdb")
 
-sys.path.insert(0, str(REPO_ROOT))          # for `import web.api.main`
+sys.path.insert(0, str(REPO_ROOT))  # for `import web.api.main`
 sys.path.insert(0, str(REPO_ROOT / "src"))  # for `import nfl_analytics`
 
 
 def _nfl_db_path() -> Path:
     from nfl_analytics import config
+
     return config.NFL_DB
 
 
 def pytest_collection_modifyitems(config, items):
     if _nfl_db_path().exists():
         return
-    skip = pytest.mark.skip(reason=f"no warehouse at {_nfl_db_path()} "
-                                   "(set NFL_TEST_USE_FIXTURE=1 or build the DB)")
+    skip = pytest.mark.skip(
+        reason=f"no warehouse at {_nfl_db_path()} (set NFL_TEST_USE_FIXTURE=1 or build the DB)"
+    )
     for item in items:
         if "warehouse" in item.keywords or "api" in item.keywords:
             item.add_marker(skip)
@@ -47,6 +49,7 @@ def pytest_collection_modifyitems(config, items):
 @pytest.fixture(scope="session")
 def warehouse_conn():
     import duckdb
+
     con = duckdb.connect(str(_nfl_db_path()), read_only=True)
     yield con
     con.close()
@@ -55,7 +58,9 @@ def warehouse_conn():
 @pytest.fixture(scope="session")
 def client():
     from fastapi.testclient import TestClient
+
     from web.api.main import app
+
     with TestClient(app) as c:
         yield c
 
@@ -63,5 +68,4 @@ def client():
 @pytest.fixture(scope="session")
 def max_season(warehouse_conn) -> int:
     """Latest completed-data season — use instead of hardcoding 2025."""
-    return warehouse_conn.execute(
-        "SELECT max(season) FROM games").fetchone()[0]
+    return warehouse_conn.execute("SELECT max(season) FROM games").fetchone()[0]

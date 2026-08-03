@@ -17,12 +17,28 @@ def any_final_game(client, max_season):
 
 def test_matchup_shape(client, any_final_game):
     d = client.get(f"/api/matchup/{any_final_game}").json()
-    assert set(d) >= {"game", "venue", "teams", "coach_h2h", "referee",
-                      "weather", "market", "injuries", "series"}
+    assert set(d) >= {
+        "game",
+        "venue",
+        "teams",
+        "coach_h2h",
+        "referee",
+        "weather",
+        "market",
+        "injuries",
+        "series",
+    }
     for side in ("away", "home"):
         t = d["teams"][side]
-        assert set(t) >= {"code", "record", "rest_days", "travel_miles",
-                          "tz_shift_hours", "form_last5", "epa"}
+        assert set(t) >= {
+            "code",
+            "record",
+            "rest_days",
+            "travel_miles",
+            "tz_shift_hours",
+            "form_last5",
+            "epa",
+        }
         assert set(t["record"]) == {"w", "l", "t"}
     assert d["game"]["final"] is True
 

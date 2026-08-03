@@ -32,6 +32,7 @@ GAMES_URL = "https://github.com/nflverse/nfldata/raw/master/data/games.csv"
 CURRENT_SEASON = 2026
 LAST_SEASON = 2025
 
+
 # (release tag, [candidate asset names], dest relative to data/)
 # 2025+ player stats live in the new unified-schema 'stats_player' release
 # (145-col v2 format, offense+def+kicking merged) — loaded as *_v2 tables,
@@ -44,46 +45,68 @@ def manifest(season: int) -> list[tuple[str, list[str], str]]:
     y = str(season)
     out = []
     if season >= 1999:
-        out.append(("pbp", [f"play_by_play_{y}.csv"],
-                    f"play_by_play/play_by_play_{y}.csv"))
+        out.append(("pbp", [f"play_by_play_{y}.csv"], f"play_by_play/play_by_play_{y}.csv"))
     if season >= 2007:
-        out.append(("stats_team", [f"stats_team_regpost_{y}.csv"],
-                    f"team_stats/stats_team_regpost_{y}.csv"))
+        out.append(
+            (
+                "stats_team",
+                [f"stats_team_regpost_{y}.csv"],
+                f"team_stats/stats_team_regpost_{y}.csv",
+            )
+        )
     if 2007 <= season <= 2024:
-        for stem in ("player_stats", "player_stats_season", "player_stats_def",
-                     "player_stats_def_season", "player_stats_kicking",
-                     "player_stats_kicking_season"):
-            out.append(("player_stats", [f"{stem}_{y}.csv"],
-                        f"player_stats/{stem}_{y}.csv"))
+        for stem in (
+            "player_stats",
+            "player_stats_season",
+            "player_stats_def",
+            "player_stats_def_season",
+            "player_stats_kicking",
+            "player_stats_kicking_season",
+        ):
+            out.append(("player_stats", [f"{stem}_{y}.csv"], f"player_stats/{stem}_{y}.csv"))
     if season >= 2025:
-        for stem in ("stats_player_week", "stats_player_reg",
-                     "stats_player_post", "stats_player_regpost"):
-            out.append(("stats_player", [f"{stem}_{y}.csv"],
-                        f"player_stats_v2/{stem}_{y}.csv"))
+        for stem in (
+            "stats_player_week",
+            "stats_player_reg",
+            "stats_player_post",
+            "stats_player_regpost",
+        ):
+            out.append(("stats_player", [f"{stem}_{y}.csv"], f"player_stats_v2/{stem}_{y}.csv"))
     if season >= 2009:
         out.append(("injuries", [f"injuries_{y}.csv"], f"injuries/injuries_{y}.csv"))
     if season >= 2002:
-        out.append(("weekly_rosters", [f"roster_weekly_{y}.csv"],
-                    f"rosters/roster_weekly_{y}.csv"))
+        out.append(("weekly_rosters", [f"roster_weekly_{y}.csv"], f"rosters/roster_weekly_{y}.csv"))
     if season >= 2018:
         for kind in ("pass", "rush", "rec", "def"):
-            out.append(("pfr_advstats", [f"advstats_week_{kind}_{y}.csv"],
-                        f"advanced_stats/advstats_week_{kind}_{y}.csv"))
+            out.append(
+                (
+                    "pfr_advstats",
+                    [f"advstats_week_{kind}_{y}.csv"],
+                    f"advanced_stats/advstats_week_{kind}_{y}.csv",
+                )
+            )
     if season >= 2012:
-        out.append(("snap_counts", [f"snap_counts_{y}.csv"],
-                    f"snap_counts/snap_counts_{y}.csv"))
+        out.append(("snap_counts", [f"snap_counts_{y}.csv"], f"snap_counts/snap_counts_{y}.csv"))
     if season >= 2001:
-        out.append(("depth_charts", [f"depth_charts_{y}.csv"],
-                    f"depth_charts/depth_charts_{y}.csv"))
+        out.append(
+            ("depth_charts", [f"depth_charts_{y}.csv"], f"depth_charts/depth_charts_{y}.csv")
+        )
     # NFL pulled the participation feed after 2023; 2024 asset exists but is
     # unofficial — capped here, verified at load
     if 2016 <= season <= 2024:
-        out.append(("pbp_participation", [f"pbp_participation_{y}.csv"],
-                    f"participation/pbp_participation_{y}.csv"))
+        out.append(
+            (
+                "pbp_participation",
+                [f"pbp_participation_{y}.csv"],
+                f"participation/pbp_participation_{y}.csv",
+            )
+        )
     if season >= 2022:
-        out.append(("ftn_charting", [f"ftn_charting_{y}.csv"],
-                    f"ftn_charting/ftn_charting_{y}.csv"))
+        out.append(
+            ("ftn_charting", [f"ftn_charting_{y}.csv"], f"ftn_charting/ftn_charting_{y}.csv")
+        )
     return out
+
 
 # cumulative files: re-download whole file every refresh (they span all seasons)
 # NGS is published gzip-only now; download() decompresses .gz -> .csv dest.
@@ -129,8 +152,7 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     ok = download(client, GAMES_URL, DATA / "schedules" / "games.csv")
     (fetched if ok else failures).append("schedules/games.csv")
 
-    seasons = (list(range(1999, CURRENT_SEASON + 1)) if bootstrap
-               else [LAST_SEASON, CURRENT_SEASON])
+    seasons = list(range(1999, CURRENT_SEASON + 1)) if bootstrap else [LAST_SEASON, CURRENT_SEASON]
     items = [(t, c, d) for s in seasons for (t, c, d) in manifest(s)] + CUMULATIVE
     for tag, candidates, rel_dest in items:
         dest = DATA / rel_dest
@@ -153,7 +175,7 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
             else:
                 failures.append(f"{rel_dest}: no candidate matched {candidates} in tag {tag}")
 
-    print(f"Downloaded {len(fetched)} assets in {time.time()-t0:.0f}s:")
+    print(f"Downloaded {len(fetched)} assets in {time.time() - t0:.0f}s:")
     for f in fetched:
         print(f"  {f}")
     if failures:
@@ -165,14 +187,18 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     if rebuild and not failures:
         # weather: forecasts for upcoming games (+ archive gaps) into
         # data/weather/openmeteo.csv BEFORE the rebuild loads it. Non-fatal.
-        w = subprocess.run([sys.executable, str(ROOT / "scripts" / "fetch_weather.py")],
-                           capture_output=True, text=True)
+        w = subprocess.run(
+            [sys.executable, str(ROOT / "scripts" / "fetch_weather.py")],
+            capture_output=True,
+            text=True,
+        )
         print((w.stdout or "").strip()[-500:])
         if w.returncode != 0:
             print(f"fetch_weather failed (non-fatal): {(w.stderr or '').strip()[-300:]}")
         for script in ("build_warehouse.py", "build_views.py"):
-            r = subprocess.run([sys.executable, str(ROOT / "scripts" / script)],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [sys.executable, str(ROOT / "scripts" / script)], capture_output=True, text=True
+            )
             print(r.stdout[-2000:])
             if r.returncode != 0:
                 print(r.stderr[-2000:])
@@ -185,6 +211,7 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     if rc == 0:
         try:
             import duckdb
+
             kdb = duckdb.connect(str(ROOT / "kalshi.duckdb"))
             kdb.execute("""
                 CREATE TABLE IF NOT EXISTS line_snapshots (
@@ -207,8 +234,10 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     LOGS.mkdir(exist_ok=True)
     with open(LOGS / "refresh.log", "a", encoding="utf-8") as f:
         mode = "bootstrap" if bootstrap else ("full" if full else "weekly")
-        f.write(f"{datetime.now().isoformat()} mode={mode} "
-                f"fetched={len(fetched)} failures={len(failures)} rc={rc}\n")
+        f.write(
+            f"{datetime.now().isoformat()} mode={mode} "
+            f"fetched={len(fetched)} failures={len(failures)} rc={rc}\n"
+        )
     return rc
 
 
@@ -216,7 +245,8 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser()
     p.add_argument("--full", action="store_true")
     p.add_argument("--no-rebuild", action="store_true")
-    p.add_argument("--bootstrap", action="store_true",
-                   help="download ALL seasons (fresh clone setup, ~2 GB)")
+    p.add_argument(
+        "--bootstrap", action="store_true", help="download ALL seasons (fresh clone setup, ~2 GB)"
+    )
     a = p.parse_args()
     sys.exit(refresh(a.full, not a.no_rebuild, bootstrap=a.bootstrap))

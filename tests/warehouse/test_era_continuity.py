@@ -5,9 +5,12 @@ pytestmark = pytest.mark.warehouse
 
 def test_player_weekly_no_season_gaps(warehouse_conn):
     """The 2024→2025 v2 seam must not leave a hole in the compat view."""
-    seasons = [r[0] for r in warehouse_conn.execute("""
+    seasons = [
+        r[0]
+        for r in warehouse_conn.execute("""
         SELECT DISTINCT season FROM v_player_stats_week_all ORDER BY season
-    """).fetchall()]
+    """).fetchall()
+    ]
     if not seasons:
         pytest.skip("no player stats in this DB slice")
     expected = list(range(min(seasons), max(seasons) + 1))
@@ -15,8 +18,12 @@ def test_player_weekly_no_season_gaps(warehouse_conn):
 
 
 def test_games_no_season_gaps(warehouse_conn):
-    seasons = [r[0] for r in warehouse_conn.execute(
-        "SELECT DISTINCT season FROM games ORDER BY season").fetchall()]
+    seasons = [
+        r[0]
+        for r in warehouse_conn.execute(
+            "SELECT DISTINCT season FROM games ORDER BY season"
+        ).fetchall()
+    ]
     expected = list(range(min(seasons), max(seasons) + 1))
     assert seasons == expected
 

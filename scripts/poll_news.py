@@ -17,10 +17,12 @@ from nfl_analytics.news import poll  # noqa: E402
 def main() -> int:
     try:
         res = poll()
-        line = (f"{datetime.now().isoformat()} news poll: "
-                f"fetched={res['fetched']} new={res['new_rows']} "
-                f"total={res['stored_total']} "
-                f"gsis_matched={res['tags_resolved_to_gsis']}/{res['player_tags']}")
+        line = (
+            f"{datetime.now().isoformat()} news poll: "
+            f"fetched={res['fetched']} new={res['new_rows']} "
+            f"total={res['stored_total']} "
+            f"gsis_matched={res['tags_resolved_to_gsis']}/{res['player_tags']}"
+        )
         rc = 0
     except Exception as e:
         line = f"{datetime.now().isoformat()} news poll FAILED: {e}"

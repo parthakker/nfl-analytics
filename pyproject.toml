@@ -37,6 +37,9 @@ extend-exclude = ["legacy"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
+# E501: long lines that survive the formatter live inside SQL strings —
+# wrapping those hurts readability more than it helps
+ignore = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

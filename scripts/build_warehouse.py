@@ -76,15 +76,24 @@ TABLES = {
 # Tables whose source may legitimately be absent (mid-bootstrap, fresh clone
 # before the first fetch_weather run) — a missing glob is a skip, not a failure.
 OPTIONAL_TABLES = {
-    "snap_counts", "depth_charts", "participation", "ftn_charting",
-    "combine", "espn_qbr_week", "espn_qbr_season", "weather_openmeteo",
+    "snap_counts",
+    "depth_charts",
+    "participation",
+    "ftn_charting",
+    "combine",
+    "espn_qbr_week",
+    "espn_qbr_season",
+    "weather_openmeteo",
 }
 
 # Team relocations/renames. Raw tables keep original abbreviations; join this
 # to get one canonical abbreviation per franchise across eras.
 TEAM_ALIASES = [
-    ("SD", "LAC"), ("OAK", "LV"), ("STL", "LA"),
-    ("JAC", "JAX"), ("LAR", "LA"),
+    ("SD", "LAC"),
+    ("OAK", "LV"),
+    ("STL", "LA"),
+    ("JAC", "JAX"),
+    ("LAR", "LA"),
 ]
 
 
@@ -112,7 +121,7 @@ def build() -> int:
                 )
             """)
             n = con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
-            print(f"  {table:28s} {n:>9,} rows  ({len(paths)} files, {time.time()-t0:.1f}s)")
+            print(f"  {table:28s} {n:>9,} rows  ({len(paths)} files, {time.time() - t0:.1f}s)")
         except Exception as e:
             failures.append(f"{table}: {e}")
 
@@ -144,8 +153,15 @@ def build() -> int:
 
     # validation: seasons present per yearly-file table
     print("\nSeason coverage:")
-    for table in ["play_by_play", "player_stats_week", "team_stats", "injuries",
-                  "rosters_weekly", "advstats_week_pass", "ngs_passing"]:
+    for table in [
+        "play_by_play",
+        "player_stats_week",
+        "team_stats",
+        "injuries",
+        "rosters_weekly",
+        "advstats_week_pass",
+        "ngs_passing",
+    ]:
         try:
             lo, hi, n = con.execute(
                 f"SELECT min(season), max(season), count(DISTINCT season) FROM {table}"

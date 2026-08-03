@@ -3,15 +3,18 @@ import pytest
 pytestmark = pytest.mark.api
 
 
-@pytest.mark.parametrize("path", [
-    "/api/matchup/2024_99_XXX_YYY",
-    "/api/matchup/h2h/KC/NOPE",
-    "/api/knowledge/not-a-chapter",
-    "/api/knowledge/..%2F..%2Fsecrets",
-    "/api/teams/NOPE",
-    "/api/coaches/Zzz%20Nobody",
-    "/api/referees/999999",
-])
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/matchup/2024_99_XXX_YYY",
+        "/api/matchup/h2h/KC/NOPE",
+        "/api/knowledge/not-a-chapter",
+        "/api/knowledge/..%2F..%2Fsecrets",
+        "/api/teams/NOPE",
+        "/api/coaches/Zzz%20Nobody",
+        "/api/referees/999999",
+    ],
+)
 def test_unknowns_are_404(client, path):
     assert client.get(path).status_code == 404
 

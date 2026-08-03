@@ -18,8 +18,10 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 
 def changed_files() -> list[str]:
     out = []
-    for args in (["git", "diff", "--name-only", "HEAD"],
-                 ["git", "ls-files", "--others", "--exclude-standard"]):
+    for args in (
+        ["git", "diff", "--name-only", "HEAD"],
+        ["git", "ls-files", "--others", "--exclude-standard"],
+    ):
         p = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True, timeout=15)
         out += p.stdout.splitlines()
     return [f.strip().replace("\\", "/") for f in out if f.strip()]
@@ -36,15 +38,34 @@ def main() -> int:
     failures = []
 
     if py_changed:
-        p = subprocess.run([sys.executable, "-m", "pytest", "tests/unit", "-x", "-q",
-                            "--no-header", "-p", "no:cacheprovider"],
-                           cwd=str(ROOT), capture_output=True, text=True, timeout=120)
+        p = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "tests/unit",
+                "-x",
+                "-q",
+                "--no-header",
+                "-p",
+                "no:cacheprovider",
+            ],
+            cwd=str(ROOT),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
         if p.returncode != 0:
             failures.append("unit tests FAILED:\n" + (p.stdout + p.stderr)[-2000:])
 
     if ui_changed:
-        p = subprocess.run(["npx.cmd", "tsc", "-b"], cwd=str(ROOT / "web" / "ui"),
-                           capture_output=True, text=True, timeout=120)
+        p = subprocess.run(
+            ["npx.cmd", "tsc", "-b"],
+            cwd=str(ROOT / "web" / "ui"),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
         if p.returncode != 0:
             failures.append("tsc FAILED:\n" + (p.stdout + p.stderr)[-2000:])
 

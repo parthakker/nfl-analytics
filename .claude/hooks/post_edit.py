@@ -17,8 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 
 def run(cmd: list[str], cwd: Path = ROOT) -> tuple[int, str]:
     try:
-        p = subprocess.run(cmd, cwd=str(cwd), capture_output=True, text=True,
-                           timeout=60, shell=False)
+        p = subprocess.run(
+            cmd, cwd=str(cwd), capture_output=True, text=True, timeout=60, shell=False
+        )
         return p.returncode, (p.stdout + p.stderr).strip()
     except Exception as e:  # tool missing etc. — never break the session
         return 0, f"(post_edit: {cmd[0]} unavailable: {e})"

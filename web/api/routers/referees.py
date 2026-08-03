@@ -8,9 +8,10 @@ router = APIRouter()
 @router.get("/api/referees")
 def referees(min_games: int = 30) -> dict:
     with read_conn() as con:
-        league = con.execute(
-            "SELECT round(avg(penalties), 2) FROM v_referee_games").fetchone()[0]
-        rows = rows_to_dicts(con, """
+        league = con.execute("SELECT round(avg(penalties), 2) FROM v_referee_games").fetchone()[0]
+        rows = rows_to_dicts(
+            con,
+            """
             SELECT ref_key AS official_id, any_value(name) AS name,
                    sum(games)::int AS games,
                    min(season) AS first_season, max(season) AS last_season,
@@ -23,20 +24,26 @@ def referees(min_games: int = 30) -> dict:
             FROM v_referee_seasons
             GROUP BY ref_key HAVING sum(games) >= ?
             ORDER BY pen_per_game DESC
-        """, [min_games])
+        """,
+            [min_games],
+        )
     return {"league_avg_pen_per_game": league, "referees": rows}
 
 
 @router.get("/api/referees/{official_id}")
 def referee(official_id: str) -> dict:
     with read_conn() as con:
-        seasons = rows_to_dicts(con, """
+        seasons = rows_to_dicts(
+            con,
+            """
             SELECT season, games, pen_per_game, pen_yds_per_game, home_pen_bias,
                    avg_total_points, over_rate, home_win_rate, home_cover_rate,
                    any_value(name) AS name
             FROM v_referee_seasons WHERE ref_key = ?
             GROUP BY ALL ORDER BY season
-        """, [official_id])
+        """,
+            [official_id],
+        )
         if not seasons:
             raise HTTPException(404, "unknown official")
     return {"official_id": official_id, "name": seasons[-1]["name"], "seasons": seasons}

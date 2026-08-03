@@ -58,15 +58,16 @@ def main() -> int:
         ORDER BY s.game_id
     """).fetchall()
     if missing_games:
-        md.append(f"\n**Missing game ids:** {', '.join(g[0] for g in missing_games[:40])}"
-                  + (" …" if len(missing_games) > 40 else ""))
+        md.append(
+            f"\n**Missing game ids:** {', '.join(g[0] for g in missing_games[:40])}"
+            + (" …" if len(missing_games) > 40 else "")
+        )
 
     # 2. Key analytics columns: null % by era in pbp
     md.append("\n## Play-by-play analytics columns — null % by era\n")
     md.append("| Column | 2007-2010 | 2011-2015 | 2016-2020 | 2021-2025 |")
     md.append("|---|---|---|---|---|")
-    for col in ("epa", "wp", "cpoe", "xpass", "air_yards", "success",
-                "temp", "wind", "drive"):
+    for col in ("epa", "wp", "cpoe", "xpass", "air_yards", "success", "temp", "wind", "drive"):
         vals = []
         for lo, hi in ((2007, 2010), (2011, 2015), (2016, 2020), (2021, 2025)):
             pct = con.execute(f"""
@@ -79,9 +80,16 @@ def main() -> int:
 
     # 3. Per-table season row counts (compact)
     md.append("\n## Table coverage by season\n")
-    tables = ["player_stats_week", "player_stats_week_v2", "team_stats",
-              "injuries", "rosters_weekly", "advstats_week_pass",
-              "ngs_passing", "officials"]
+    tables = [
+        "player_stats_week",
+        "player_stats_week_v2",
+        "team_stats",
+        "injuries",
+        "rosters_weekly",
+        "advstats_week_pass",
+        "ngs_passing",
+        "officials",
+    ]
     md.append("| Table | First | Last | Seasons | Rows | Empty/suspect seasons |")
     md.append("|---|---|---|---|---|---|")
     for t in tables:
@@ -97,7 +105,9 @@ def main() -> int:
         """).fetchall()
         med = sorted(s[1] for s in sizes)[len(sizes) // 2] if sizes else 0
         small = [str(s) for s, c in sizes if med and c < 0.4 * med]
-        note = (f"holes: {holes} " if holes else "") + (f"small: {','.join(small)}" if small else "")
+        note = (f"holes: {holes} " if holes else "") + (
+            f"small: {','.join(small)}" if small else ""
+        )
         if holes:
             gaps.append(f"{t}: missing seasons {holes}")
         md.append(f"| {t} | {int(lo)} | {int(hi)} | {n_seasons} | {n:,} | {note or '—'} |")
@@ -109,9 +119,11 @@ def main() -> int:
         for g in gaps:
             md.append(f"- ⚠ {g}")
     else:
-        md.append("**No unexpected gaps found** — every played game since 2007 has "
-                  "play-by-play, and no table has missing or suspiciously small "
-                  "seasons within its coverage window.")
+        md.append(
+            "**No unexpected gaps found** — every played game since 2007 has "
+            "play-by-play, and no table has missing or suspiciously small "
+            "seasons within its coverage window."
+        )
 
     md.append("""
 ### Documented floors (not missing — never existed publicly)

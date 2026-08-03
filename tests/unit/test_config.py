@@ -18,5 +18,6 @@ def test_env_override_wins(monkeypatch, tmp_path):
 
 def test_defaults_are_repo_rooted():
     from nfl_analytics import config
+
     assert config.DATA_DIR == config.ROOT / "data"
     assert (config.ROOT / "pyproject.toml").exists()

@@ -26,9 +26,9 @@ from sklearn.linear_model import LogisticRegression, Ridge
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
-from nfl_analytics.model.ratings import compute_ratings          # noqa: E402
-from nfl_analytics.model.features import build_features, FEATURE_COLS  # noqa: E402
-from nfl_analytics.model import backtest as bt                   # noqa: E402
+from nfl_analytics.model import backtest as bt  # noqa: E402
+from nfl_analytics.model.features import FEATURE_COLS, build_features  # noqa: E402
+from nfl_analytics.model.ratings import compute_ratings  # noqa: E402
 
 DB = ROOT / "nfl.duckdb"
 REPORT = ROOT / "docs" / "model_report.md"
@@ -58,9 +58,11 @@ def causality_check(con, half_life, carryover) -> None:
     # earlier entering ratings unless the implementation is broken. To make
     # this a real test, recompute from a truncated frame:
     import nfl_analytics.model.ratings as R
+
     orig_sql = R.GAME_EPA_SQL
     R.GAME_EPA_SQL = orig_sql.replace(
-        "WHERE p.play_type", f"WHERE p.season < {cutoff} AND p.play_type")
+        "WHERE p.play_type", f"WHERE p.season < {cutoff} AND p.play_type"
+    )
     try:
         trunc, _ = compute_ratings(con, half_life, carryover)
     finally:
@@ -110,23 +112,38 @@ def main() -> int:
 
     wcon = duckdb.connect(str(DB))
     wcon.execute("CREATE OR REPLACE TABLE model_ratings AS SELECT * FROM current")
-    params = pd.DataFrame([{
-        "fitted_at": pd.Timestamp.now().isoformat(),
-        "half_life": h, "carryover": c,
-        "feature_cols": json.dumps(FEATURE_COLS),
-        "win_intercept": float(clf.intercept_[0]),
-        "win_coefs": json.dumps(clf.coef_[0].tolist()),
-        "margin_intercept": float(reg.intercept_),
-        "margin_coefs": json.dumps(reg.coef_.tolist()),
-        "train_games": len(done),
-        "holdout_brier": s["brier_model"],
-        "holdout_logloss": s["logloss_model"],
-    }])
+    params = pd.DataFrame(  # noqa: F841 — read by duckdb replacement scan below
+        [
+            {
+                "fitted_at": pd.Timestamp.now().isoformat(),
+                "half_life": h,
+                "carryover": c,
+                "feature_cols": json.dumps(FEATURE_COLS),
+                "win_intercept": float(clf.intercept_[0]),
+                "win_coefs": json.dumps(clf.coef_[0].tolist()),
+                "margin_intercept": float(reg.intercept_),
+                "margin_coefs": json.dumps(reg.coef_.tolist()),
+                "train_games": len(done),
+                "holdout_brier": s["brier_model"],
+                "holdout_logloss": s["logloss_model"],
+            }
+        ]
+    )
     wcon.execute("CREATE OR REPLACE TABLE model_params AS SELECT * FROM params")
-    keep = ["game_id", "season", "week", "home_team", "away_team", "home_win",
-            "home_margin", "spread_line", "market_home_prob",
-            "p_home_win", "pred_margin"]
-    mp = pred[keep]
+    keep = [
+        "game_id",
+        "season",
+        "week",
+        "home_team",
+        "away_team",
+        "home_win",
+        "home_margin",
+        "spread_line",
+        "market_home_prob",
+        "p_home_win",
+        "pred_margin",
+    ]
+    mp = pred[keep]  # noqa: F841 — read by duckdb replacement scan below
     wcon.execute("CREATE OR REPLACE TABLE model_predictions AS SELECT * FROM mp")
     wcon.close()
 
@@ -141,24 +158,25 @@ def main() -> int:
         "calibrated yardstick, not an oracle: a Kalshi price is interesting "
         "only when it disagrees with the model by MORE than the model's "
         "typical error vs the market, and after fees/spread."
-        if s["brier_market"] <= s["brier_model_on_market_games"] else
-        "**Verdict:** model beat the market Brier on this holdout — treat "
+        if s["brier_market"] <= s["brier_model_on_market_games"]
+        else "**Verdict:** model beat the market Brier on this holdout — treat "
         "with suspicion, verify for leakage before believing it."
     )
-    REPORT.write_text(f"""# Baseline Model Report
+    REPORT.write_text(
+        f"""# Baseline Model Report
 
 Fitted {pd.Timestamp.now():%Y-%m-%d %H:%M}. EWMA opponent-adjusted EPA ratings
 (half-life **{h:.0f}** games, season carryover **{c:.1f}**) -> logistic win
 prob + ridge margin. Walk-forward by season; hyperparams tuned on 2012-2018
 only; **2019-2024 is the untouched holdout**; 2025 reported as bonus.
 
-## Holdout 2019-2024 ({s['n_games']} games, {s['n_with_market']} with moneylines)
+## Holdout 2019-2024 ({s["n_games"]} games, {s["n_with_market"]} with moneylines)
 
 | Metric | Model | Market (devigged ML) | Home-always |
 |---|---|---|---|
-| Brier | {s['brier_model_on_market_games']:.4f} | {s['brier_market']:.4f} | {s['brier_home_always']:.4f} |
-| Log loss | {s['logloss_model']:.4f} | {s['logloss_market']:.4f} | — |
-| Margin MAE | {s['margin_mae_model']:.2f} | {s['margin_mae_spread']:.2f} (closing spread) | — |
+| Brier | {s["brier_model_on_market_games"]:.4f} | {s["brier_market"]:.4f} | {s["brier_home_always"]:.4f} |
+| Log loss | {s["logloss_model"]:.4f} | {s["logloss_market"]:.4f} | — |
+| Margin MAE | {s["margin_mae_model"]:.2f} | {s["margin_mae_spread"]:.2f} (closing spread) | — |
 
 {verdict}
 
@@ -176,15 +194,17 @@ Weeks 4+ only (early-season ratings are noisy):
 
 ## 2025 out-of-sample (never touched during tuning)
 
-Brier {s25['brier_model_on_market_games']:.4f} vs market {s25['brier_market']:.4f}
-({s25['n_games']} games). Margin MAE {s25['margin_mae_model']:.2f} vs spread
-{s25['margin_mae_spread']:.2f}.
+Brier {s25["brier_model_on_market_games"]:.4f} vs market {s25["brier_market"]:.4f}
+({s25["n_games"]} games). Margin MAE {s25["margin_mae_model"]:.2f} vs spread
+{s25["margin_mae_spread"]:.2f}.
 
 ## Tuning grid (2012-2018 walk-forward log loss)
 
 {pd.DataFrame(results).to_markdown(index=False, floatfmt=".5f")}
-""", encoding="utf-8")
-    print(f"\nReport: {REPORT}  ({time.time()-t0:.0f}s total)")
+""",
+        encoding="utf-8",
+    )
+    print(f"\nReport: {REPORT}  ({time.time() - t0:.0f}s total)")
     print(verdict)
     return 0
 

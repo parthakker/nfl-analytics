@@ -15,17 +15,20 @@ def _params(con: duckdb.DuckDBPyConnection) -> dict:
 
 
 def _rating(con, team: str) -> dict:
-    df = con.execute(
-        "SELECT * FROM model_ratings WHERE team = canon_team(?)", [team]
-    ).fetchdf()
+    df = con.execute("SELECT * FROM model_ratings WHERE team = canon_team(?)", [team]).fetchdf()
     if df.empty:
         raise ValueError(f"no ratings for team {team!r}")
     return df.iloc[0].to_dict()
 
 
-def predict_game(con: duckdb.DuckDBPyConnection, home_team: str, away_team: str,
-                 rest_diff: float = 0.0, away_tz_shift: float | None = None,
-                 div_game: int | None = None) -> dict:
+def predict_game(
+    con: duckdb.DuckDBPyConnection,
+    home_team: str,
+    away_team: str,
+    rest_diff: float = 0.0,
+    away_tz_shift: float | None = None,
+    div_game: int | None = None,
+) -> dict:
     """Predict an arbitrary matchup using current ratings.
 
     For a scheduled game, look up rest/div from `schedules` first and pass
@@ -36,18 +39,24 @@ def predict_game(con: duckdb.DuckDBPyConnection, home_team: str, away_team: str,
     h, a = _rating(con, home_team), _rating(con, away_team)
 
     if away_tz_shift is None:
-        row = con.execute("""
+        row = con.execute(
+            """
             SELECT awy.offset_behind_et - hm.offset_behind_et
             FROM team_timezones hm, team_timezones awy
             WHERE hm.team = canon_team(?) AND awy.team = canon_team(?)
-        """, [home_team, away_team]).fetchone()
+        """,
+            [home_team, away_team],
+        ).fetchone()
         away_tz_shift = float(row[0]) if row and row[0] is not None else 0.0
     if div_game is None:
-        row = con.execute("""
+        row = con.execute(
+            """
             SELECT max(div_game::int) FROM schedules
             WHERE home_team = canon_team(?) AND away_team = canon_team(?)
               AND season >= 2024
-        """, [home_team, away_team]).fetchone()
+        """,
+            [home_team, away_team],
+        ).fetchone()
         div_game = int(row[0]) if row and row[0] is not None else 0
 
     feats = {
@@ -60,13 +69,17 @@ def predict_game(con: duckdb.DuckDBPyConnection, home_team: str, away_team: str,
         "div_game": div_game,
     }
     x = [feats[c] for c in p["feature_cols"]]
-    z = p["win_intercept"] + sum(c * v for c, v in zip(p["win_coefs"], x))
-    margin = p["margin_intercept"] + sum(c * v for c, v in zip(p["margin_coefs"], x))
+    z = p["win_intercept"] + sum(c * v for c, v in zip(p["win_coefs"], x, strict=False))
+    margin = p["margin_intercept"] + sum(c * v for c, v in zip(p["margin_coefs"], x, strict=False))
     return {
-        "home_team": home_team, "away_team": away_team,
+        "home_team": home_team,
+        "away_team": away_team,
         "p_home_win": 1.0 / (1.0 + math.exp(-z)),
-        "pred_margin": margin,   # positive = home by that many
+        "pred_margin": margin,  # positive = home by that many
         "inputs": feats,
-        "model": {"half_life": p["half_life"], "carryover": p["carryover"],
-                  "holdout_brier": p["holdout_brier"]},
+        "model": {
+            "half_life": p["half_life"],
+            "carryover": p["carryover"],
+            "holdout_brier": p["holdout_brier"],
+        },
     }

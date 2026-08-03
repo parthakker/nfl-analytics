@@ -12,7 +12,9 @@ def markets(kind: str = "game") -> dict:
     if kind not in KINDS:
         raise HTTPException(400, f"kind must be one of {KINDS}")
     with read_conn(attach_kalshi=True) as con:
-        rows = rows_to_dicts(con, """
+        rows = rows_to_dicts(
+            con,
+            """
             WITH latest AS (
                 SELECT *, row_number() OVER (PARTITION BY ticker
                                              ORDER BY snapshot_ts DESC) AS rn
@@ -33,16 +35,21 @@ def markets(kind: str = "game") -> dict:
             LEFT JOIN prev24 p USING (ticker)
             WHERE l.rn = 1 AND d.kind = ? AND l.status = 'active'
             ORDER BY l.volume DESC NULLS LAST
-        """, [kind])
+        """,
+            [kind],
+        )
         sparks = {}
-        for r in rows_to_dicts(con, """
+        for r in rows_to_dicts(
+            con,
+            """
             SELECT ticker, list(implied_prob_mid ORDER BY snapshot_ts) AS pts
             FROM (SELECT ticker, implied_prob_mid, snapshot_ts,
                          row_number() OVER (PARTITION BY ticker
                                             ORDER BY snapshot_ts DESC) AS rn
                   FROM kalshi.kalshi_snapshots)
             WHERE rn <= 28 GROUP BY ticker
-        """):
+        """,
+        ):
             sparks[r["ticker"]] = r["pts"]
     for r in rows:
         r["spark"] = sparks.get(r["ticker"], [])
@@ -55,12 +62,16 @@ def history(ticker: str) -> dict:
         title = con.execute(
             "SELECT title FROM kalshi.kalshi_markets_dim WHERE ticker = ?", [ticker]
         ).fetchone()
-        points = rows_to_dicts(con, """
+        points = rows_to_dicts(
+            con,
+            """
             SELECT snapshot_ts AS ts, implied_prob_mid AS prob, last_price,
                    volume, open_interest AS oi
             FROM kalshi.kalshi_snapshots WHERE ticker = ?
             ORDER BY snapshot_ts
-        """, [ticker])
+        """,
+            [ticker],
+        )
     if not title:
         raise HTTPException(404, "unknown ticker")
     return {"ticker": ticker, "title": title[0], "points": points}

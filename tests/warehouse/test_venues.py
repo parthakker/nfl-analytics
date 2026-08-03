@@ -5,7 +5,8 @@ pytestmark = pytest.mark.warehouse
 
 def test_all_games_resolve_to_a_venue(warehouse_conn):
     n = warehouse_conn.execute(
-        "SELECT count(*) FROM game_venues WHERE venue_id IS NULL").fetchone()[0]
+        "SELECT count(*) FROM game_venues WHERE venue_id IS NULL"
+    ).fetchone()[0]
     assert n == 0, "unresolved venues — add aliases/overrides to data/stadiums.json"
 
 

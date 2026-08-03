@@ -17,9 +17,12 @@ CATEGORIES = ("injury", "trade-signing", "depth-chart", "legal", "general")
 @router.get("/api/news/search")
 def news_search(q: str, limit: int = 25) -> dict:
     import sys
+
     from ..deps import ROOT
+
     sys.path.insert(0, str(ROOT / "src"))
     from nfl_analytics.news import search as fts_search
+
     try:
         return {"query": q, "items": fts_search(q, min(limit, 50))}
     except Exception as e:
@@ -36,9 +39,13 @@ def news(source: str = "all", category: str = "", limit: int = 50) -> dict:
             raise HTTPException(400, f"category must be one of {CATEGORIES}")
         cat_clause = f"AND category = '{category}'"
     with read_conn(attach_news=True) as con:
-        items = rows_to_dicts(con, f"""
+        items = rows_to_dicts(
+            con,
+            f"""
             SELECT published_ts AS ts, source, category, teams, headline, url
             FROM newsdb.news WHERE {SOURCES[source]} {cat_clause}
             ORDER BY published_ts DESC NULLS LAST LIMIT ?
-        """, [min(limit, 200)])
+        """,
+            [min(limit, 200)],
+        )
     return {"items": items}

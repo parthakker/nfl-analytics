@@ -17,15 +17,44 @@ STADIUMS = Path(__file__).resolve().parent.parent / "data" / "stadiums.json"
 # Limitation: international games (London/Munich/Mexico City) keep the home
 # team's timezone here; use games.stadium to special-case if it matters.
 TEAM_TZ = {
-    "ARI": "MST", "ATL": "ET", "BAL": "ET", "BUF": "ET", "CAR": "ET",
-    "CHI": "CT", "CIN": "ET", "CLE": "ET", "DAL": "CT", "DEN": "MT",
-    "DET": "ET", "GB": "CT", "HOU": "CT", "IND": "ET", "JAX": "ET",
-    "KC": "CT", "LA": "PT", "LAC": "PT", "LV": "PT", "MIA": "ET",
-    "MIN": "CT", "NE": "ET", "NO": "CT", "NYG": "ET", "NYJ": "ET",
-    "PHI": "ET", "PIT": "ET", "SEA": "PT", "SF": "PT", "TB": "ET",
-    "TEN": "CT", "WAS": "ET",
+    "ARI": "MST",
+    "ATL": "ET",
+    "BAL": "ET",
+    "BUF": "ET",
+    "CAR": "ET",
+    "CHI": "CT",
+    "CIN": "ET",
+    "CLE": "ET",
+    "DAL": "CT",
+    "DEN": "MT",
+    "DET": "ET",
+    "GB": "CT",
+    "HOU": "CT",
+    "IND": "ET",
+    "JAX": "ET",
+    "KC": "CT",
+    "LA": "PT",
+    "LAC": "PT",
+    "LV": "PT",
+    "MIA": "ET",
+    "MIN": "CT",
+    "NE": "ET",
+    "NO": "CT",
+    "NYG": "ET",
+    "NYJ": "ET",
+    "PHI": "ET",
+    "PIT": "ET",
+    "SEA": "PT",
+    "SF": "PT",
+    "TB": "ET",
+    "TEN": "CT",
+    "WAS": "ET",
     # relocated-era codes
-    "SD": "PT", "OAK": "PT", "STL": "CT", "JAC": "ET", "LAR": "PT",
+    "SD": "PT",
+    "OAK": "PT",
+    "STL": "CT",
+    "JAC": "ET",
+    "LAR": "PT",
 }
 TZ_OFFSET = {"ET": 0, "CT": 1, "MT": 2, "MST": 2, "PT": 3}  # hours behind ET
 
@@ -34,12 +63,22 @@ TZ_OFFSET = {"ET": 0, "CT": 1, "MT": 2, "MST": 2, "PT": 3}  # hours behind ET
 # advstats_season_pass (LVR), draft_picks (PFR codes incl. pre-2000 era).
 # pbp/player_stats/team_stats are already canonical.
 TEAM_ALIASES = {
-    "SD": "LAC", "SDG": "LAC",
-    "OAK": "LV", "LVR": "LV", "RAI": "LV",
-    "STL": "LA", "LAR": "LA", "RAM": "LA",
-    "JAC": "JAX", "PHO": "ARI",
-    "GNB": "GB", "KAN": "KC", "NOR": "NO", "NWE": "NE",
-    "SFO": "SF", "TAM": "TB",
+    "SD": "LAC",
+    "SDG": "LAC",
+    "OAK": "LV",
+    "LVR": "LV",
+    "RAI": "LV",
+    "STL": "LA",
+    "LAR": "LA",
+    "RAM": "LA",
+    "JAC": "JAX",
+    "PHO": "ARI",
+    "GNB": "GB",
+    "KAN": "KC",
+    "NOR": "NO",
+    "NWE": "NE",
+    "SFO": "SF",
+    "TAM": "TB",
 }
 
 VIEWS = {
@@ -522,18 +561,39 @@ def load_stadiums(con: duckdb.DuckDBPyConnection) -> None:
     """)
     con.executemany(
         "INSERT INTO stadiums VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-        [[v["venue_id"], v["name"], v["city"], v["state"], v["country"],
-          v["lat"], v["lon"], v["tz"], v["et_offset"], v["roof"], v["surface"],
-          v["first_season"], v["last_season"]] for v in sj["venues"]])
+        [
+            [
+                v["venue_id"],
+                v["name"],
+                v["city"],
+                v["state"],
+                v["country"],
+                v["lat"],
+                v["lon"],
+                v["tz"],
+                v["et_offset"],
+                v["roof"],
+                v["surface"],
+                v["first_season"],
+                v["last_season"],
+            ]
+            for v in sj["venues"]
+        ],
+    )
     aliases = {}
     for v in sj["venues"]:
         for a in [v["name"], *v["aliases"]]:
             aliases[a.lower().strip()] = v["venue_id"]
-    con.execute("CREATE OR REPLACE TABLE stadium_aliases (alias_lower VARCHAR PRIMARY KEY, venue_id VARCHAR)")
+    con.execute(
+        "CREATE OR REPLACE TABLE stadium_aliases (alias_lower VARCHAR PRIMARY KEY, venue_id VARCHAR)"
+    )
     con.executemany("INSERT INTO stadium_aliases VALUES (?,?)", list(aliases.items()))
-    con.execute("CREATE OR REPLACE TABLE game_venue_overrides (game_id VARCHAR PRIMARY KEY, venue_id VARCHAR)")
-    con.executemany("INSERT INTO game_venue_overrides VALUES (?,?)",
-                    list(sj["game_overrides"].items()))
+    con.execute(
+        "CREATE OR REPLACE TABLE game_venue_overrides (game_id VARCHAR PRIMARY KEY, venue_id VARCHAR)"
+    )
+    con.executemany(
+        "INSERT INTO game_venue_overrides VALUES (?,?)", list(sj["game_overrides"].items())
+    )
     con.execute("""
         CREATE OR REPLACE MACRO haversine_miles(lat1, lon1, lat2, lon2) AS
         3958.8 * 2 * asin(sqrt(
@@ -586,11 +646,14 @@ def load_stadiums(con: duckdb.DuckDBPyConnection) -> None:
                (st.country != 'USA') AS is_international
         FROM pick p LEFT JOIN stadiums st ON st.venue_id = p.venue_id
     """)
-    unresolved = con.execute(
-        "SELECT count(*) FROM game_venues WHERE venue_id IS NULL").fetchone()[0]
+    unresolved = con.execute("SELECT count(*) FROM game_venues WHERE venue_id IS NULL").fetchone()[
+        0
+    ]
     n = con.execute("SELECT count(*) FROM game_venues").fetchone()[0]
-    print(f"  game_venues                  OK ({n:,} games, {unresolved} unresolved"
-          + (" — WARNING: add aliases/overrides to data/stadiums.json!" if unresolved else ")"))
+    print(
+        f"  game_venues                  OK ({n:,} games, {unresolved} unresolved"
+        + (" — WARNING: add aliases/overrides to data/stadiums.json!" if unresolved else ")")
+    )
 
 
 def parse_weather(con: duckdb.DuckDBPyConnection) -> None:
@@ -621,12 +684,16 @@ def parse_weather(con: duckdb.DuckDBPyConnection) -> None:
 
 def build() -> int:
     con = duckdb.connect(str(DB))
-    con.execute("CREATE OR REPLACE TABLE team_timezones AS SELECT * FROM (VALUES "
-                + ", ".join(f"('{t}', '{tz}', {TZ_OFFSET[tz]})" for t, tz in TEAM_TZ.items())
-                + ") AS t(team, tz, offset_behind_et)")
-    con.execute("CREATE OR REPLACE TABLE team_aliases AS SELECT * FROM (VALUES "
-                + ", ".join(f"('{a}', '{c}')" for a, c in TEAM_ALIASES.items())
-                + ") AS t(alias, canonical)")
+    con.execute(
+        "CREATE OR REPLACE TABLE team_timezones AS SELECT * FROM (VALUES "
+        + ", ".join(f"('{t}', '{tz}', {TZ_OFFSET[tz]})" for t, tz in TEAM_TZ.items())
+        + ") AS t(team, tz, offset_behind_et)"
+    )
+    con.execute(
+        "CREATE OR REPLACE TABLE team_aliases AS SELECT * FROM (VALUES "
+        + ", ".join(f"('{a}', '{c}')" for a, c in TEAM_ALIASES.items())
+        + ") AS t(alias, canonical)"
+    )
     # canon_team('OAK') -> 'LV'; pass-through for already-canonical codes
     con.execute("""
         CREATE OR REPLACE MACRO canon_team(t) AS
@@ -664,10 +731,17 @@ def build() -> int:
                WHERE team='MIA' AND venue_id='LON00' LIMIT 1)
         """).fetchone()
         buf_sofi, nyg_nyj, mia_lon = checks
-        ok = (buf_sofi and 2100 <= buf_sofi <= 2300 and (nyg_nyj or 0) < 20
-              and mia_lon and 4300 <= mia_lon <= 4550)
-        print(f"  travel sanity {'OK' if ok else 'FAILED'}: BUF->SoFi={buf_sofi}mi, "
-              f"NYG@NYJ={nyg_nyj}mi, MIA@Wembley={mia_lon}mi")
+        ok = (
+            buf_sofi
+            and 2100 <= buf_sofi <= 2300
+            and (nyg_nyj or 0) < 20
+            and mia_lon
+            and 4300 <= mia_lon <= 4550
+        )
+        print(
+            f"  travel sanity {'OK' if ok else 'FAILED'}: BUF->SoFi={buf_sofi}mi, "
+            f"NYG@NYJ={nyg_nyj}mi, MIA@Wembley={mia_lon}mi"
+        )
         if not ok:
             failures.append("travel sanity check out of range")
     except Exception as e:

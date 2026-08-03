@@ -9,8 +9,8 @@ change fails loudly without corrupting stored news.
 
 import logging
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
-from datetime import datetime, timezone
 
 import duckdb
 import httpx
@@ -31,12 +31,39 @@ EXTRA_FEEDS = {
 }
 
 CATEGORY_RULES = [
-    ("injury", ("injur", "questionable", "doubtful", " out ", "ir ", "acl",
-                "hamstring", "concussion", "surgery", "carted", "pup ")),
-    ("trade-signing", ("trade", "sign", "signing", "deal", "contract",
-                       "extension", "waiv", "release", "cut ", "acqui", "free agent")),
-    ("depth-chart", ("starter", "depth chart", "qb1", "starting job",
-                     "benched", "promoted")),
+    (
+        "injury",
+        (
+            "injur",
+            "questionable",
+            "doubtful",
+            " out ",
+            "ir ",
+            "acl",
+            "hamstring",
+            "concussion",
+            "surgery",
+            "carted",
+            "pup ",
+        ),
+    ),
+    (
+        "trade-signing",
+        (
+            "trade",
+            "sign",
+            "signing",
+            "deal",
+            "contract",
+            "extension",
+            "waiv",
+            "release",
+            "cut ",
+            "acqui",
+            "free agent",
+        ),
+    ),
+    ("depth-chart", ("starter", "depth chart", "qb1", "starting job", "benched", "promoted")),
     ("legal", ("suspend", "arrest", "lawsuit", "fined", "investigat")),
 ]
 
@@ -47,6 +74,7 @@ def classify(headline: str, body: str) -> str:
         if any(w in text for w in words):
             return cat
     return "general"
+
 
 # ESPN abbreviations that differ from our canonical nflverse codes
 ESPN_TEAM_FIX = {"WSH": "WAS", "LAR": "LA"}
@@ -85,7 +113,7 @@ def name_tag(text: str, names: dict[str, str]) -> list[str]:
     """Find player full names in text via word-bigram lookup (fast, no regex)."""
     words = [w.strip(".,:;!?'\"()") for w in text.lower().split()]
     found = []
-    for a, b in zip(words, words[1:]):
+    for a, b in zip(words, words[1:], strict=False):
         gsis = names.get(f"{a} {b}")
         if gsis and gsis not in found:
             found.append(gsis)
@@ -104,14 +132,17 @@ def search(query: str, limit: int = 25) -> list[dict]:
     con = duckdb.connect(str(NEWS_DB), read_only=True)
     try:
         con.execute("LOAD fts")
-        rows = con.execute("""
+        rows = con.execute(
+            """
             SELECT published_ts, source, category, headline, body, url, teams,
                    fts_main_news.match_bm25(article_id, ?) AS score
             FROM news WHERE score IS NOT NULL
             ORDER BY score DESC LIMIT ?
-        """, [query, limit]).fetchall()
+        """,
+            [query, limit],
+        ).fetchall()
         cols = ["ts", "source", "category", "headline", "body", "url", "teams", "score"]
-        return [dict(zip(cols, r)) for r in rows]
+        return [dict(zip(cols, r, strict=False)) for r in rows]
     finally:
         con.close()
 
@@ -131,11 +162,14 @@ def _gsis_map(espn_ids: set[str]) -> dict[str, str]:
         return {}
     con = duckdb.connect(str(NFL_DB), read_only=True)
     try:
-        rows = con.execute("""
+        rows = con.execute(
+            """
             SELECT espn_id::varchar, gsis_id FROM players
             WHERE espn_id IS NOT NULL AND espn_id::varchar IN
             (SELECT unnest(?::varchar[]))
-        """, [list(espn_ids)]).fetchall()
+        """,
+            [list(espn_ids)],
+        ).fetchall()
     finally:
         con.close()
     return dict(rows)
@@ -165,7 +199,7 @@ def _athlete_espn_id(athlete: dict) -> str | None:
 def poll(client: httpx.Client | None = None) -> dict:
     """Fetch both feeds, insert new rows, return counts."""
     client = client or httpx.Client(follow_redirects=True, timeout=30)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     team_map = _espn_team_map(client)
     rows = []
 
@@ -179,13 +213,19 @@ def poll(client: httpx.Client | None = None) -> dict:
                 ab = team_map.get(str(cat["teamId"]))
                 if ab:
                     teams.append(ab)
-        rows.append({
-            "source": "espn_news", "article_id": str(a["id"]),
-            "published_ts": _ts(a.get("published")), "fetched_ts": now,
-            "headline": a.get("headline", ""), "body": a.get("description", ""),
-            "url": (a.get("links", {}).get("web", {}) or {}).get("href", ""),
-            "espn_ids": espn_ids, "teams": teams,
-        })
+        rows.append(
+            {
+                "source": "espn_news",
+                "article_id": str(a["id"]),
+                "published_ts": _ts(a.get("published")),
+                "fetched_ts": now,
+                "headline": a.get("headline", ""),
+                "body": a.get("description", ""),
+                "url": (a.get("links", {}).get("web", {}) or {}).get("href", ""),
+                "espn_ids": espn_ids,
+                "teams": teams,
+            }
+        )
 
     # --- injury report ---
     for team in client.get(INJURIES_URL).json().get("injuries", []):
@@ -194,16 +234,26 @@ def poll(client: httpx.Client | None = None) -> dict:
             eid = _athlete_espn_id(ath)
             status = inj.get("status", "")
             date = (inj.get("date") or "")[:10]
-            rows.append({
-                "source": "espn_injuries",
-                "article_id": f"{eid}-{date}-{status}",
-                "published_ts": _ts(inj.get("date")), "fetched_ts": now,
-                "headline": f"{ath.get('displayName','?')} ({team.get('displayName','')}): {status}",
-                "body": inj.get("longComment") or inj.get("shortComment") or "",
-                "url": next((l["href"] for l in ath.get("links", [])
-                             if "playercard" in l.get("rel", [])), ""),
-                "espn_ids": [eid] if eid else [], "teams": [],
-            })
+            rows.append(
+                {
+                    "source": "espn_injuries",
+                    "article_id": f"{eid}-{date}-{status}",
+                    "published_ts": _ts(inj.get("date")),
+                    "fetched_ts": now,
+                    "headline": f"{ath.get('displayName', '?')} ({team.get('displayName', '')}): {status}",
+                    "body": inj.get("longComment") or inj.get("shortComment") or "",
+                    "url": next(
+                        (
+                            lnk["href"]
+                            for lnk in ath.get("links", [])
+                            if "playercard" in lnk.get("rel", [])
+                        ),
+                        "",
+                    ),
+                    "espn_ids": [eid] if eid else [],
+                    "teams": [],
+                }
+            )
 
     # --- league-wide RSS feeds (PFT, Yahoo, ...) ---
     for src_name, feed_url in EXTRA_FEEDS.items():
@@ -217,25 +267,33 @@ def poll(client: httpx.Client | None = None) -> dict:
                 if not link:
                     continue
                 try:
-                    pub_ts = parsedate_to_datetime(item.findtext("pubDate")) \
-                        if item.findtext("pubDate") else None
+                    pub_ts = (
+                        parsedate_to_datetime(item.findtext("pubDate"))
+                        if item.findtext("pubDate")
+                        else None
+                    )
                 except (TypeError, ValueError):
                     pub_ts = None
-                rows.append({
-                    "source": src_name, "article_id": link,
-                    "published_ts": pub_ts, "fetched_ts": now,
-                    "headline": (item.findtext("title") or "").strip(),
-                    "body": (item.findtext("description") or "").strip()[:1000],
-                    "url": link, "espn_ids": [], "teams": [],
-                })
+                rows.append(
+                    {
+                        "source": src_name,
+                        "article_id": link,
+                        "published_ts": pub_ts,
+                        "fetched_ts": now,
+                        "headline": (item.findtext("title") or "").strip(),
+                        "body": (item.findtext("description") or "").strip()[:1000],
+                        "url": link,
+                        "espn_ids": [],
+                        "teams": [],
+                    }
+                )
         except (httpx.HTTPError, ET.ParseError) as e:
             log.warning("feed %s failed: %s", src_name, e)
 
     # --- official team-site RSS feeds (32 clubs, standard /rss/news) ---
     for code in TEAMS:
         try:
-            r = client.get(rss_url(code),
-                           headers={"User-Agent": "Mozilla/5.0"})
+            r = client.get(rss_url(code), headers={"User-Agent": "Mozilla/5.0"})
             if r.status_code != 200:
                 continue
             root = ET.fromstring(r.content)
@@ -248,13 +306,19 @@ def poll(client: httpx.Client | None = None) -> dict:
                     pub_ts = parsedate_to_datetime(pub) if pub else None
                 except (TypeError, ValueError):
                     pub_ts = None
-                rows.append({
-                    "source": "team_site", "article_id": link,
-                    "published_ts": pub_ts, "fetched_ts": now,
-                    "headline": (item.findtext("title") or "").strip(),
-                    "body": (item.findtext("description") or "").strip()[:1000],
-                    "url": link, "espn_ids": [], "teams": [code],
-                })
+                rows.append(
+                    {
+                        "source": "team_site",
+                        "article_id": link,
+                        "published_ts": pub_ts,
+                        "fetched_ts": now,
+                        "headline": (item.findtext("title") or "").strip(),
+                        "body": (item.findtext("description") or "").strip()[:1000],
+                        "url": link,
+                        "espn_ids": [],
+                        "teams": [code],
+                    }
+                )
         except (httpx.HTTPError, ET.ParseError) as e:
             log.warning("team RSS failed for %s: %s", code, e)
 
@@ -274,15 +338,28 @@ def poll(client: httpx.Client | None = None) -> dict:
         _migrate(con)
         before = con.execute("SELECT count(*) FROM news").fetchone()[0]
         for r in rows:
-            con.execute("""
+            con.execute(
+                """
                 INSERT INTO news
                 SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 WHERE NOT EXISTS (SELECT 1 FROM news
                                   WHERE source = ? AND article_id = ?)
-            """, [r["source"], r["article_id"], r["published_ts"],
-                  r["fetched_ts"], r["headline"], r["body"], r["url"],
-                  r["players"], r["teams"], r["category"],
-                  r["source"], r["article_id"]])
+            """,
+                [
+                    r["source"],
+                    r["article_id"],
+                    r["published_ts"],
+                    r["fetched_ts"],
+                    r["headline"],
+                    r["body"],
+                    r["url"],
+                    r["players"],
+                    r["teams"],
+                    r["category"],
+                    r["source"],
+                    r["article_id"],
+                ],
+            )
         # backfill categories for rows from before the category column existed
         con.execute("""
             UPDATE news SET category = CASE
@@ -297,5 +374,10 @@ def poll(client: httpx.Client | None = None) -> dict:
         con.close()
     matched = sum(1 for r in rows for p in r["players"] if not p.startswith("espn:"))
     tagged = sum(len(r["players"]) for r in rows)
-    return {"fetched": len(rows), "new_rows": inserted, "stored_total": total,
-            "player_tags": tagged, "tags_resolved_to_gsis": matched}
+    return {
+        "fetched": len(rows),
+        "new_rows": inserted,
+        "stored_total": total,
+        "player_tags": tagged,
+        "tags_resolved_to_gsis": matched,
+    }

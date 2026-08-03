@@ -29,8 +29,7 @@ def _claude_cmd(message: str, session_id: str | None, streaming: bool) -> list[s
         return None
     cmd = [exe, "-p", message, "--allowedTools", "mcp__nfl"]
     if streaming:
-        cmd += ["--output-format", "stream-json", "--verbose",
-                "--include-partial-messages"]
+        cmd += ["--output-format", "stream-json", "--verbose", "--include-partial-messages"]
     else:
         cmd += ["--output-format", "json"]
     if session_id:
@@ -82,11 +81,10 @@ async def _run_claude(message: str, session_id: str | None, streaming: bool):
         return
     try:
         proc = await asyncio.create_subprocess_exec(
-            *cmd, cwd=str(ROOT),
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            *cmd, cwd=str(ROOT), stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
     except Exception as e:
-        yield {"event": "error",
-               "data": json.dumps({"message": f"could not start claude: {e}"})}
+        yield {"event": "error", "data": json.dumps({"message": f"could not start claude: {e}"})}
         return
 
     q: asyncio.Queue = asyncio.Queue()
@@ -96,7 +94,7 @@ async def _run_claude(message: str, session_id: str | None, streaming: bool):
         while True:
             try:
                 line = await asyncio.wait_for(q.get(), timeout=10)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # safe: only the queue-wait is cancelled, never the pipe read
                 yield {"event": "ping", "data": "{}"}
                 continue
@@ -108,30 +106,41 @@ async def _run_claude(message: str, session_id: str | None, streaming: bool):
                 continue
             t = js.get("type")
             if t == "system" and js.get("subtype") == "init":
-                yield {"event": "session",
-                       "data": json.dumps({"session_id": js.get("session_id")})}
+                yield {"event": "session", "data": json.dumps({"session_id": js.get("session_id")})}
             elif t == "stream_event":
                 delta = js.get("event", {}).get("delta", {})
                 if delta.get("type") == "text_delta" and delta.get("text"):
-                    yield {"event": "token",
-                           "data": json.dumps({"text": delta["text"]})}
+                    yield {"event": "token", "data": json.dumps({"text": delta["text"]})}
             elif t == "assistant":
                 for block in (js.get("message", {}) or {}).get("content", []):
                     if isinstance(block, dict) and block.get("type") == "tool_use":
-                        yield {"event": "tool",
-                               "data": json.dumps({"name": block.get("name", ""),
-                                                   "hint": _tool_hint(block.get("name", ""))})}
+                        yield {
+                            "event": "tool",
+                            "data": json.dumps(
+                                {
+                                    "name": block.get("name", ""),
+                                    "hint": _tool_hint(block.get("name", "")),
+                                }
+                            ),
+                        }
             elif t == "result":
                 got_done = True
-                yield {"event": "done",
-                       "data": json.dumps({"text": js.get("result", ""),
-                                           "session_id": js.get("session_id"),
-                                           "duration_ms": js.get("duration_ms")})}
+                yield {
+                    "event": "done",
+                    "data": json.dumps(
+                        {
+                            "text": js.get("result", ""),
+                            "session_id": js.get("session_id"),
+                            "duration_ms": js.get("duration_ms"),
+                        }
+                    ),
+                }
         if not got_done:
             err = (await proc.stderr.read()).decode(errors="replace")[-500:]
-            yield {"event": "error",
-                   "data": json.dumps({"message": err.strip() or
-                                       "stream ended without a result"})}
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": err.strip() or "stream ended without a result"}),
+            }
     except asyncio.CancelledError:
         raise
     except Exception as e:  # any parser/transport surprise -> visible error
@@ -153,9 +162,12 @@ async def _stream_events(message: str, session_id: str | None):
             saw_answer = True
         if ev["event"] == "error" and streaming and not saw_answer:
             failed = True
-            yield {"event": "tool",
-                   "data": json.dumps({"name": "fallback",
-                                       "hint": "stream hiccup — retrying in reliable mode"})}
+            yield {
+                "event": "tool",
+                "data": json.dumps(
+                    {"name": "fallback", "hint": "stream hiccup — retrying in reliable mode"}
+                ),
+            }
             break
         yield ev
     if failed:
@@ -171,8 +183,8 @@ async def chat_stream(request: Request):
         return JSONResponse({"error": "empty message"}, status_code=400)
     if _lock.locked():
         return JSONResponse(
-            {"error": "the analyst is mid-thought — one question at a time"},
-            status_code=409)
+            {"error": "the analyst is mid-thought — one question at a time"}, status_code=409
+        )
 
     session_id = body.get("session_id") or None
 
@@ -188,7 +200,9 @@ async def _with_timeout(agen):
     start = asyncio.get_event_loop().time()
     async for item in agen:
         if asyncio.get_event_loop().time() - start > TIMEOUT_S:
-            yield {"event": "error",
-                   "data": json.dumps({"message": f"timed out after {TIMEOUT_S}s"})}
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": f"timed out after {TIMEOUT_S}s"}),
+            }
             return
         yield item

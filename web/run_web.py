@@ -27,6 +27,7 @@ def main() -> None:
     logs = ROOT / "logs"
     logs.mkdir(exist_ok=True)
     import logging
+
     handler = logging.FileHandler(logs / "jarvis.log", encoding="utf-8")
     handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access", "web"):

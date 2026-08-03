@@ -7,8 +7,9 @@ from sklearn.linear_model import LogisticRegression, Ridge
 from .features import FEATURE_COLS
 
 
-def walk_forward(df: pd.DataFrame, first_target: int = 2012,
-                 last_target: int | None = None) -> pd.DataFrame:
+def walk_forward(
+    df: pd.DataFrame, first_target: int = 2012, last_target: int | None = None
+) -> pd.DataFrame:
     """Fit on all seasons < s, predict season s, for each target season.
     Returns df restricted to predicted rows with p_home_win / pred_margin."""
     df = df.dropna(subset=["home_win"]).copy()
@@ -42,8 +43,11 @@ def log_loss_(y, p) -> float:
 def calibration_table(y, p, bins: int = 10) -> pd.DataFrame:
     d = pd.DataFrame({"y": np.asarray(y, dtype=float), "p": np.asarray(p, dtype=float)})
     d["bin"] = np.clip((d["p"] * bins).astype(int), 0, bins - 1)
-    t = d.groupby("bin").agg(n=("y", "size"), predicted=("p", "mean"),
-                             actual=("y", "mean")).reset_index()
+    t = (
+        d.groupby("bin")
+        .agg(n=("y", "size"), predicted=("p", "mean"), actual=("y", "mean"))
+        .reset_index()
+    )
     t["gap"] = t["actual"] - t["predicted"]
     return t
 
@@ -61,10 +65,16 @@ def ats_record(df: pd.DataFrame, thresholds=(0.5, 1.0, 2.0, 3.0)) -> pd.DataFram
         home_covers = bets["home_margin"] > bets["spread_line"]
         wins = int((bet_home == home_covers).sum())
         n = len(bets)
-        rows.append({"threshold": t, "bets": n, "wins": wins,
-                     "win_pct": round(wins / n, 4) if n else None,
-                     "breakeven": 0.524,
-                     "profitable": (wins / n > 0.524) if n else None})
+        rows.append(
+            {
+                "threshold": t,
+                "bets": n,
+                "wins": wins,
+                "win_pct": round(wins / n, 4) if n else None,
+                "breakeven": 0.524,
+                "profitable": (wins / n > 0.524) if n else None,
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -86,8 +96,13 @@ def summarize(pred: pd.DataFrame, holdout_start: int, holdout_end: int) -> dict:
         "logloss_market": log_loss_(yc, core["market_home_prob"]),
         "margin_mae_model": float((h["pred_margin"] - h["home_margin"]).abs().mean()),
         "margin_mae_spread": float(
-            (h.dropna(subset=["spread_line"])["spread_line"]
-             - h.dropna(subset=["spread_line"])["home_margin"]).abs().mean()),
+            (
+                h.dropna(subset=["spread_line"])["spread_line"]
+                - h.dropna(subset=["spread_line"])["home_margin"]
+            )
+            .abs()
+            .mean()
+        ),
         "calibration": calibration_table(y, h["p_home_win"]),
         "ats": ats_record(h),
         "ats_late_season": ats_record(h[h["week"] >= 4]),

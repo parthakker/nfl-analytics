@@ -27,16 +27,47 @@ MAX_MB = 25
 # every play_by_play column referenced by build_views VIEWS, the games
 # derivation consumers, tests, or API pbp queries
 PBP_COLS = [
-    "game_id", "play_id", "season", "week", "season_type", "game_date",
-    "home_team", "away_team", "posteam", "defteam", "play_type", "epa",
-    "pass", "rush", "down", "qtr", "ydstogo", "yardline_100", "wp", "xpass",
-    "shotgun", "no_huddle", "air_yards", "sack", "interception",
-    "fumble_lost", "rushing_yards", "rusher_id", "receiver_id", "touchdown",
-    "penalty", "penalty_yards", "penalty_team", "weather",
+    "game_id",
+    "play_id",
+    "season",
+    "week",
+    "season_type",
+    "game_date",
+    "home_team",
+    "away_team",
+    "posteam",
+    "defteam",
+    "play_type",
+    "epa",
+    "pass",
+    "rush",
+    "down",
+    "qtr",
+    "ydstogo",
+    "yardline_100",
+    "wp",
+    "xpass",
+    "shotgun",
+    "no_huddle",
+    "air_yards",
+    "sack",
+    "interception",
+    "fumble_lost",
+    "rushing_yards",
+    "rusher_id",
+    "receiver_id",
+    "touchdown",
+    "penalty",
+    "penalty_yards",
+    "penalty_team",
+    "weather",
 ]
 
 FULL_COPY = [
-    "games", "schedules", "team_aliases", "officials",
+    "games",
+    "schedules",
+    "team_aliases",
+    "officials",
     "weather_openmeteo",  # keyed by game_id, tiny
 ]
 
@@ -44,19 +75,30 @@ FULL_COPY = [
 # yet — add back when views/pages appear): snap_counts, depth_charts,
 # participation, ftn_charting, espn_qbr_*, combine, draft_picks, advstats_season_*.
 SLICED = [
-    "team_stats", "player_stats_week", "player_stats_season",
-    "player_stats_def_week", "player_stats_def_season",
-    "player_stats_kicking_week", "player_stats_kicking_season",
-    "player_stats_week_v2", "player_stats_season_v2",
-    "injuries", "ngs_passing", "ngs_receiving",
-    "ngs_rushing", "advstats_week_pass", "advstats_week_rush",
-    "advstats_week_rec", "advstats_week_def",
+    "team_stats",
+    "player_stats_week",
+    "player_stats_season",
+    "player_stats_def_week",
+    "player_stats_def_season",
+    "player_stats_kicking_week",
+    "player_stats_kicking_season",
+    "player_stats_week_v2",
+    "player_stats_season_v2",
+    "injuries",
+    "ngs_passing",
+    "ngs_receiving",
+    "ngs_rushing",
+    "advstats_week_pass",
+    "advstats_week_rush",
+    "advstats_week_rec",
+    "advstats_week_def",
 ]
 
 
 def _load_build_views():
     spec = importlib.util.spec_from_file_location(
-        "build_views", ROOT / "scripts" / "build_views.py")
+        "build_views", ROOT / "scripts" / "build_views.py"
+    )
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -68,8 +110,12 @@ def build_nfl_fixture(seasons: tuple[int, int]) -> Path:
     dst.unlink(missing_ok=True)
     con = duckdb.connect(str(dst))
     con.execute(f"ATTACH '{src.as_posix()}' AS live (READ_ONLY)")
-    have = {r[0] for r in con.execute(
-        "SELECT table_name FROM duckdb_tables() WHERE database_name = 'live'").fetchall()}
+    have = {
+        r[0]
+        for r in con.execute(
+            "SELECT table_name FROM duckdb_tables() WHERE database_name = 'live'"
+        ).fetchall()
+    }
 
     for t in FULL_COPY:
         con.execute(f"CREATE TABLE {t} AS SELECT * FROM live.{t}")
@@ -88,7 +134,7 @@ def build_nfl_fixture(seasons: tuple[int, int]) -> Path:
     # pbp: latest completed season only, view-referenced columns only
     con.execute(f"""
         CREATE TABLE play_by_play AS
-        SELECT {', '.join(f'"{c}"' for c in PBP_COLS)}
+        SELECT {", ".join(f'"{c}"' for c in PBP_COLS)}
         FROM live.play_by_play WHERE season = {hi}
     """)
     # players: only ids that appear somewhere in the sliced data
@@ -151,6 +197,7 @@ def build_news_fixture() -> Path:
     # FTS index for /api/news/search
     sys.path.insert(0, str(ROOT / "src"))
     from nfl_analytics.news import rebuild_fts
+
     rebuild_fts(con)
     con.close()
     return dst

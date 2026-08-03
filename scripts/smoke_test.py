@@ -7,7 +7,6 @@ line per run goes to logs/smoke.log; failures list what broke.
 Run:  python scripts/smoke_test.py        (scheduled daily 07:30)
 """
 
-import json
 import subprocess
 import sys
 import time
@@ -23,40 +22,50 @@ BASE = "http://127.0.0.1:8000"
 CHECKS = {
     "/api/health": lambda js: js.get("ok") is True,
     "/api/meta": lambda js: len(js.get("teams", {})) == 32,
-    "/api/league/overview": lambda js: len(js.get("divisions", [])) == 8
-        and all(len(d["teams"]) == 4 for d in js["divisions"]),
-    "/api/teams/DET": lambda js: js.get("record", {}).get("w") is not None
-        and js.get("coach", {}).get("history"),
+    "/api/league/overview": lambda js: (
+        len(js.get("divisions", [])) == 8 and all(len(d["teams"]) == 4 for d in js["divisions"])
+    ),
+    "/api/teams/DET": lambda js: (
+        js.get("record", {}).get("w") is not None and js.get("coach", {}).get("history")
+    ),
     "/api/teams/DET/epa": lambda js: len(js.get("weeks", [])) >= 15,
     "/api/teams/DET/roster": lambda js: len(js.get("players", [])) > 40,
     "/api/teams/DET/schedule": lambda js: len(js.get("games", [])) >= 17,
     "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
     "/api/players/search?q=mahomes": lambda js: len(js.get("hits", [])) > 0,
     "/api/leaders?cat=rushing&season=2025": lambda js: len(js.get("rows", [])) == 25,
-    "/api/schedule?season=2026&week=1": lambda js: len(js.get("games", [])) >= 14
-        and js["games"][0].get("game_id"),
+    "/api/schedule?season=2026&week=1": lambda js: (
+        len(js.get("games", [])) >= 14 and js["games"][0].get("game_id")
+    ),
     "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
     "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
     "/api/leaders?cat=half_ppr&season=2025": lambda js: len(js.get("rows", [])) == 25,
     "/api/referees?min_games=100": lambda js: len(js.get("referees", [])) >= 5,
     "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50,
-    "/api/coaches/Andy%20Reid": lambda js: len(js.get("seasons", [])) >= 15
-        and len(js.get("fingerprint", [])) >= 4,
-    "/api/betting/board?week=1": lambda js: len(js.get("games", [])) >= 14
-        and any(g.get("kalshi") for g in js["games"]),
+    "/api/coaches/Andy%20Reid": lambda js: (
+        len(js.get("seasons", [])) >= 15 and len(js.get("fingerprint", [])) >= 4
+    ),
+    "/api/betting/board?week=1": lambda js: (
+        len(js.get("games", [])) >= 14 and any(g.get("kalshi") for g in js["games"])
+    ),
     "/api/betting/situations": lambda js: len(js.get("division_dogs", [])) > 0,
     "/api/news/search?q=injury": lambda js: len(js.get("items", [])) > 0,
     "/api/news?category=injury&limit=5": lambda js: len(js.get("items", [])) > 0,
     # matchup center (enrichment wave 2026-08)
-    "/api/matchup/2024_01_BAL_KC": lambda js: js.get("series", {}).get("games", 0) > 0
+    "/api/matchup/2024_01_BAL_KC": lambda js: (
+        js.get("series", {}).get("games", 0) > 0
         and js["teams"]["away"]["travel_miles"] is not None
         and js.get("weather", {}).get("temp_f") is not None
-        and js.get("referee", {}).get("career"),
-    "/api/matchup/2026_01_DEN_KC": lambda js: js.get("game", {}).get("final") is False
+        and js.get("referee", {}).get("career")
+    ),
+    "/api/matchup/2026_01_DEN_KC": lambda js: (
+        js.get("game", {}).get("final") is False
         and js["teams"]["home"]["rest_days"] is not None
-        and js["teams"]["away"]["travel_miles"] is not None,
-    "/api/matchup/h2h/BUF/MIA": lambda js: js.get("summary", {}).get("games", 0) >= 50
-        and len(js.get("games", [])) >= 50,
+        and js["teams"]["away"]["travel_miles"] is not None
+    ),
+    "/api/matchup/h2h/BUF/MIA": lambda js: (
+        js.get("summary", {}).get("games", 0) >= 50 and len(js.get("games", [])) >= 50
+    ),
     "/api/knowledge": lambda js: len(js.get("chapters", [])) >= 10,
     "/api/knowledge/analytics-primer": lambda js: len(js.get("markdown", "")) > 1000,
 }
@@ -86,9 +95,20 @@ def main() -> int:
         client.get(BASE + "/api/health", timeout=3)
     except Exception:
         proc = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "web.api.main:app",
-             "--port", "8000", "--log-level", "warning"],
-            cwd=str(ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            [
+                sys.executable,
+                "-m",
+                "uvicorn",
+                "web.api.main:app",
+                "--port",
+                "8000",
+                "--log-level",
+                "warning",
+            ],
+            cwd=str(ROOT),
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
         for _ in range(20):
             time.sleep(1)
             try:
@@ -104,8 +124,9 @@ def main() -> int:
             proc.kill()
 
     stamp = datetime.now().isoformat()
-    line = (f"{stamp} smoke: {len(CHECKS) - len(failures)}/{len(CHECKS)} passed"
-            + (f" | FAILURES: {'; '.join(failures)}" if failures else ""))
+    line = f"{stamp} smoke: {len(CHECKS) - len(failures)}/{len(CHECKS)} passed" + (
+        f" | FAILURES: {'; '.join(failures)}" if failures else ""
+    )
     print(line)
     logs = ROOT / "logs"
     logs.mkdir(exist_ok=True)

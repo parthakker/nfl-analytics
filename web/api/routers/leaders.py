@@ -22,7 +22,9 @@ def leaders(season: int = 2025, cat: str = "ppr", min_games: int = 8) -> dict:
         raise HTTPException(400, f"cat must be one of {list(CATS)}")
     agg, label = CATS[cat]
     with read_conn() as con:
-        rows = rows_to_dicts(con, f"""
+        rows = rows_to_dicts(
+            con,
+            f"""
             SELECT player_display_name AS player, any_value(position) AS pos,
                    any_value(recent_team) AS team, count(*) AS games,
                    {agg} AS value
@@ -30,5 +32,7 @@ def leaders(season: int = 2025, cat: str = "ppr", min_games: int = 8) -> dict:
             WHERE season = ? AND season_type = 'REG'
             GROUP BY player_display_name
             HAVING count(*) >= ? ORDER BY value DESC LIMIT 25
-        """, [season, min_games])
+        """,
+            [season, min_games],
+        )
     return {"season": season, "cat": cat, "label": label, "rows": rows}

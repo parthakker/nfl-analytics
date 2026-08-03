@@ -7,8 +7,12 @@ pytestmark = pytest.mark.warehouse
 
 
 def test_player_season_has_the_three_types(warehouse_conn):
-    types = {r[0] for r in warehouse_conn.execute(
-        "SELECT DISTINCT season_type FROM player_stats_season").fetchall()}
+    types = {
+        r[0]
+        for r in warehouse_conn.execute(
+            "SELECT DISTINCT season_type FROM player_stats_season"
+        ).fetchall()
+    }
     assert "REG" in types and "REG+POST" in types
 
 

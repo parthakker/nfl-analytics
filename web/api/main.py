@@ -15,20 +15,48 @@ from fastapi.staticfiles import StaticFiles
 from nfl_analytics.db import StoreBusyError
 
 from .deps import ROOT, read_conn
-from .routers import (betting, chat, coaches, knowledge, leaders, league,
-                      markets, matchup, meta, news, players, referees,
-                      schedule, teams)
+from .routers import (
+    betting,
+    chat,
+    coaches,
+    knowledge,
+    leaders,
+    league,
+    markets,
+    matchup,
+    meta,
+    news,
+    players,
+    referees,
+    schedule,
+    teams,
+)
 
 app = FastAPI(title="NFL Jarvis", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
-for _r in (meta, league, teams, players, leaders, schedule, news, markets,
-           chat, coaches, referees, betting, matchup, knowledge):
+for _r in (
+    meta,
+    league,
+    teams,
+    players,
+    leaders,
+    schedule,
+    news,
+    markets,
+    chat,
+    coaches,
+    referees,
+    betting,
+    matchup,
+    knowledge,
+):
     app.include_router(_r.router)
 
 
 @app.exception_handler(StoreBusyError)
 def busy_handler(request: Request, exc: StoreBusyError):
     return JSONResponse({"error": str(exc), "retryable": True}, status_code=503)
+
 
 DIST = Path(__file__).resolve().parent.parent / "ui" / "dist"
 
@@ -44,9 +72,12 @@ def health() -> dict:
         dbs["nfl_readable"] = True
     except Exception:
         dbs["nfl_readable"] = False
-    return {"ok": all(dbs.values()), "dbs": dbs,
-            "claude": shutil.which("claude") is not None,
-            "ui_built": (DIST / "index.html").exists()}
+    return {
+        "ok": all(dbs.values()),
+        "dbs": dbs,
+        "claude": shutil.which("claude") is not None,
+        "ui_built": (DIST / "index.html").exists(),
+    }
 
 
 if (DIST / "index.html").exists():

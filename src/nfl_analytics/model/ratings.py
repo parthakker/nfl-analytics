@@ -54,8 +54,9 @@ class RatingBook:
                     r[d] *= self.carryover
         self._season[team] = season
 
-    def update(self, team: str, opponent: str, season: int,
-               off_pass: float, off_rush: float) -> None:
+    def update(
+        self, team: str, opponent: str, season: int, off_pass: float, off_rush: float
+    ) -> None:
         """Fold one game's offensive performance into `team`'s offense and
         `opponent`'s defense. Caller must have taken `entering()` snapshots
         for both sides BEFORE any update() calls for the game."""
@@ -67,15 +68,17 @@ class RatingBook:
         for dim, raw in (("pass", off_pass), ("rush", off_rush)):
             if raw is None or pd.isna(raw):
                 continue
-            adj_off = raw - orr[f"def_{dim}"]      # credit vs opponent D entering
-            adj_def = raw - tr[f"off_{dim}"]       # opponent D debited vs team O entering
+            adj_off = raw - orr[f"def_{dim}"]  # credit vs opponent D entering
+            adj_def = raw - tr[f"off_{dim}"]  # opponent D debited vs team O entering
             tr[f"off_{dim}"] = (1 - a) * tr[f"off_{dim}"] + a * adj_off
             orr[f"def_{dim}"] = (1 - a) * orr[f"def_{dim}"] + a * adj_def
 
 
-def compute_ratings(con: duckdb.DuckDBPyConnection,
-                    half_life: float = 8.0, carryover: float = 0.5,
-                    ) -> tuple[pd.DataFrame, pd.DataFrame]:
+def compute_ratings(
+    con: duckdb.DuckDBPyConnection,
+    half_life: float = 8.0,
+    carryover: float = 0.5,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Returns (per-game entering ratings, current end-state ratings).
 
     Per-game frame: one row per team-game with the four ratings ENTERING
@@ -92,14 +95,19 @@ def compute_ratings(con: duckdb.DuckDBPyConnection,
             snaps[r["team"]] = book.entering(r["team"])
         for _, r in grp.iterrows():
             e = snaps[r["team"]]
-            out.append({"game_id": game_id, "season": int(r["season"]),
-                        "week": int(r["week"]), "team": r["team"],
-                        "opponent": r["opponent"], **{f"r_{d}": e[d] for d in DIMS}})
+            out.append(
+                {
+                    "game_id": game_id,
+                    "season": int(r["season"]),
+                    "week": int(r["week"]),
+                    "team": r["team"],
+                    "opponent": r["opponent"],
+                    **{f"r_{d}": e[d] for d in DIMS},
+                }
+            )
         for _, r in grp.iterrows():
-            book.update(r["team"], r["opponent"], int(r["season"]),
-                        r["off_pass"], r["off_rush"])
-    current = pd.DataFrame([
-        {"team": t, **{f"r_{d}": v[d] for d in DIMS}}
-        for t, v in sorted(book.ratings.items())
-    ])
+            book.update(r["team"], r["opponent"], int(r["season"]), r["off_pass"], r["off_rush"])
+    current = pd.DataFrame(
+        [{"team": t, **{f"r_{d}": v[d] for d in DIMS}} for t, v in sorted(book.ratings.items())]
+    )
     return pd.DataFrame(out), current

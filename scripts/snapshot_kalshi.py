@@ -17,9 +17,11 @@ from nfl_analytics.kalshi import snapshot  # noqa: E402
 def main() -> int:
     try:
         res = snapshot()
-        line = (f"{datetime.now().isoformat()} kalshi snapshot: "
-                f"markets={res['markets_snapshotted']} "
-                f"total_rows={res['snapshot_rows_total']}")
+        line = (
+            f"{datetime.now().isoformat()} kalshi snapshot: "
+            f"markets={res['markets_snapshotted']} "
+            f"total_rows={res['snapshot_rows_total']}"
+        )
         rc = 0
     except Exception as e:
         line = f"{datetime.now().isoformat()} kalshi snapshot FAILED: {e}"
