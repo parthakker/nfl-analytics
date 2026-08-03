@@ -306,7 +306,73 @@ def kalshi_price_history(ticker: str) -> dict:
                              "run scripts/snapshot_kalshi.py"}
 
 
+# ---------- Group G: coaches, referees, betting ----------
+
+@server.tool()
+def coach_profile(name: str) -> dict:
+    """Head coach career: records, playoffs, ATS, 4th-down aggressiveness,
+    pass-rate-over-expected, scheme identity (curated), rivalry records."""
+    with read_conn() as con:
+        seasons = table_result(con, """
+            SELECT s.season, s.team, s.reg_wins, s.reg_games - s.reg_wins AS reg_losses,
+                   s.post_wins, s.post_games - s.post_wins AS post_losses,
+                   s.ats_wins, s.ats_games, t.proe,
+                   round(t.go_attempts::double / nullif(t.go_situations,0), 3) AS go_rate
+            FROM v_coach_seasons s
+            LEFT JOIN v_coach_tendencies t ON t.coach = s.coach AND t.season = s.season
+            WHERE s.coach ILIKE '%' || ? || '%' ORDER BY s.season
+        """, [name], filters_applied=f"coach~{name}, 2007+")
+        rivals = table_result(con, """
+            SELECT opp_coach, games, wins FROM v_coach_matchups
+            WHERE coach ILIKE '%' || ? || '%' AND games >= 3
+            ORDER BY games DESC LIMIT 10
+        """, [name], max_rows=10)
+    return {"seasons": seasons, "rivals": rivals,
+            "note": "scheme metadata in data/coaches_meta.json"}
+
+
+@server.tool()
+def referee_stats(name: str = "") -> dict:
+    """Head referee tendencies 2015+: penalties/game, home penalty bias,
+    over rate, home win/cover rates. Empty name = all refs ranked."""
+    with read_conn() as con:
+        if name:
+            return table_result(con, """
+                SELECT * FROM v_referee_seasons
+                WHERE name ILIKE '%' || ? || '%' ORDER BY season
+            """, [name], filters_applied=f"ref~{name}")
+        return table_result(con, """
+            SELECT any_value(name) AS name, sum(games)::int AS games,
+                   round(sum(pen_per_game*games)/sum(games), 2) AS pen_per_game,
+                   round(sum(over_rate*games)/sum(games), 3) AS over_rate,
+                   round(sum(home_cover_rate*games)/sum(games), 3) AS home_cover_rate
+            FROM v_referee_seasons GROUP BY official_id
+            HAVING sum(games) >= 30 ORDER BY pen_per_game DESC
+        """, filters_applied="career, min 30 games, 2015+")
+
+
+@server.tool()
+def betting_board(week: int = 0) -> dict:
+    """Upcoming games: Vegas lines vs live Kalshi prices with dislocation
+    flags (market-vs-market, fee-adjusted) and situational angles."""
+    from web.api.routers.betting import board
+    return board(2026, week or None)
+
+
 # ---------- Group F: news ----------
+
+@server.tool()
+def news_search(query: str, limit: int = 15) -> dict:
+    """Full-text search over ALL stored news (ESPN, team sites, PFT, Yahoo)
+    ranked by relevance. e.g. 'Gibbs hamstring', 'coaching change Arizona'."""
+    from .news import search as fts
+    try:
+        items = fts(query, min(limit, 30))
+        return {"query": query,
+                "items": [{k: (str(v) if hasattr(v, "isoformat") else v)
+                           for k, v in it.items() if k != "body"} for it in items]}
+    except Exception as e:
+        return {"error": f"search unavailable: {e} — run scripts/poll_news.py first"}
 
 @server.tool()
 def player_news(name_or_id: str, days: int = 7) -> dict:

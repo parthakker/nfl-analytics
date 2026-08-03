@@ -32,6 +32,8 @@ def detail(gsis_id: str) -> dict:
                    sum(passing_yards)::int AS pass_yds, sum(passing_tds)::int AS pass_td,
                    sum(carries)::int AS att, sum(rushing_yards)::int AS rush_yds,
                    sum(receptions)::int AS rec, sum(receiving_yards)::int AS rec_yds,
+                   round(sum(fantasy_points),1) AS std,
+                   round(sum(fantasy_points_half_ppr),1) AS half_ppr,
                    round(sum(fantasy_points_ppr),1) AS ppr
             FROM v_player_stats_week_all
             WHERE player_id=? AND season_type='REG' AND week IS NOT NULL

@@ -59,25 +59,48 @@ def _tool_hint(name: str) -> str:
     return hints.get(short, f"using {short}")
 
 
-async def _stream_events(message: str, session_id: str | None):
-    streaming = os.environ.get("CHAT_STREAMING", "1") != "0"
+async def _pump(stream: asyncio.StreamReader, q: asyncio.Queue) -> None:
+    """Read lines into a queue. Never cancelled mid-read (cancelling proactor
+    pipe reads on Windows corrupts the stream — the original 'connection
+    closed early' bug). EOF is signalled with None."""
+    try:
+        while True:
+            line = await stream.readline()
+            if not line:
+                break
+            await q.put(line)
+    finally:
+        await q.put(None)
+
+
+async def _run_claude(message: str, session_id: str | None, streaming: bool):
+    """Yield SSE events for one claude invocation. Raises nothing: all
+    failures become 'error' events."""
     cmd = _claude_cmd(message, session_id, streaming)
     if cmd is None:
         yield {"event": "error", "data": json.dumps({"message": "claude CLI not found"})}
         return
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *cmd, cwd=str(ROOT),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    except Exception as e:
+        yield {"event": "error",
+               "data": json.dumps({"message": f"could not start claude: {e}"})}
+        return
 
-    proc = await asyncio.create_subprocess_exec(
-        *cmd, cwd=str(ROOT),
-        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    q: asyncio.Queue = asyncio.Queue()
+    pump = asyncio.create_task(_pump(proc.stdout, q))
     got_done = False
     try:
         while True:
             try:
-                line = await asyncio.wait_for(proc.stdout.readline(), timeout=10)
+                line = await asyncio.wait_for(q.get(), timeout=10)
             except asyncio.TimeoutError:
+                # safe: only the queue-wait is cancelled, never the pipe read
                 yield {"event": "ping", "data": "{}"}
                 continue
-            if not line:
+            if line is None:
                 break
             try:
                 js = json.loads(line)
@@ -88,8 +111,7 @@ async def _stream_events(message: str, session_id: str | None):
                 yield {"event": "session",
                        "data": json.dumps({"session_id": js.get("session_id")})}
             elif t == "stream_event":
-                ev = js.get("event", {})
-                delta = ev.get("delta", {})
+                delta = js.get("event", {}).get("delta", {})
                 if delta.get("type") == "text_delta" and delta.get("text"):
                     yield {"event": "token",
                            "data": json.dumps({"text": delta["text"]})}
@@ -105,16 +127,40 @@ async def _stream_events(message: str, session_id: str | None):
                        "data": json.dumps({"text": js.get("result", ""),
                                            "session_id": js.get("session_id"),
                                            "duration_ms": js.get("duration_ms")})}
-        await asyncio.wait_for(proc.wait(), timeout=5)
         if not got_done:
             err = (await proc.stderr.read()).decode(errors="replace")[-500:]
             yield {"event": "error",
-                   "data": json.dumps({"message": err or "stream ended without a result"})}
+                   "data": json.dumps({"message": err.strip() or
+                                       "stream ended without a result"})}
     except asyncio.CancelledError:
         raise
+    except Exception as e:  # any parser/transport surprise -> visible error
+        yield {"event": "error", "data": json.dumps({"message": f"{type(e).__name__}: {e}"})}
     finally:
+        pump.cancel()
         if proc.returncode is None:
             proc.kill()
+
+
+async def _stream_events(message: str, session_id: str | None):
+    """Streaming first; if it fails before producing an answer, retry once
+    with the proven single-shot JSON mode inside the same SSE response."""
+    streaming = os.environ.get("CHAT_STREAMING", "1") != "0"
+    saw_answer = False
+    failed = False
+    async for ev in _run_claude(message, session_id, streaming):
+        if ev["event"] == "done":
+            saw_answer = True
+        if ev["event"] == "error" and streaming and not saw_answer:
+            failed = True
+            yield {"event": "tool",
+                   "data": json.dumps({"name": "fallback",
+                                       "hint": "stream hiccup — retrying in reliable mode"})}
+            break
+        yield ev
+    if failed:
+        async for ev in _run_claude(message, session_id, streaming=False):
+            yield ev
 
 
 @router.post("/api/chat/stream")

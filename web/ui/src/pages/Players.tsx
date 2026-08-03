@@ -66,7 +66,7 @@ export default function Players() {
               <table className="w-full text-left text-sm">
                 <thead className="sticky top-0" style={{ background: "var(--bg-1)" }}>
                   <tr style={{ color: "var(--muted)" }}>
-                    {["Season", "G", "Pass yds", "Rush yds", "Rec", "Rec yds", "PPR"].map((h) => (
+                    {["Season", "G", "Pass yds", "Rush yds", "Rec", "Rec yds", "Std", "½PPR", "PPR"].map((h) => (
                       <th key={h} className="py-1.5 pr-2 font-medium">{h}</th>
                     ))}
                   </tr>
@@ -81,6 +81,8 @@ export default function Players() {
                       <td className="py-1.5 pr-2">{s.rush_yds?.toLocaleString?.()}</td>
                       <td className="py-1.5 pr-2">{s.rec}</td>
                       <td className="py-1.5 pr-2">{s.rec_yds?.toLocaleString?.()}</td>
+                      <td className="py-1.5 pr-2">{s.std}</td>
+                      <td className="py-1.5 pr-2">{s.half_ppr}</td>
                       <td className="py-1.5 font-semibold" style={{ color: "var(--arc)" }}>{s.ppr}</td>
                     </tr>
                   ))}

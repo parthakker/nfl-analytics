@@ -36,6 +36,16 @@ CHECKS = {
     "/api/schedule?season=2026&week=1": lambda js: len(js.get("games", [])) >= 14,
     "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
     "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
+    "/api/leaders?cat=half_ppr&season=2025": lambda js: len(js.get("rows", [])) == 25,
+    "/api/referees?min_games=100": lambda js: len(js.get("referees", [])) >= 5,
+    "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50,
+    "/api/coaches/Andy%20Reid": lambda js: len(js.get("seasons", [])) >= 15
+        and len(js.get("fingerprint", [])) >= 4,
+    "/api/betting/board?week=1": lambda js: len(js.get("games", [])) >= 14
+        and any(g.get("kalshi") for g in js["games"]),
+    "/api/betting/situations": lambda js: len(js.get("division_dogs", [])) > 0,
+    "/api/news/search?q=injury": lambda js: len(js.get("items", [])) > 0,
+    "/api/news?category=injury&limit=5": lambda js: len(js.get("items", [])) > 0,
 }
 
 

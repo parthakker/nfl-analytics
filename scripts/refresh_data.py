@@ -155,6 +155,30 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
                 break
     rc = 1 if failures else 0
 
+    # append current Vegas lines to kalshi.duckdb so line MOVEMENT accumulates
+    # (schedules only ever holds the latest numbers)
+    if rc == 0:
+        try:
+            import duckdb
+            kdb = duckdb.connect(str(ROOT / "kalshi.duckdb"))
+            kdb.execute("""
+                CREATE TABLE IF NOT EXISTS line_snapshots (
+                    snapshot_ts TIMESTAMP, game_id VARCHAR, season INT, week INT,
+                    spread_line DOUBLE, total_line DOUBLE,
+                    home_moneyline INT, away_moneyline INT)
+            """)
+            kdb.execute(f"""
+                INSERT INTO line_snapshots
+                SELECT now(), game_id, season, week, spread_line, total_line,
+                       home_moneyline, away_moneyline
+                FROM read_csv('{(DATA / "schedules" / "games.csv").as_posix()}')
+                WHERE result IS NULL AND spread_line IS NOT NULL
+            """)
+            kdb.close()
+            print("line_snapshots: appended current Vegas lines for upcoming games")
+        except Exception as e:
+            print(f"line snapshot skipped: {e}")
+
     LOGS.mkdir(exist_ok=True)
     with open(LOGS / "refresh.log", "a", encoding="utf-8") as f:
         mode = "bootstrap" if bootstrap else ("full" if full else "weekly")

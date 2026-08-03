@@ -8,6 +8,8 @@ router = APIRouter()
 # user input never reaches the SQL string.
 CATS = {
     "ppr": ("round(sum(fantasy_points_ppr),1)", "PPR points"),
+    "half_ppr": ("round(sum(fantasy_points_half_ppr),1)", "Half-PPR points"),
+    "std": ("round(sum(fantasy_points),1)", "Standard points"),
     "passing": ("sum(passing_yards)::int", "passing yards"),
     "rushing": ("sum(rushing_yards)::int", "rushing yards"),
     "receiving": ("sum(receiving_yards)::int", "receiving yards"),

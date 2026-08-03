@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import GlassPanel from "../components/GlassPanel";
 
-const CATS = [["ppr", "Fantasy (PPR)"], ["passing", "Passing"],
-              ["rushing", "Rushing"], ["receiving", "Receiving"]] as const;
+const CATS = [["ppr", "PPR"], ["half_ppr", "Half-PPR"], ["std", "Standard"],
+              ["passing", "Passing"], ["rushing", "Rushing"],
+              ["receiving", "Receiving"]] as const;
 const SEASONS = Array.from({ length: 19 }, (_, i) => 2025 - i);
 
 export default function Leaders() {

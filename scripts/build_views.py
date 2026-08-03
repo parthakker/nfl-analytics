@@ -142,7 +142,8 @@ VIEWS = {
                receiving_fumbles, receiving_fumbles_lost, receiving_air_yards,
                receiving_yards_after_catch, receiving_first_downs, receiving_epa,
                racr, target_share, air_yards_share, wopr,
-               fantasy_points, fantasy_points_ppr
+               fantasy_points, fantasy_points_ppr,
+               fantasy_points_ppr - 0.5 * receptions AS fantasy_points_half_ppr
         FROM player_stats_week
         UNION ALL
         SELECT player_id, player_display_name, position, position_group,
@@ -158,8 +159,116 @@ VIEWS = {
                receiving_fumbles, receiving_fumbles_lost, receiving_air_yards,
                receiving_yards_after_catch, receiving_first_downs, receiving_epa,
                racr, target_share, air_yards_share, wopr,
-               fantasy_points, fantasy_points_ppr
+               fantasy_points, fantasy_points_ppr,
+               fantasy_points_ppr - 0.5 * receptions AS fantasy_points_half_ppr
         FROM player_stats_week_v2
+    """,
+    # coach x season x team: records incl. playoffs and against-the-spread.
+    # v_team_games.spread_line is already team-perspective (positive = favored).
+    "v_coach_seasons": """
+        CREATE OR REPLACE VIEW v_coach_seasons AS
+        SELECT coach, season, team,
+               count(*) FILTER (WHERE season_type = 'REG') AS reg_games,
+               sum(win) FILTER (WHERE season_type = 'REG')::int AS reg_wins,
+               count(*) FILTER (WHERE season_type = 'POST') AS post_games,
+               sum(win) FILTER (WHERE season_type = 'POST')::int AS post_wins,
+               round(avg(points_for), 1) AS ppg,
+               round(avg(points_against), 1) AS papg,
+               count(*) FILTER (WHERE spread_line IS NOT NULL
+                                AND points_for - points_against <> spread_line) AS ats_games,
+               count(*) FILTER (WHERE spread_line IS NOT NULL
+                                AND points_for - points_against > spread_line) AS ats_wins
+        FROM v_team_games WHERE coach IS NOT NULL
+        GROUP BY coach, season, team
+    """,
+    # coach x season tendencies from pbp: the scheme fingerprint.
+    # 4th-down "go territory": 4th & <=2, own 40 to opp 5, first 3 quarters,
+    # game within reach (wp .1-.9) — rbsdm-style aggressiveness.
+    "v_coach_tendencies": """
+        CREATE OR REPLACE VIEW v_coach_tendencies AS
+        WITH plays AS (
+            SELECT CASE WHEN p.posteam = g.home_team THEN g.home_coach
+                        ELSE g.away_coach END AS coach,
+                   CASE WHEN p.defteam = g.home_team THEN g.home_coach
+                        ELSE g.away_coach END AS def_coach,
+                   p.*
+            FROM play_by_play p JOIN games g USING (game_id)
+            WHERE p.posteam IS NOT NULL
+        )
+        SELECT coach, season,
+               round(avg(pass - xpass) FILTER (
+                     WHERE down <= 2 AND qtr <= 3 AND xpass IS NOT NULL
+                       AND play_type IN ('pass','run')), 4) AS proe,
+               round(avg(shotgun::int) FILTER (WHERE play_type IN ('pass','run')), 3) AS shotgun_rate,
+               round(avg(no_huddle::int) FILTER (WHERE play_type IN ('pass','run')), 3) AS no_huddle_rate,
+               round(avg(CASE WHEN air_yards >= 20 THEN 1.0 ELSE 0.0 END)
+                     FILTER (WHERE play_type = 'pass' AND air_yards IS NOT NULL), 3) AS deep_shot_rate,
+               round(count(*) FILTER (WHERE play_type IN ('pass','run'))
+                     / count(DISTINCT game_id)::double, 1) AS plays_per_game,
+               count(*) FILTER (WHERE down = 4 AND ydstogo <= 2
+                                AND yardline_100 BETWEEN 5 AND 60 AND qtr <= 3
+                                AND wp BETWEEN 0.1 AND 0.9
+                                AND play_type IN ('pass','run','punt','field_goal')) AS go_situations,
+               count(*) FILTER (WHERE down = 4 AND ydstogo <= 2
+                                AND yardline_100 BETWEEN 5 AND 60 AND qtr <= 3
+                                AND wp BETWEEN 0.1 AND 0.9
+                                AND play_type IN ('pass','run')) AS go_attempts
+        FROM plays
+        GROUP BY coach, season
+    """,
+    "v_coach_def_tendencies": """
+        CREATE OR REPLACE VIEW v_coach_def_tendencies AS
+        SELECT CASE WHEN p.defteam = g.home_team THEN g.home_coach
+                    ELSE g.away_coach END AS coach,
+               p.season,
+               round(avg(p.epa) FILTER (WHERE p.pass = 1), 4) AS def_pass_epa,
+               round(avg(p.epa) FILTER (WHERE p.rush = 1), 4) AS def_rush_epa,
+               round(avg(p.sack::double) FILTER (WHERE p.pass = 1), 3) AS sack_rate,
+               round(avg((coalesce(p.interception,0) + coalesce(p.fumble_lost,0))::double), 3) AS takeaway_rate,
+               round(avg(CASE WHEN p.rushing_yards <= 0 THEN 1.0 ELSE 0.0 END)
+                     FILTER (WHERE p.rush = 1 AND p.rushing_yards IS NOT NULL), 3) AS run_stuff_rate
+        FROM play_by_play p JOIN games g USING (game_id)
+        WHERE p.defteam IS NOT NULL AND p.play_type IN ('pass','run')
+        GROUP BY 1, 2
+    """,
+    # head referee x game: penalties (from pbp), totals, spread results.
+    # officials.game_id is numeric = games.old_game_id (99.86% match).
+    "v_referee_games": """
+        CREATE OR REPLACE VIEW v_referee_games AS
+        WITH pen AS (
+            SELECT game_id,
+                   count(*) FILTER (WHERE penalty = 1) AS penalties,
+                   sum(penalty_yards) FILTER (WHERE penalty = 1) AS penalty_yards,
+                   count(*) FILTER (WHERE penalty = 1 AND penalty_team = home_team) AS pen_home,
+                   count(*) FILTER (WHERE penalty = 1 AND penalty_team = away_team) AS pen_away
+            FROM play_by_play GROUP BY game_id
+        )
+        SELECT o.official_id, o.official_name, g.game_id, g.season, g.week,
+               g.season_type, p.penalties, p.penalty_yards, p.pen_home, p.pen_away,
+               g.home_score + g.away_score AS total_points, g.total_line,
+               CASE WHEN g.total_line IS NOT NULL
+                    THEN (g.home_score + g.away_score) > g.total_line END AS went_over,
+               g.home_score > g.away_score AS home_won,
+               CASE WHEN g.spread_line IS NOT NULL
+                    THEN (g.home_score - g.away_score) > g.spread_line END AS home_covered
+        FROM officials o
+        JOIN games g ON g.old_game_id::VARCHAR = o.game_id::VARCHAR
+        JOIN pen p ON p.game_id = g.game_id
+        WHERE o.position = 'Referee'
+    """,
+    "v_referee_seasons": """
+        CREATE OR REPLACE VIEW v_referee_seasons AS
+        SELECT official_id, any_value(official_name) AS name, season,
+               count(*) AS games,
+               round(avg(penalties), 2) AS pen_per_game,
+               round(avg(penalty_yards), 1) AS pen_yds_per_game,
+               round(avg(pen_home) - avg(pen_away), 2) AS home_pen_bias,
+               round(avg(total_points), 1) AS avg_total_points,
+               round(avg(CASE WHEN went_over THEN 1.0 WHEN went_over = false THEN 0.0 END), 3) AS over_rate,
+               round(avg(home_won::int), 3) AS home_win_rate,
+               round(avg(CASE WHEN home_covered THEN 1.0 WHEN home_covered = false THEN 0.0 END), 3) AS home_cover_rate
+        FROM v_referee_games
+        GROUP BY official_id, season
     """,
     # per-player-week red zone usage from pbp
     "v_redzone_usage_week": """

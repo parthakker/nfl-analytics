@@ -24,6 +24,30 @@ NEWS_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limi
 INJURIES_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/injuries"
 TEAMS_URL = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams"
 
+# extra league-wide RSS feeds (fail-soft: a dead feed never kills the poll)
+EXTRA_FEEDS = {
+    "pft": "https://profootballtalk.nbcsports.com/feed/",
+    "yahoo": "https://sports.yahoo.com/nfl/rss/",
+}
+
+CATEGORY_RULES = [
+    ("injury", ("injur", "questionable", "doubtful", " out ", "ir ", "acl",
+                "hamstring", "concussion", "surgery", "carted", "pup ")),
+    ("trade-signing", ("trade", "sign", "signing", "deal", "contract",
+                       "extension", "waiv", "release", "cut ", "acqui", "free agent")),
+    ("depth-chart", ("starter", "depth chart", "qb1", "starting job",
+                     "benched", "promoted")),
+    ("legal", ("suspend", "arrest", "lawsuit", "fined", "investigat")),
+]
+
+
+def classify(headline: str, body: str) -> str:
+    text = f" {headline} {body} ".lower()
+    for cat, words in CATEGORY_RULES:
+        if any(w in text for w in words):
+            return cat
+    return "general"
+
 # ESPN abbreviations that differ from our canonical nflverse codes
 ESPN_TEAM_FIX = {"WSH": "WAS", "LAR": "LA"}
 
@@ -35,6 +59,61 @@ SCHEMA = """
         players VARCHAR[], teams VARCHAR[]
     )
 """
+
+
+def _migrate(con) -> None:
+    cols = {r[1] for r in con.execute("PRAGMA table_info('news')").fetchall()}
+    if "category" not in cols:
+        con.execute("ALTER TABLE news ADD COLUMN category VARCHAR")
+
+
+def _name_index() -> dict[str, str]:
+    """lowercase 'first last' -> gsis_id for recent-era players."""
+    con = duckdb.connect(str(NFL_DB), read_only=True)
+    try:
+        rows = con.execute("""
+            SELECT lower(full_name), any_value(gsis_id) FROM rosters_weekly
+            WHERE season >= 2024 AND gsis_id IS NOT NULL
+            GROUP BY lower(full_name)
+        """).fetchall()
+    finally:
+        con.close()
+    return dict(rows)
+
+
+def name_tag(text: str, names: dict[str, str]) -> list[str]:
+    """Find player full names in text via word-bigram lookup (fast, no regex)."""
+    words = [w.strip(".,:;!?'\"()") for w in text.lower().split()]
+    found = []
+    for a, b in zip(words, words[1:]):
+        gsis = names.get(f"{a} {b}")
+        if gsis and gsis not in found:
+            found.append(gsis)
+    return found
+
+
+def rebuild_fts(con) -> None:
+    con.execute("INSTALL fts; LOAD fts;")
+    con.execute("""
+        PRAGMA create_fts_index('news', 'article_id', 'headline', 'body',
+                                overwrite=1)
+    """)
+
+
+def search(query: str, limit: int = 25) -> list[dict]:
+    con = duckdb.connect(str(NEWS_DB), read_only=True)
+    try:
+        con.execute("LOAD fts")
+        rows = con.execute("""
+            SELECT published_ts, source, category, headline, body, url, teams,
+                   fts_main_news.match_bm25(article_id, ?) AS score
+            FROM news WHERE score IS NOT NULL
+            ORDER BY score DESC LIMIT ?
+        """, [query, limit]).fetchall()
+        cols = ["ts", "source", "category", "headline", "body", "url", "teams", "score"]
+        return [dict(zip(cols, r)) for r in rows]
+    finally:
+        con.close()
 
 
 def _espn_team_map(client: httpx.Client) -> dict[str, str]:
@@ -126,6 +205,32 @@ def poll(client: httpx.Client | None = None) -> dict:
                 "espn_ids": [eid] if eid else [], "teams": [],
             })
 
+    # --- league-wide RSS feeds (PFT, Yahoo, ...) ---
+    for src_name, feed_url in EXTRA_FEEDS.items():
+        try:
+            r = client.get(feed_url, headers={"User-Agent": "Mozilla/5.0"})
+            if r.status_code != 200:
+                continue
+            root = ET.fromstring(r.content)
+            for item in root.iter("item"):
+                link = (item.findtext("link") or "").strip()
+                if not link:
+                    continue
+                try:
+                    pub_ts = parsedate_to_datetime(item.findtext("pubDate")) \
+                        if item.findtext("pubDate") else None
+                except (TypeError, ValueError):
+                    pub_ts = None
+                rows.append({
+                    "source": src_name, "article_id": link,
+                    "published_ts": pub_ts, "fetched_ts": now,
+                    "headline": (item.findtext("title") or "").strip(),
+                    "body": (item.findtext("description") or "").strip()[:1000],
+                    "url": link, "espn_ids": [], "teams": [],
+                })
+        except (httpx.HTTPError, ET.ParseError) as e:
+            log.warning("feed %s failed: %s", src_name, e)
+
     # --- official team-site RSS feeds (32 clubs, standard /rss/news) ---
     for code in TEAMS:
         try:
@@ -153,28 +258,41 @@ def poll(client: httpx.Client | None = None) -> dict:
         except (httpx.HTTPError, ET.ParseError) as e:
             log.warning("team RSS failed for %s: %s", code, e)
 
-    # resolve espn ids -> gsis ids in one pass
+    # resolve espn ids -> gsis ids; name-tag sources that lack athlete ids
     all_ids = {i for r in rows for i in r["espn_ids"]}
     gsis = _gsis_map(all_ids)
+    names = _name_index()
     for r in rows:
         r["players"] = [gsis.get(i, f"espn:{i}") for i in r.pop("espn_ids")]
+        if not r["players"]:
+            r["players"] = name_tag(f"{r['headline']} {r['body']}", names)
+        r["category"] = classify(r["headline"], r["body"])
 
     con = duckdb.connect(str(NEWS_DB))
     try:
         con.execute(SCHEMA)
+        _migrate(con)
         before = con.execute("SELECT count(*) FROM news").fetchone()[0]
         for r in rows:
             con.execute("""
                 INSERT INTO news
-                SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+                SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                 WHERE NOT EXISTS (SELECT 1 FROM news
                                   WHERE source = ? AND article_id = ?)
             """, [r["source"], r["article_id"], r["published_ts"],
                   r["fetched_ts"], r["headline"], r["body"], r["url"],
-                  r["players"], r["teams"],
+                  r["players"], r["teams"], r["category"],
                   r["source"], r["article_id"]])
+        # backfill categories for rows from before the category column existed
+        con.execute("""
+            UPDATE news SET category = CASE
+                WHEN source = 'espn_injuries' THEN 'injury'
+                ELSE 'general' END
+            WHERE category IS NULL
+        """)
         total = con.execute("SELECT count(*) FROM news").fetchone()[0]
         inserted = total - before
+        rebuild_fts(con)
     finally:
         con.close()
     matched = sum(1 for r in rows for p in r["players"] if not p.startswith("espn:"))

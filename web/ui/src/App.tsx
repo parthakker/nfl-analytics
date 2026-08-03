@@ -9,6 +9,10 @@ import Players from "./pages/Players";
 import SchedulePage from "./pages/SchedulePage";
 import NewsPage from "./pages/NewsPage";
 import Markets from "./pages/Markets";
+import Betting from "./pages/Betting";
+import Coaches from "./pages/Coaches";
+import CoachPage from "./pages/CoachPage";
+import Referees from "./pages/Referees";
 
 export default function App() {
   return (
@@ -23,6 +27,10 @@ export default function App() {
             <Route path="/schedule" element={<SchedulePage />} />
             <Route path="/news" element={<NewsPage />} />
             <Route path="/markets" element={<Markets />} />
+            <Route path="/betting" element={<Betting />} />
+            <Route path="/coaches" element={<Coaches />} />
+            <Route path="/coach/:name" element={<CoachPage />} />
+            <Route path="/refs" element={<Referees />} />
           </Route>
         </Routes>
       </ChatProvider>

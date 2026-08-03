@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import {
   api, type NewsItem, type RosterPlayer, type TeamDetail, type TeamScheduleGame,
 } from "../lib/api";
@@ -97,7 +97,8 @@ export default function TeamHUD() {
               <li key={h.season} className="flex items-center gap-3">
                 <span className="tabular-nums" style={{ color: "var(--muted)" }}>{h.season}</span>
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
-                <span className="font-medium">{h.coach}</span>
+                <Link to={`/coach/${encodeURIComponent(h.coach)}`}
+                      className="font-medium hover:underline">{h.coach}</Link>
                 <span className="ml-auto tabular-nums" style={{ color: "var(--muted)" }}>
                   {h.wins}–{h.games - h.wins}
                 </span>

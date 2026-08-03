@@ -4,9 +4,12 @@ const LINKS = [
   ["/", "Command"],
   ["/leaders", "Leaders"],
   ["/players", "Players"],
+  ["/coaches", "Coaches"],
+  ["/refs", "Refs"],
   ["/schedule", "Schedule"],
-  ["/news", "News"],
+  ["/betting", "Betting"],
   ["/markets", "Markets"],
+  ["/news", "News"],
 ] as const;
 
 export default function Shell() {
