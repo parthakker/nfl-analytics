@@ -1,0 +1,40 @@
+name: Claude
+
+# @claude assistant on issues and PRs.
+# SECURITY: this is a PUBLIC repo and runs bill to the ANTHROPIC_API_KEY
+# secret — the job-level `if` restricts triggering to the repo owner. Do not
+# remove that gate. Also keep "require approval for outside collaborators"
+# enabled in Settings -> Actions.
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened]
+
+jobs:
+  claude:
+    if: >-
+      (
+        (github.event_name == 'issues' &&
+         contains(github.event.issue.body, '@claude') &&
+         github.event.issue.user.login == 'parthakker') ||
+        (github.event_name != 'issues' &&
+         contains(github.event.comment.body, '@claude') &&
+         github.event.comment.user.login == 'parthakker')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
