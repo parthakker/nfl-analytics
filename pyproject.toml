@@ -1,0 +1,22 @@
+[project]
+name = "nfl-analytics"
+version = "0.1.0"
+description = "Personal NFL analytics: DuckDB warehouse, prediction model, Kalshi edge scan, Sleeper fantasy, MCP server"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.5",
+    "pandas>=2.2",
+    "httpx>=0.27",
+    "scikit-learn>=1.5",
+    "mcp[cli]>=1.2",
+]
+
+[project.scripts]
+nfl-mcp = "nfl_analytics.mcp_server:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

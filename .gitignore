@@ -1,0 +1,21 @@
+# data lives in nflverse releases, not in git — rebuild with:
+#   python scripts/refresh_data.py --bootstrap
+data/
+*.duckdb
+*.duckdb.wal
+logs/
+
+# local config & secrets (none required, but just in case)
+.env
+.streamlit/secrets.toml
+
+# python
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+
+# OS noise
+Thumbs.db
+.DS_Store
