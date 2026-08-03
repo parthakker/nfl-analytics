@@ -88,7 +88,18 @@ proactively; kalshi_edge_scan intentionally not built yet.
 
 Derived views: `v_team_games` (team-game with win, rest_days, tz_shift_hours),
 `v_strength_of_schedule`, `v_team_epa_season`, `v_team_def_epa_season`,
-`v_coach_matchups`, `v_redzone_usage_week`.
+`v_coach_matchups`, `v_redzone_usage_week`, `v_player_stats_week_all` (incl.
+`fantasy_points_half_ppr`), `v_coach_seasons` (records+ATS+playoffs),
+`v_coach_tendencies` (4th-down go rate, PROE, tempo — rbsdm-style),
+`v_coach_def_tendencies`, `v_referee_games`/`v_referee_seasons` (head refs
+2015+: penalties, over rate, home bias). Curated scheme metadata (HC/OC/DC +
+offense/defense identity per team) lives in `data/coaches_meta.json` — HAND
+EDITED, never overwritten by refresh; OC/DC mostly unrecorded, fill freely.
+News store has `category` (injury/trade-signing/depth-chart/legal/general)
+and a DuckDB FTS index (news_search MCP tool / /api/news/search). Kalshi db
+also holds `line_snapshots` (Vegas line history, appended each refresh).
+Jarvis pages now include Coaches, Refs, Betting (market-vs-market
+dislocations only — the model remains paused).
 
 ## Join keys
 
