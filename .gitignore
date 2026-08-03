@@ -9,6 +9,10 @@ logs/
 .env
 .streamlit/secrets.toml
 
+# frontend build artifacts
+web/ui/node_modules/
+web/ui/dist/
+
 # python
 __pycache__/
 *.pyc

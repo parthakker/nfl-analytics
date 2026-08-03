@@ -45,6 +45,23 @@ coaching history, schedules with lines, league leaders, and news.
 *(Windows: you can also create a shortcut to a `.cmd` file containing that
 command — see `NFL Dashboard.cmd` for a template.)*
 
+## 4b. The Jarvis UI (optional — the futuristic one)
+
+A second, fancier front end (dark glass "command center" with team HUDs,
+live market board, and built-in AI chat). Requires Node.js
+([nodejs.org](https://nodejs.org) LTS, or `winget install OpenJS.NodeJS.LTS`):
+
+```bash
+cd web/ui
+npm install
+npm run build
+cd ../..
+python web/run_web.py
+```
+
+Opens at http://localhost:8000. The chat page additionally needs Claude Code
+(section 6). Note for OneDrive users: exclude `web/ui/node_modules` from sync.
+
 ## 5. Keep it fresh (optional but recommended)
 
 During the season, data updates nightly at the source. Refresh yours with:

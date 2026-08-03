@@ -1,0 +1,85 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+:root {
+  --arc: #22d3ee;
+  --accent: var(--arc);
+  --accent-glow: rgba(34, 211, 238, 0.5);
+  --bg-0: #04070c;
+  --bg-1: #0a1017;
+  --glass: rgba(16, 24, 36, 0.55);
+  --stroke: rgba(148, 197, 255, 0.14);
+  --text: #dbe7f3;
+  --muted: #7d93a8;
+}
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* layered ambient background */
+.shell-bg {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden;
+  background:
+    radial-gradient(1200px 700px at 70% -10%, rgba(34, 211, 238, 0.08), transparent 60%),
+    radial-gradient(900px 600px at 10% 110%, rgba(34, 211, 238, 0.05), transparent 55%),
+    var(--bg-0);
+}
+.shell-bg::before {
+  content: ""; position: absolute; inset: 0; opacity: 0.05;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 47px, var(--arc) 48px),
+    repeating-linear-gradient(90deg, transparent, transparent 47px, var(--arc) 48px);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .shell-bg::after {
+    content: ""; position: absolute; width: 42rem; height: 42rem;
+    border-radius: 50%; filter: blur(120px);
+    background: rgba(34, 211, 238, 0.07);
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  @keyframes drift {
+    from { transform: translate(-10%, 60%); }
+    to   { transform: translate(110%, 10%); }
+  }
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--stroke);
+  border-radius: 16px;
+  box-shadow: 0 0 24px -8px var(--accent-glow),
+              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.glow-text { text-shadow: 0 0 18px var(--accent-glow); }
+
+.logo-glow { filter: drop-shadow(0 0 10px var(--accent-glow)); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pulse { animation: pulse 2.2s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+}
+
+/* news ticker marquee */
+@media (prefers-reduced-motion: no-preference) {
+  .ticker-track { animation: ticker 60s linear infinite; }
+  .ticker-track:hover { animation-play-state: paused; }
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+}
+
+/* recessive scrollbars */
+* { scrollbar-width: thin; scrollbar-color: var(--stroke) transparent; }

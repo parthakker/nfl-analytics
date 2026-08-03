@@ -12,7 +12,8 @@ questions in plain English.
 | Piece | What it does |
 |---|---|
 | **Warehouse** (DuckDB) | 909k+ plays (2007–2025), player/team stats, rosters, injuries, officials, draft history, and the full 2026 schedule with betting lines — all queryable in milliseconds |
-| **Dashboard** (Streamlit) | Division standings with logos → click into team pages (roster, coaching history, efficiency charts, news, schedule) → players, league leaders, schedules & lines |
+| **Jarvis UI** (React + FastAPI) | A dark, glowing "command center": division constellation with all 32 team logos → per-team HUDs in team colors (stat rings, efficiency charts, roster, coach lineage) → live prediction-market board → **built-in streaming AI chat** (Ctrl-K) |
+| **Dashboard** (Streamlit) | The simpler original UI: division standings → team pages → players, league leaders, schedules & lines |
 | **News engine** | Auto-polls ESPN plus all 32 official team websites every 6 hours; headlines are tagged to players/teams in the warehouse |
 | **Kalshi tracker** | Records prediction-market prices (game winners, spreads, totals, win totals, Super Bowl futures) every 6 hours, building line-movement history |
 | **Prediction model** | Opponent-adjusted EPA ratings → win probabilities, honestly backtested against 18 years of closing lines (spoiler: Vegas wins — the model's value is calibration, and the [report](docs/model_report.md) shows exactly by how much) |

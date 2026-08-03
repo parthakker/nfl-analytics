@@ -12,6 +12,17 @@ before writing non-trivial queries against a table.
 
 ## Front end
 
+**Jarvis UI (primary):** `web/` — FastAPI (`web/api/`, routers over the three
+duckdb files via db.read_conn) + React/Vite/Tailwind SPA (`web/ui/`, built to
+dist, served on :8000). Launch: "NFL Jarvis" desktop shortcut or
+`python web/run_web.py`. Rebuild UI after edits: `cd web/ui && npm run build`.
+Dev mode: uvicorn --reload --reload-dir web/api + `npm run dev` (:5173 proxies
+/api). Theming: CSS vars --accent/--accent-glow (arc cyan default; TeamHUD
+overrides with glow-safe team color). Chat = SSE over `claude -p
+--output-format stream-json` (chat.py; CHAT_STREAMING=0 forces json fallback).
+
+## Streamlit front end (legacy, kept for friends)
+
 `dashboard.py` (Streamlit v2) is the user-facing UI — launched via the
 "NFL Dashboard" desktop shortcut or `python -m streamlit run dashboard.py`.
 Pages: League (division grid w/ logos → click into teams), Team (banner,
