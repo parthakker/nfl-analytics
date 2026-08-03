@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from nfl_analytics.db import StoreBusyError
 
-from .deps import ROOT, read_conn
+from .deps import read_conn
 from .routers import (
     betting,
     chat,
@@ -63,9 +63,11 @@ DIST = Path(__file__).resolve().parent.parent / "ui" / "dist"
 
 @app.get("/api/health")
 def health() -> dict:
-    dbs = {}
-    for name in ("nfl", "news", "kalshi"):
-        dbs[name] = (ROOT / f"{name}.duckdb").exists()
+    from nfl_analytics.config import KALSHI_DB, NEWS_DB, NFL_DB
+
+    # configured paths, not hardcoded root files — env overrides (tests, CI
+    # fixtures) must be honored
+    dbs = {"nfl": NFL_DB.exists(), "news": NEWS_DB.exists(), "kalshi": KALSHI_DB.exists()}
     try:
         with read_conn() as con:
             con.execute("SELECT 1")
