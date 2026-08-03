@@ -1,18 +1,27 @@
 [project]
 name = "nfl-analytics"
-version = "0.1.0"
-description = "Personal NFL analytics: DuckDB warehouse, prediction model, Kalshi edge scan, Sleeper fantasy, MCP server"
+version = "0.2.0"
+description = "Personal NFL analytics: DuckDB warehouse, Jarvis web UI, prediction model, Kalshi tracker, MCP server"
 requires-python = ">=3.12"
 dependencies = [
     "duckdb>=1.5",
     "pandas>=2.2",
+    "numpy>=2.0",
     "httpx>=0.27",
     "scikit-learn>=1.5",
     "mcp[cli]>=1.2",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sse-starlette>=2.1",
 ]
+
+[project.optional-dependencies]
+legacy = ["streamlit>=1.38", "altair>=5"]
+dev = ["pytest>=8", "pytest-xdist>=3", "ruff>=0.8"]
 
 [project.scripts]
 nfl-mcp = "nfl_analytics.mcp_server:main"
+nfl = "nfl_analytics.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -20,3 +29,19 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["legacy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "warehouse: requires a real or fixture nfl.duckdb (auto-skipped when absent)",
+    "api: FastAPI contract tests (requires DB)",
+]
