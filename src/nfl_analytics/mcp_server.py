@@ -381,7 +381,7 @@ def data_status() -> dict:
         except Exception:
             snaps = (0, None)
     tails = {}
-    for name in ("refresh", "news", "kalshi"):
+    for name in ("refresh", "news", "kalshi", "smoke", "jarvis"):
         lf = LOGS_DIR / f"{name}.log"
         tails[name] = ("\n".join(lf.read_text(encoding="utf-8").splitlines()[-3:])
                        if lf.exists() else "never run")

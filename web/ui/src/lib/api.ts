@@ -68,8 +68,13 @@ export interface MarketRow {
   delta_24h: number | null; as_of: string; spark: (number | null)[];
 }
 
-async function get<T>(path: string): Promise<T> {
+async function get<T>(path: string, retried = false): Promise<T> {
   const r = await fetch(path);
+  if (r.status === 503 && !retried) {
+    // a scheduled data collector briefly holds the store — wait it out once
+    await new Promise((res) => setTimeout(res, 3000));
+    return get<T>(path, true);
+  }
   if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
   return r.json() as Promise<T>;
 }

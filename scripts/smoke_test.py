@@ -1,0 +1,95 @@
+"""Smoke test: hit every Jarvis API endpoint and verify real data flows.
+
+Uses the running server on :8000 if present, otherwise starts a temporary
+one. Each check requires NON-EMPTY data, not just HTTP 200. One summary
+line per run goes to logs/smoke.log; failures list what broke.
+
+Run:  python scripts/smoke_test.py        (scheduled daily 07:30)
+"""
+
+import json
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+import httpx
+
+ROOT = Path(__file__).resolve().parent.parent
+BASE = "http://127.0.0.1:8000"
+
+# endpoint -> predicate(json) that must be truthy for a PASS
+CHECKS = {
+    "/api/health": lambda js: js.get("ok") is True,
+    "/api/meta": lambda js: len(js.get("teams", {})) == 32,
+    "/api/league/overview": lambda js: len(js.get("divisions", [])) == 8
+        and all(len(d["teams"]) == 4 for d in js["divisions"]),
+    "/api/teams/DET": lambda js: js.get("record", {}).get("w") is not None
+        and js.get("coach", {}).get("history"),
+    "/api/teams/DET/epa": lambda js: len(js.get("weeks", [])) >= 15,
+    "/api/teams/DET/roster": lambda js: len(js.get("players", [])) > 40,
+    "/api/teams/DET/schedule": lambda js: len(js.get("games", [])) >= 17,
+    "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
+    "/api/players/search?q=mahomes": lambda js: len(js.get("hits", [])) > 0,
+    "/api/leaders?cat=rushing&season=2025": lambda js: len(js.get("rows", [])) == 25,
+    "/api/schedule?season=2026&week=1": lambda js: len(js.get("games", [])) >= 14,
+    "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
+    "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
+}
+
+
+def run_checks(client: httpx.Client) -> list[str]:
+    failures = []
+    for path, ok in CHECKS.items():
+        try:
+            r = client.get(BASE + path, timeout=30)
+            if r.status_code == 503:  # store busy — one retry
+                time.sleep(4)
+                r = client.get(BASE + path, timeout=30)
+            if r.status_code != 200:
+                failures.append(f"{path}: HTTP {r.status_code} {r.text[:80]}")
+            elif not ok(r.json()):
+                failures.append(f"{path}: 200 but data check failed: {r.text[:100]}")
+        except Exception as e:
+            failures.append(f"{path}: {type(e).__name__} {str(e)[:80]}")
+    return failures
+
+
+def main() -> int:
+    client = httpx.Client()
+    proc = None
+    try:
+        client.get(BASE + "/api/health", timeout=3)
+    except Exception:
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "uvicorn", "web.api.main:app",
+             "--port", "8000", "--log-level", "warning"],
+            cwd=str(ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(20):
+            time.sleep(1)
+            try:
+                client.get(BASE + "/api/health", timeout=2)
+                break
+            except Exception:
+                pass
+
+    try:
+        failures = run_checks(client)
+    finally:
+        if proc:
+            proc.kill()
+
+    stamp = datetime.now().isoformat()
+    line = (f"{stamp} smoke: {len(CHECKS) - len(failures)}/{len(CHECKS)} passed"
+            + (f" | FAILURES: {'; '.join(failures)}" if failures else ""))
+    print(line)
+    logs = ROOT / "logs"
+    logs.mkdir(exist_ok=True)
+    with open(logs / "smoke.log", "a", encoding="utf-8") as f:
+        f.write(line + "\n")
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

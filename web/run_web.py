@@ -22,9 +22,26 @@ def main() -> None:
         print("UI not built yet. Run:")
         print("  cd web/ui && npm install && npm run build")
         raise SystemExit(1)
+
+    # everything the server does lands in logs/jarvis.log for post-mortems
+    logs = ROOT / "logs"
+    logs.mkdir(exist_ok=True)
+    import logging
+    handler = logging.FileHandler(logs / "jarvis.log", encoding="utf-8")
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s"))
+    for name in ("uvicorn", "uvicorn.error", "uvicorn.access", "web"):
+        lg = logging.getLogger(name)
+        lg.addHandler(handler)
+        lg.setLevel(logging.INFO)
+    logging.getLogger("web").info("=== Jarvis starting ===")
+
     threading.Timer(1.5, webbrowser.open, ["http://localhost:8000"]).start()
     print("NFL Jarvis online -> http://localhost:8000  (Ctrl+C to stop)")
-    uvicorn.run("web.api.main:app", host="127.0.0.1", port=8000, log_level="warning")
+    try:
+        uvicorn.run("web.api.main:app", host="127.0.0.1", port=8000, log_level="info")
+    except Exception:
+        logging.getLogger("web").exception("Jarvis crashed")
+        raise
 
 
 if __name__ == "__main__":

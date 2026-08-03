@@ -1,9 +1,13 @@
-"""Read-only DuckDB access for MCP tools.
+"""Read-only DuckDB access for MCP tools and the web API.
 
 Every tool call opens a short-lived read_only connection so the warehouse
-is never write-locked by the server (refresh/train can rebuild any time).
+is never write-locked by long-lived servers. Opens and attaches RETRY with
+backoff: the scheduled collectors (kalshi snapshot, news poll, weekly
+refresh) briefly hold write locks, and DuckDB allows one writer OR many
+readers per file — without retries, any request racing a collector fails.
 """
 
+import time
 from contextlib import contextmanager
 
 import duckdb
@@ -11,14 +15,38 @@ import duckdb
 from .config import NFL_DB, KALSHI_DB, NEWS_DB
 
 
+class StoreBusyError(RuntimeError):
+    """A database file is momentarily locked by a scheduled writer."""
+
+
+def _retry(fn, what: str, tries: int = 4, delay: float = 0.6):
+    last = None
+    for i in range(tries):
+        try:
+            return fn()
+        except duckdb.Error as e:
+            last = e
+            msg = str(e).lower()
+            if "lock" not in msg and "file handle" not in msg and "being used" not in msg:
+                raise
+            time.sleep(delay * (i + 1))
+    raise StoreBusyError(
+        f"{what} is busy (a scheduled data update is writing to it) — "
+        f"try again in a few seconds. [{last}]")
+
+
 @contextmanager
 def read_conn(attach_kalshi: bool = False, attach_news: bool = False):
-    con = duckdb.connect(str(NFL_DB), read_only=True)
+    con = _retry(lambda: duckdb.connect(str(NFL_DB), read_only=True), "warehouse")
     try:
         if attach_kalshi and KALSHI_DB.exists():
-            con.execute(f"ATTACH '{KALSHI_DB.as_posix()}' AS kalshi (READ_ONLY)")
+            _retry(lambda: con.execute(
+                f"ATTACH '{KALSHI_DB.as_posix()}' AS kalshi (READ_ONLY)"),
+                "market history store")
         if attach_news and NEWS_DB.exists():
-            con.execute(f"ATTACH '{NEWS_DB.as_posix()}' AS newsdb (READ_ONLY)")
+            _retry(lambda: con.execute(
+                f"ATTACH '{NEWS_DB.as_posix()}' AS newsdb (READ_ONLY)"),
+                "news store")
         yield con
     finally:
         con.close()

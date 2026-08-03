@@ -12,6 +12,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from nfl_analytics.db import StoreBusyError
+
 from .deps import ROOT, read_conn
 from .routers import chat, leaders, league, markets, meta, news, players, schedule, teams
 
@@ -19,6 +21,11 @@ app = FastAPI(title="NFL Jarvis", docs_url="/api/docs", openapi_url="/api/openap
 
 for _r in (meta, league, teams, players, leaders, schedule, news, markets, chat):
     app.include_router(_r.router)
+
+
+@app.exception_handler(StoreBusyError)
+def busy_handler(request: Request, exc: StoreBusyError):
+    return JSONResponse({"error": str(exc), "retryable": True}, status_code=503)
 
 DIST = Path(__file__).resolve().parent.parent / "ui" / "dist"
 
