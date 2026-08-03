@@ -1,39 +1,15 @@
 # NFL Analytics Warehouse
 
-**Repo:** https://github.com/parthakker/nfl-analytics (public). Local git
-identity is Parth's personal email (repo-local config). `data/`, `*.duckdb`,
-and `logs/` are gitignored — fresh clones rebuild via
-`python scripts/refresh_data.py --bootstrap`. Commit when Parth asks.
+**Repo:** https://github.com/parthakker/nfl-analytics (public, MIT). Local git
+identity is Parth's personal email (repo-local config). `data/*` (except the
+two hand-curated JSONs), `*.duckdb`, and `logs/` are gitignored — fresh clones
+rebuild via `nfl refresh --bootstrap`. Commit when Parth asks; follow
+`/release` for the ritual.
 
-Personal NFL analyst project. All questions are answered by running SQL against
-`nfl.duckdb` (DuckDB, project root) — computed answers, not retrieval. Detailed
-per-table dictionaries live in `docs/dictionary/*.md`; read the relevant one
-before writing non-trivial queries against a table.
-
-## Front end
-
-**Jarvis UI (primary):** `web/` — FastAPI (`web/api/`, routers over the three
-duckdb files via db.read_conn) + React/Vite/Tailwind SPA (`web/ui/`, built to
-dist, served on :8000). Launch: "NFL Jarvis" desktop shortcut or
-`python web/run_web.py`. Rebuild UI after edits: `cd web/ui && npm run build`.
-Dev mode: uvicorn --reload --reload-dir web/api + `npm run dev` (:5173 proxies
-/api). Theming: CSS vars --accent/--accent-glow (arc cyan default; TeamHUD
-overrides with glow-safe team color). Chat = SSE over `claude -p
---output-format stream-json` (chat.py; CHAT_STREAMING=0 forces json fallback).
-
-## Streamlit front end (legacy, kept for friends)
-
-`dashboard.py` (Streamlit v2) is the user-facing UI — launched via the
-"NFL Dashboard" desktop shortcut or `python -m streamlit run dashboard.py`.
-Pages: League (division grid w/ logos → click into teams), Team (banner,
-Overview/Roster/Coaching/News/Schedule tabs), Players, Leaders, Schedule,
-News (ESPN + all-32 team-site RSS), Chat (embedded — subprocess
-`claude -p --resume <session> --allowedTools mcp__nfl`, ~$0.30/question).
-Team metadata (names/divisions/domains/logos/colors) lives in
-`src/nfl_analytics/teams_meta.py` — single source of truth.
-Keep it SIMPLE per Parth's explicit preference; long-term vision (US map
-navigation, referee pages) is in memory. The model is deliberately not
-surfaced in the dashboard. `data/.MasterData/` was deleted 2026-08-02.
+Personal NFL analyst project. Questions are answered by running SQL against
+`nfl.duckdb` (DuckDB, repo root) — computed answers, not retrieval. Before
+non-trivial SQL, load the `warehouse-queries` skill (table grid, view catalog,
+query patterns); per-table dictionaries live in `docs/dictionary/*.md`.
 
 ## How to query
 
@@ -41,142 +17,83 @@ surfaced in the dashboard. `data/.MasterData/` was deleted 2026-08-02.
 python -c "import duckdb; con=duckdb.connect('nfl.duckdb', read_only=True); print(con.execute('''<SQL>''').fetchdf().to_string())"
 ```
 
-Always connect `read_only=True` for analysis. Rebuild scripts:
-`python scripts/build_warehouse.py` (raw tables, ~30s) then
-`python scripts/build_views.py` (views, aliases, macro).
+Always `read_only=True` for analysis. Never write to any `*.duckdb` outside
+the build scripts (enforced by permissions.deny).
 
-## Tables (grain — coverage)
+## Commands
 
-| Table | Grain | Seasons |
-|---|---|---|
-| play_by_play | play (372 cols) | 1999–2025 |
-| games | game (derived: coaches, scores, spread/total, roof, weather) | 1999–2025 |
-| schedules | game incl. UPCOMING; odds, rest, QBs, refs (see dictionary) | 1999–2026 |
-| player_stats_week / _season | player-week / player-season(type) offense | 2007–2024 |
-| player_stats_week_v2 / _season_v2 | unified 145-col v2 format (off+def+kicking) | 2025+ |
-| v_player_stats_week_all | compat view: old + v2 under old column names | 2007–2025 |
-| player_stats_def_week / _def_season | same, defense | 2007–2024 |
-| player_stats_kicking_week / _kicking_season | same, kicking | 2007–2024 |
-| team_stats | team-season-seasontype (101→131 cols; new cols null pre-2025) | 2007–2025 |
-| advstats_season_{pass,rush,rec,def} | player-season (PFR) | 2018–2025 |
-| advstats_week_{pass,rush,rec,def} | player-game (PFR) | 2018–2025 |
-| ngs_{passing,receiving,rushing} | player-week + week=0 season rows | 2016–2025 |
-| players | player (master ID bridge, gsis_id PK) | all |
-| rosters_weekly | player-team-week | 2002–2026 |
-| injuries | player-week injury report | 2009–2025 |
-| draft_picks | draft slot | 1980–2026 |
-| officials | official-game | 2015–2025 |
-| snap_counts | player-game snap counts (off/def/ST + pct) | 2012–2025 |
-| depth_charts | team-week depth chart slots | 2001–2025 |
-| participation | play (personnel, defenders_in_box, pass rushers; joins pbp on nflverse_game_id+play_id) | 2016–2024 (2016–23 reliable; feed discontinued) |
-| ftn_charting | play (play-action, screen, RPO, motion, blitzers) | 2022–2025 |
-| combine | prospect-year | 2000–2026 |
-| espn_qbr_week / _season | QB-week / QB-season QBR | 2006–2025 |
-| stadiums / stadium_aliases / game_venues / team_home_venues | curated venue db (data/stadiums.json, HAND EDITED) + per-game venue resolution incl. internationals | 1999–2026 |
-| game_weather_parsed | game (structured parse of pbp weather text: sky/temp/humidity/wind/gusts) | 1999–2025 |
-| weather_openmeteo | game (Open-Meteo archive gaps + forecasts; scripts/fetch_weather.py → data/weather/openmeteo.csv) | sparse |
-| team_aliases / team_timezones | lookup | — |
+- `nfl <cmd>` (or `python -m nfl_analytics.cli <cmd>`): refresh / rebuild /
+  views / audit / smoke / weather / train / news / kalshi / fixture.
+  Rebuild = `nfl rebuild` then `nfl views` (~60s).
+- Tests: `pytest tests/unit` (fast, no DB) · `pytest -m warehouse` (real-DB
+  invariants) · `pytest -m api` (TestClient contracts) · `cd web/ui && npm run
+  e2e` (Playwright vs live server). Prefer running single tests, not the whole
+  suite. CI runs unit + fixture tiers (`NFL_TEST_USE_FIXTURE=1`).
+- UI rebuild after web/ui edits: `cd web/ui && npm run build`.
+- Jarvis (primary UI): "NFL Jarvis" shortcut or `python web/run_web.py` (:8000).
+  Legacy Streamlit lives in `legacy/` — frozen, don't extend.
 
-**Refresh:** `python scripts/refresh_data.py` (weekly in-season; `--full` for
-everything). nflverse updates nightly. 2025+ player stats use the renamed v2
-schema — query `v_player_stats_week_all` for cross-era weekly offense; the raw
-pre-2025 tables STOP at 2024 and will not grow.
+## Front end
 
-**Automation (Windows Task Scheduler, created 2026-08-02):**
-`NFL-WeeklyRefresh` (Tue 08:00 → refresh_data.py), `NFL-NewsPoll` (every 6h →
-poll_news.py → news.duckdb), `NFL-KalshiSnapshot` (every 6h →
-snapshot_kalshi.py → kalshi.duckdb). All log one line per run to `logs/*.log`;
-the `data_status` MCP tool surfaces the tails. Manage with
-`schtasks /Query|/Run|/Delete /TN <name>`.
+`web/` — FastAPI routers (`web/api/`) + React/Vite/Tailwind SPA (`web/ui/`).
+Pages: Command, TeamHUD, Leaders, Players, Coaches, Refs, Schedule, H2H,
+Betting, Markets, News, Knowledge, plus `/matchup/:gameId` detail. Conventions
+in `.claude/rules/{frontend,api}.md` (auto-load when touching those dirs).
+Chat = SSE over `claude -p` (chat.py). The prediction model is built but
+PAUSED per Parth — don't surface it proactively.
 
-**Sidecar DBs:** `kalshi.duckdb` (market snapshots; series KXNFLGAME/SPREAD/
-TOTAL/WINS/SB) and `news.duckdb` (ESPN news+injuries, players tagged by
-gsis_id). Attached read-only by MCP tools; never part of the warehouse rebuild.
-**Model status:** built and validated but PAUSED per Parth — don't surface it
-proactively; kalshi_edge_scan intentionally not built yet.
+## Data & automation
 
-Derived views: `v_team_games` (team-game with win, rest_days + rest_days_sched/
-is_off_bye/short_week, **travel_miles** via haversine from curated venue coords,
-venue cols, tz_shift_hours recomputed from real venues incl. internationals),
-`v_strength_of_schedule`, `v_team_epa_season`, `v_team_def_epa_season`,
-`v_coach_matchups` (now + ATS + last_meeting_game_id), `v_redzone_usage_week`,
-`v_player_stats_week_all` (incl. `fantasy_points_half_ppr`), `v_coach_seasons`
-(records+ATS+playoffs), `v_coach_tendencies` (4th-down go rate, PROE, tempo),
-`v_coach_def_tendencies`, `v_referee_games`/`v_referee_seasons` (head refs
-**1999+** — officials 2015+ coalesced with schedules.referee; aggregate on
-`ref_key`, not name/official_id), `v_referee_team_splits` (ref × team W%/ATS/
-pen diff), `v_matchup_games`/`v_team_matchups` (team-pair series 1999+,
-franchise-canonicalized, venue+ATS splits, signed current_streak),
-`v_team_travel_season`, `v_game_weather` (one weather answer per game:
-indoor → pbp parse → open-meteo → schedules; forecasts for upcoming). Curated scheme metadata (HC/OC/DC +
-offense/defense identity per team) lives in `data/coaches_meta.json` — HAND
-EDITED, never overwritten by refresh; OC/DC mostly unrecorded, fill freely.
-News store has `category` (injury/trade-signing/depth-chart/legal/general)
-and a DuckDB FTS index (news_search MCP tool / /api/news/search). Kalshi db
-also holds `line_snapshots` (Vegas line history, appended each refresh).
-Jarvis pages now include Coaches, Refs, Betting (market-vs-market
-dislocations only — the model remains paused), **Matchup**
-(`/matchup/:gameId` — ESPN-style card for any 1999+ or upcoming game: travel,
-rest, ref history+team splits, coach h2h, weather/forecast, market, injuries,
-series; linked from Schedule rows, Betting cards, TeamHUD strip), **H2H**
-(`/h2h/:a/:b` — all-time series explorer w/ era/venue/site splits), and
-**Knowledge** (`/knowledge` — 15-chapter ebook served from `docs/knowledge/*.md`
-via react-markdown; chapters are hand-editable, no rebuild needed; SVG diagrams
-in `web/ui/public/knowledge/`).
+**Warehouse:** nflverse, pbp 1999–2025 + schedules 1999–2026 (incl. upcoming,
+odds, refs). Weekly stats are v2-schema 2025+ — query `v_player_stats_week_all`
+for cross-era. Sidecars: `kalshi.duckdb` (market + Vegas line snapshots),
+`news.duckdb` (tagged news + FTS). Hand-curated (never overwritten by
+refresh): `data/stadiums.json`, `data/coaches_meta.json` — rules in
+`.claude/rules/data-curation.md`.
+
+**Task Scheduler (5 jobs, one log line per run in `logs/*.log`):**
+`NFL-WeeklyRefresh` (Tue 08:00 → refresh_data.py), `NFL-NewsPoll` (6h),
+`NFL-KalshiSnapshot` (6h), `NFL-SmokeTest` (daily 07:30),
+`NFL-NightlyHealth` (daily 06:45 → headless `claude -p "/health-check"`).
+Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
 
 ## Join keys
 
-- **Player:** `gsis_id` (`00-0033873` format; named `player_id` in player_stats,
-  `player_gsis_id` in NGS). Advanced stats key on `pfr_id`/`pfr_player_id` ONLY —
-  bridge via `players` (has both; join verified 99.5%+).
-- **Game:** `game_id` = `2024_01_ARI_BUF` (season_week_AWAY_HOME) everywhere
-  EXCEPT `officials.game_id`, which is numeric and matches `games.old_game_id`.
-- **Team-week:** `season` + `week` + team code.
+- **Player:** `gsis_id` (`00-0033873`; named `player_id` in player_stats,
+  `player_gsis_id` in NGS). Advanced stats key on `pfr_id` ONLY — bridge via
+  `players`. ESPN QBR keys on `espn_id`.
+- **Game:** `game_id` = `2024_01_ARI_BUF` everywhere EXCEPT
+  `officials.game_id` (numeric = `games.old_game_id`). participation/ftn join
+  pbp on `nflverse_game_id` (+ play_id).
+- **Team-week:** `season` + `week` + team code; `canon_team(col)` macro for
+  legacy codes (OAK/SD/STL etc.).
 
-## Critical gotchas (each verified; details in docs/dictionary/)
+## Critical gotchas (one-liners — detail in .claude/rules/warehouse.md + docs/dictionary/)
 
-1. **Season tables double-count:** `player_stats_*_season` contain REG, POST,
-   AND combined `REG+POST` rows — always filter `season_type`. `team_stats` has
-   only `REG` or `REG+POST`: playoff teams have NO pure-REG row, so compare
-   per-game rates, or aggregate REG from weekly/pbp instead.
-2. **NGS `week = 0` rows are season aggregates** (REG only, qualified players
-   only) mixed into the same tables. Filter `week = 0` or `week > 0` explicitly.
-3. **Team codes:** pbp, player_stats, team_stats, NGS are canonical
-   (LA/LAC/LV/JAX), but injuries use OAK/SD/STL, NGS uses LAR,
-   `advstats_season_pass` uses LVR, and draft_picks uses PFR codes
-   (KAN/GNB/TAM/...). Use `canon_team(col)` macro (or `team_aliases`) when
-   joining across tables. NGS also backdates LV/LAC to pre-relocation seasons.
-4. **advstats percentage scales differ:** `advstats_season_pass` pcts are 0–100;
-   all other advstats tables are 0–1 fractions. Small-sample rows produce
-   absurd ratios (pressure_pct 150); require attempt minimums.
-5. **advstats_week_def / _week_rush numerics are VARCHAR** with `'NA'` strings
-   (2018–21) — `TRY_CAST(col AS DOUBLE)` is mandatory. Season advstats collapse
-   traded players into `2TM`/`3TM` rows.
-6. **Postseason week numbering shifted in 2021** (17-game era): POST weeks
-   18–21 before 2021, 19–22 after. `success` = `epa > 0` exactly. Scrambles are
-   `pass=1, play_type='run'`. `spread_line` positive = home team favored;
-   in `v_team_games` it is flipped to always mean "this team favored by".
-7. **players.gsis_id is unique**, but ~6.4k historical rows carry ESB-format
-   ids that never join. rosters_weekly (gsis_id, season, week) has same-team
-   dup rows pre-2017 — dedupe or use 2017+. `roster_weekly_2025` is a preseason
-   partial with NULL week. draft_picks `car_av` is 100% NULL — use `w_av`.
-8. **Coverage floors differ:** full-join analyses are capped by the narrowest
-   source (advstats 2018+, NGS 2016+, officials 2015+, injuries 2009+).
-   NGS rush-yards-over-expected cols are NULL 2016–17.
-9. **Weather:** `temp`/`wind` NULL for all non-outdoor roofs (+122 outdoor
-   games); `surface` has a `'grass '` (trailing space) variant.
-10. **Aggregate officials by `official_id`**, not name (name spelling varies).
+1. Season stat tables mix REG / POST / REG+POST rows — always filter `season_type`.
+2. NGS `week = 0` rows are season aggregates — filter explicitly.
+3. Team codes vary by table — `canon_team()` when joining across tables.
+4. advstats pct scales differ (season_pass 0–100, rest 0–1); require attempt minimums.
+5. advstats_week_def/_rush numerics are VARCHAR with 'NA' — `TRY_CAST` mandatory.
+6. POST week numbering shifted in 2021; `success` = `epa > 0`; `spread_line`
+   positive = home favored (team-perspective in v_team_games/v_matchup_games).
+7. players has ~6.4k ESB-format ids that never join; rosters_weekly has
+   pre-2017 dup rows.
+8. Coverage floors: advstats 2018+, NGS 2016+, officials 2015+ (head refs
+   1999+ via schedules.referee on `ref_key`), injuries 2009+, snap_counts
+   2012+, participation 2016–2023 only (discontinued), ftn 2022+.
+9. Weather: temp/wind NULL for domes; query `v_game_weather`, not raw cols.
+10. Aggregate officials by `official_id` / views by `ref_key`, never by name.
 
 ## Conventions for answers
 
-- EPA/play from pbp: filter `play_type IN ('pass','run')` and `season_type='REG'`
-  unless the question says otherwise; state the filter used.
-- Rate stats: apply sensible minimums (e.g. 160 att for QB season rates) and
-  say what minimum was applied.
-- Travel questions: `v_team_games.travel_miles` (haversine from the team's
-  home venue that season to the real game venue — internationals ARE modeled,
-  incl. the 7 mislabeled 2025 international rows fixed via
-  `data/stadiums.json` game_overrides) and `tz_shift_hours` (positive =
-  traveling east). Prefer `rest_days_sched` over `rest_days` (populated wk 1).
-  Travel is home-base distance, not itinerary-chained.
+- EPA/play from pbp: `play_type IN ('pass','run')` and `season_type='REG'`
+  unless asked otherwise; state the filter used.
+- Rate stats: sensible minimums (e.g. 160 att for QB season rates); say what
+  was applied.
+- Travel: `v_team_games.travel_miles` (home-base haversine; internationals
+  modeled) + `tz_shift_hours` (positive = east). Prefer `rest_days_sched`
+  (populated wk 1) over `rest_days`.
 - Cite seasons/filters in every answer so results are reproducible.
+- Every new API endpoint gets a smoke CHECK + a tests/api case; every new
+  view gets a dictionary entry + a tests/warehouse invariant.

@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "nfl": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["-m", "nfl_analytics.mcp_server"],
+      "env": {
+        "PYTHONPATH": "${CLAUDE_PROJECT_DIR:-.}/src"
+      }
+    }
+  }
+}

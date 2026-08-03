@@ -13,7 +13,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent
 
 COMMANDS = {
-    "refresh": ("scripts/refresh_data.py", "Download nflverse data + rebuild (--full, --bootstrap, --no-rebuild)"),
+    "refresh": (
+        "scripts/refresh_data.py",
+        "Download nflverse data + rebuild (--full, --bootstrap, --no-rebuild)",
+    ),
     "rebuild": ("scripts/build_warehouse.py", "Rebuild raw tables from data/"),
     "views": ("scripts/build_views.py", "Rebuild derived views + sanity checks"),
     "audit": ("scripts/data_audit.py", "Data completeness audit -> docs/data_audit.md"),

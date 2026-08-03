@@ -1,0 +1,72 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(python -m pytest:*)",
+      "PowerShell(pytest:*)",
+      "PowerShell(python -m pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(python -m ruff:*)",
+      "PowerShell(python -m ruff:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run e2e:*)",
+      "Bash(npx tsc:*)",
+      "PowerShell(npm run build:*)",
+      "PowerShell(npm run lint:*)",
+      "PowerShell(npx tsc:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(schtasks /Query:*)",
+      "PowerShell(schtasks /Query:*)",
+      "Bash(python -m nfl_analytics.cli smoke:*)",
+      "Bash(python -m nfl_analytics.cli audit:*)",
+      "Bash(python -m nfl_analytics.cli views:*)",
+      "Bash(nfl smoke:*)",
+      "Bash(nfl audit:*)",
+      "Bash(nfl views:*)",
+      "PowerShell(python -m nfl_analytics.cli smoke:*)",
+      "PowerShell(python -m nfl_analytics.cli audit:*)",
+      "PowerShell(python -m nfl_analytics.cli views:*)",
+      "mcp__nfl__query_warehouse",
+      "mcp__nfl__describe_warehouse",
+      "mcp__nfl__data_status",
+      "mcp__nfl__team_form",
+      "mcp__nfl__player_lookup"
+    ],
+    "deny": [
+      "Write(**/*.duckdb)",
+      "Edit(**/*.duckdb)",
+      "Write(.env)",
+      "Edit(.env)",
+      "Bash(rm *.duckdb*)",
+      "PowerShell(Remove-Item *duckdb*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/post_edit.py",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/stop_gate.py",
+            "timeout": 150
+          }
+        ]
+      }
+    ]
+  }
+}
