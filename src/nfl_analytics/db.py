@@ -39,13 +39,16 @@ def _retry(fn, what: str, tries: int = 4, delay: float = 0.6):
 def read_conn(attach_kalshi: bool = False, attach_news: bool = False):
     con = _retry(lambda: duckdb.connect(str(NFL_DB), read_only=True), "warehouse")
     try:
+        # IF NOT EXISTS: duckdb caches database instances per path within a
+        # process, so another live connection (tests, tools) may have left the
+        # sidecar attached already
         if attach_kalshi and KALSHI_DB.exists():
             _retry(lambda: con.execute(
-                f"ATTACH '{KALSHI_DB.as_posix()}' AS kalshi (READ_ONLY)"),
+                f"ATTACH IF NOT EXISTS '{KALSHI_DB.as_posix()}' AS kalshi (READ_ONLY)"),
                 "market history store")
         if attach_news and NEWS_DB.exists():
             _retry(lambda: con.execute(
-                f"ATTACH '{NEWS_DB.as_posix()}' AS newsdb (READ_ONLY)"),
+                f"ATTACH IF NOT EXISTS '{NEWS_DB.as_posix()}' AS newsdb (READ_ONLY)"),
                 "news store")
         yield con
     finally:
