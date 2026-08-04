@@ -39,7 +39,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # match the dev machine's major (npm 11 lockfiles parse differently under npm 10)
+          node-version: 22
           cache: npm
           cache-dependency-path: web/ui/package-lock.json
       - run: npm ci
