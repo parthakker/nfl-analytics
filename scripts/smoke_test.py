@@ -54,7 +54,10 @@ CHECKS = {
         len(js.get("rows", [])) >= 20 and js["rows"][0].get("points") is not None
     ),
     "/api/referees?min_games=100": lambda js: len(js.get("referees", [])) >= 5,
-    "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50,
+    "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50 and len(js.get("staff", [])) == 63,
+    "/api/coaches/Steve%20Spagnuolo?role=DC": lambda js: (
+        js.get("role") == "DC" and len(js.get("unit_seasons", [])) > 0
+    ),
     "/api/coaches/Andy%20Reid": lambda js: (
         len(js.get("seasons", [])) >= 15 and len(js.get("fingerprint", [])) >= 4
     ),

@@ -124,3 +124,12 @@ body {
   background: var(--stroke); border-radius: 4px;
 }
 .scroll-x::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* brief highlight when a knowledge anchor is deep-linked */
+.anchor-flash {
+  animation: anchorflash 2s ease-out;
+}
+@keyframes anchorflash {
+  0%, 40% { color: var(--arc); text-shadow: 0 0 18px var(--accent-glow); }
+  100% { }
+}

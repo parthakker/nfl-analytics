@@ -1,450 +1,261 @@
 {
+  "_note": "HAND-CURATED coaching staff db - never overwritten by refresh. v2 schema (2026-08-03): hc/oc/dc blocks with since/playcaller/about, scheme knowledge deep-links into docs/knowledge chapters. Staff verified against 2026-dated sources 2026-08-03. dc may be null ONLY where the HC holds the defense with no DC title (currently TB). Edit freely; tests/unit/test_coaches_meta.py keeps this file complete.",
   "ARI": {
-    "head_coach": "Jonathan Gannon",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "head_coach": "Mike LaFleur",
+    "hc": {"since": 2026, "about": "Younger brother of Matt LaFleur and a Kyle Shanahan protege (49ers, Jets OC, Rams OC 2024-25). Calls the offensive plays himself in his first head job."},
+    "oc": {"name": "Nathaniel Hackett", "since": 2026, "playcaller": false, "about": "Ex-Broncos head coach and Packers OC under Matt LaFleur; hired the day of LaFleur's introduction to run install while the HC keeps the headset."},
+    "dc": {"name": "Nick Rallis", "since": 2023, "playcaller": true, "about": "The NFL's youngest coordinator when hired at 29; retained as one of ten holdovers on the new staff, entering year four running Arizona's defense."},
+    "offense_scheme": {"family": "Shanahan/LaFleur outside zone", "fact": "Heavy play-action off wide zone; LaFleur calls it, Hackett installs", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Two-high match (Gannon/Flores-derived)", "fact": "Simulated pressure over volume blitzing", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "ATL": {
-    "head_coach": "Raheem Morris",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "Fangio tree",
-      "fact": "Two-high, simulated pressures"
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "head_coach": "Kevin Stefanski",
+    "hc": {"since": 2026, "about": "Two-time AP Coach of the Year with Cleveland out of the Vikings/Kubiak wide-zone tradition; Atlanta's 20th head coach. A career play-caller deliberately handing the offense off here."},
+    "oc": {"name": "Tommy Rees", "since": 2026, "playcaller": true, "about": "Former Notre Dame and Alabama OC who took over Cleveland's play-calling late in 2025; Stefanski says he's 'very comfortable' with Rees on the headset."},
+    "dc": {"name": "Jeff Ulbrich", "since": 2025, "playcaller": true, "about": "Former Jets DC and interim HC, retained on a new three-year deal two days after Stefanski's hire; Atlanta's pass rush spiked in his first season."},
+    "offense_scheme": {"family": "Stefanski/Kubiak wide zone", "fact": "Under-center wide zone, run-pass marriage, multiple personnel", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Attacking multiple front", "fact": "Seattle/Rex Ryan hybrid with positionless versatility", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "BAL": {
     "head_coach": "Jesse Minter",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "Fourth head coach in franchise history, from the Macdonald disguise-heavy branch: Michigan's 2023 national-title DC, then Chargers DC under Jim Harbaugh. Calls the defense himself."},
+    "oc": {"name": "Declan Doyle", "since": 2026, "playcaller": true, "about": "The NFL's youngest play-caller at 29 - five years under Sean Payton, then Bears OC under Ben Johnson in 2025. Weaver calls him 'a human computer.'"},
+    "dc": {"name": "Anthony Weaver", "since": 2026, "playcaller": false, "about": "Ex-Dolphins DC in his third Baltimore stint; runs the defensive room and install while Minter owns the game-day calls."},
+    "offense_scheme": {"family": "Motion-heavy play-action West Coast", "fact": "Ben Johnson + Payton blend under Doyle", "knowledge": "offensive-scheme-families#west-coast-the-walsh-lineage"},
+    "defense_scheme": {"family": "Two-high disguise (Macdonald/Michigan lineage)", "fact": "Simulated pressures; Minter calls it", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "BUF": {
-    "head_coach": "Sean McDermott",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "Carolina/McDermott zone",
-      "fact": "Zone-heavy, disciplined shell"
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "head_coach": "Joe Brady",
+    "hc": {"since": 2026, "about": "Promoted from Bills OC after Sean McDermott's exit; Saints-raised under Payton and Carmichael, famous for LSU's 2019 passing game. Calls the offense, known for feeding the hot hand."},
+    "oc": {"name": "Pete Carmichael Jr.", "since": 2026, "playcaller": false, "about": "Fifteen years as Saints OC and Brady's mentor from New Orleans; runs install and game-planning while Brady keeps the headset."},
+    "dc": {"name": "Jim Leonhard", "since": 2026, "playcaller": true, "about": "Ex-Wisconsin DC and ten-year NFL safety from the Vance Joseph tree in Denver; converting Buffalo to a flexible attacking 3-4."},
+    "offense_scheme": {"family": "Payton West Coast / Coryell hybrid", "fact": "Under-center play-action, spread-the-targets philosophy", "knowledge": "offensive-scheme-families#west-coast-the-walsh-lineage"},
+    "defense_scheme": {"family": "Attacking 3-4 multiple (Joseph tree)", "fact": "Five-man pressure looks under Leonhard", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "CAR": {
     "head_coach": "Dave Canales",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2024, "about": "Pete Carroll's longtime Seahawks assistant who revived Baker Mayfield as Bucs OC; announced at the 2026 Combine he's handing play-calling to Idzik to run the whole program."},
+    "oc": {"name": "Brad Idzik", "since": 2025, "playcaller": true, "about": "34-year-old who followed Canales from Seattle to Tampa to Carolina; 2026 is the first play-calling job of his career."},
+    "dc": {"name": "Ejiro Evero", "since": 2023, "playcaller": true, "about": "Rams/Fangio-tree product and ex-Broncos DC; interviewed for three of the ten 2026 head-coaching openings before returning."},
+    "offense_scheme": {"family": "Carroll/Canales play-action wide zone", "fact": "Condensed sets, Seattle lineage", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Fangio-derived two-high 3-4", "fact": "Zone-match under Evero", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "CHI": {
     "head_coach": "Ben Johnson",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Johnson hybrid",
-      "fact": "Motion-heavy, exotic shifts, aggressive downfield shots"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "Turned Detroit into the league's best offense as Lions OC; the hottest offensive mind of his hiring cycle. Keeps the play sheet - motion, condensed formations, extreme 4th-down aggression."},
+    "oc": {"name": "Press Taylor", "since": 2026, "playcaller": false, "about": "Promoted from passing-game coordinator; former Colts and Jaguars OC who runs install while Johnson calls the games."},
+    "dc": {"name": "Dennis Allen", "since": 2025, "playcaller": true, "about": "Ex-Saints and Raiders head coach in his 30th year of coaching; overhauled the unit with 18 new defensive players."},
+    "offense_scheme": {"family": "Johnson motion offense (Shanahan-rooted)", "fact": "Heavy motion, RPO and gadget layers; Johnson calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "4-3 single-high man-pressure", "fact": "Rob Ryan/Payton lineage under Allen", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "CIN": {
     "head_coach": "Zac Taylor",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2019, "about": "The AFC North's longest-tenured coach; McVay-tree Rams assistant who took Cincinnati to Super Bowl LVI and remains the offense's primary voice."},
+    "oc": {"name": "Dan Pitcher", "since": 2024, "playcaller": false, "about": "Eleventh season on the staff and a rising 2027 head-coaching candidate; Taylor calls it 'collaborative' but kept the headset."},
+    "dc": {"name": "Al Golden", "since": 2025, "playcaller": true, "about": "Former Temple and Miami head coach and Notre Dame DC; explicitly dialing up the blitz rate in 2026 after a historically low 17.6%."},
+    "offense_scheme": {"family": "McVay-tree wide zone", "fact": "11-personnel spread; Taylor calls with Pitcher collaborating", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "4-3/4-2 five-man fronts", "fact": "Golden raising pressure rate in 2026", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "CLE": {
     "head_coach": "Todd Monken",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "Architect of Georgia's back-to-back national-title offenses and Ravens OC 2023-25; first NFL head job and he keeps the play-calling."},
+    "oc": {"name": "Travis Switzer", "since": 2026, "playcaller": false, "about": "Rose under Monken in Baltimore from quality control to run-game coordinator; Monken kept the headset citing Switzer's inexperience calling games."},
+    "dc": {"name": "Mike Rutenberg", "since": 2026, "playcaller": true, "about": "Hired from Atlanta specifically to preserve the Schwartz system after Jim Schwartz resigned during Super Bowl week - Cleveland led the NFL in yards allowed over the prior three seasons."},
+    "offense_scheme": {"family": "Air Raid-influenced vertical spread", "fact": "Heavy play-action off vertical concepts; Monken calls it", "knowledge": "offensive-scheme-families#air-raid-leach-mumme-and-the-nfl-s-quick-game-donor"},
+    "defense_scheme": {"family": "Attacking four-man front / wide-9", "fact": "Schwartz continuity under Rutenberg", "knowledge": "defensive-scheme-families#the-seattle-cover-3-era"}
   },
   "DAL": {
     "head_coach": "Brian Schottenheimer",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "Son of Marty and a 25-year OC journeyman who got his first head job at 51; run-game-first and intends to call plays as long as he's HC."},
+    "oc": {"name": "Klayton Adams", "since": 2025, "playcaller": false, "about": "Former Cardinals OL coach who runs the ground game and weekly install; blocked from an Eagles OC interview and viewed as a 2027 HC candidate."},
+    "dc": {"name": "Christian Parker", "since": 2026, "playcaller": true, "about": "First-time coordinator hired from Philadelphia, where he coached DBs under Vic Fangio; replaces the fired Matt Eberflus."},
+    "offense_scheme": {"family": "Gap/duo-heavy Coryell-Erhardt hybrid", "fact": "Condensed sets and play-action; Schottenheimer calls it", "knowledge": "offensive-scheme-families#air-coryell-the-vertical-timing-tree"},
+    "defense_scheme": {"family": "Fangio two-high zone-match", "fact": "Light boxes under Parker", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "DEN": {
     "head_coach": "Sean Payton",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Payton West Coast",
-      "fact": "Option routes, RB screens, red-zone specials"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2023, "about": "Super Bowl XLIV winner across 15 Saints seasons and one of the era's defining offensive minds; gave up play-calling this offseason for the first time in his head-coaching career."},
+    "oc": {"name": "Davis Webb", "since": 2026, "playcaller": true, "about": "31-year-old former NFL quarterback promoted from pass-game coordinator when Joe Lombardi was fired; Payton cites how much 'quicker' Webb is, while retaining some calls."},
+    "dc": {"name": "Vance Joseph", "since": 2023, "playcaller": true, "about": "Former Broncos head coach whose blitz-forward system produced new Bills DC Jim Leonhard; among the league's heaviest five-plus-man pressure rates."},
+    "offense_scheme": {"family": "Payton West Coast / Coryell hybrid", "fact": "Heavy play-action; Webb now calls it", "knowledge": "offensive-scheme-families#west-coast-the-walsh-lineage"},
+    "defense_scheme": {"family": "3-4 heavy-pressure (Joseph)", "fact": "Five-plus rushers at league-leading rates", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "DET": {
     "head_coach": "Dan Campbell",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Physical/downhill identity",
-      "fact": "Aggressive 4th-down culture, heavy sets"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2021, "about": "Rebuilt Detroit into an NFC power on toughness and 4th-down aggression; took over play-calling mid-2025 after stripping it from John Morton, then handed it to Petzing as part of the 2026 hire."},
+    "oc": {"name": "Drew Petzing", "since": 2026, "playcaller": true, "about": "Cardinals OC 2023-25 from the Stefanski/Kubiak lineage, hired in January after Arizona's staff change; Campbell relinquished the headset to him."},
+    "dc": {"name": "Kelvin Sheppard", "since": 2025, "playcaller": true, "about": "Former NFL linebacker who rose from Lions LB coach; already drawing head-coaching buzz and adding coverage disguise studied from the top 2025 defenses."},
+    "offense_scheme": {"family": "Kubiak/Shanahan under-center wide zone", "fact": "Play-action heavy under Petzing", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Multiple 4-3, Glenn lineage", "fact": "Moving toward more nickel and sub-package variety", "knowledge": "defensive-scheme-families#belichick-man-match-and-the-game-plan-defense"}
   },
   "GB": {
     "head_coach": "Matt LaFleur",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "McVay/Shanahan wide zone",
-      "fact": "Wide zone + bootleg series"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2019, "about": "Shanahan-tree disciple with one of the best regular-season win rates of any active coach; runs the offense himself and has never given up the headset."},
+    "oc": {"name": "Adam Stenavich", "since": 2022, "playcaller": false, "about": "Former OL coach who runs the ground game; drew Titans play-calling interest this offseason but stayed in Green Bay."},
+    "dc": {"name": "Jonathan Gannon", "since": 2026, "playcaller": true, "about": "Cardinals head coach 2023-25 and the Eagles DC who reached Super Bowl LVII; replaced Jeff Hafley and is building the system around Green Bay's personnel."},
+    "offense_scheme": {"family": "Shanahan/LaFleur outside zone", "fact": "Heavy play-action, condensed splits; LaFleur calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Adaptive 3-4 (Fangio/Colts-Eagles roots)", "fact": "Gannon: 'no fixed scheme' - coverage-varied", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "HOU": {
     "head_coach": "DeMeco Ryans",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "Fangio-influenced 4-3",
-      "fact": "Two-high shells, four-man rush"
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2023, "about": "Franchise-icon linebacker turned 49ers DC and 2023 AP Coach of the Year; a Seattle/San Francisco single-gap disciple who increasingly delegates to run the whole operation."},
+    "oc": {"name": "Nick Caley", "since": 2025, "playcaller": true, "about": "Ten years in New England then two with the Rams; retained for year two after Ryans and the GM publicly backed his in-season adaptability."},
+    "dc": {"name": "Matt Burke", "since": 2023, "playcaller": true, "about": "Former Dolphins DC; across 2023-25 Houston allowed the second-fewest points per game (20.0) and forced the third-most takeaways."},
+    "offense_scheme": {"family": "Erhardt-Perkins + McVay run/play-action", "fact": "Caley calls it", "knowledge": "offensive-scheme-families#erhardt-perkins-a-terminology-not-a-scheme"},
+    "defense_scheme": {"family": "4-3 wide-9 single-gap penetration", "fact": "Cover-3 base with two-high wrinkles", "knowledge": "defensive-scheme-families#the-seattle-cover-3-era"}
   },
   "IND": {
     "head_coach": "Shane Steichen",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2023, "about": "Chargers OC then Eagles OC for the Super Bowl LVII run; a top-tier play-caller who builds around quarterback mobility and keeps the headset."},
+    "oc": {"name": "Jim Bob Cooter", "since": 2023, "playcaller": false, "about": "Former Lions OC who drives weekly game-plan construction; drew an Eagles OC interview in January 2026."},
+    "dc": {"name": "Lou Anarumo", "since": 2025, "playcaller": true, "about": "Six years as Bengals DC including the Super Bowl LVI run; known for game-plan-specific coverage menus rather than a fixed structure."},
+    "offense_scheme": {"family": "Spread-RPO with wide zone", "fact": "QB-movement elements; Steichen calls it", "knowledge": "offensive-scheme-families#spread-option-and-rpo-influence"},
+    "defense_scheme": {"family": "Heavy-disguise multiple coverage", "fact": "Split-safety pattern-match under Anarumo", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "JAX": {
     "head_coach": "Liam Coen",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "McVay/LaFleur-tree riser ranked fifth in a 2026 poll of NFL play-callers, behind only Shanahan, McVay, Ben Johnson and Matt LaFleur. Calls his own plays."},
+    "oc": {"name": "Grant Udinski", "since": 2025, "playcaller": false, "about": "29-year-old from Minnesota's staff under Kevin O'Connell; assists Coen with in-game structure and situational work."},
+    "dc": {"name": "Anthony Campanile", "since": 2025, "playcaller": true, "about": "His 2025 debut set Jaguars franchise records for rush yards allowed per game (85.6), takeaways (31) and interceptions (22) - and nearly the whole unit returns."},
+    "offense_scheme": {"family": "McVay/Shanahan wide zone", "fact": "Condensed-formation play-action; Coen calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Zone-based multiple", "fact": "Varied fronts and pressure looks under Campanile", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "KC": {
     "head_coach": "Andy Reid",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "West Coast (Reid tree)",
-      "fact": "Spread-influenced West Coast; heavy motion, option routes"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2013, "about": "Three-time Super Bowl champion and the winningest active coach; Holmgren/West Coast lineage and the source of a sprawling coaching tree. Still calls the plays."},
+    "oc": {"name": "Eric Bieniemy", "since": 2026, "playcaller": false, "about": "Back for a second stint (2018-22 previously) after Commanders, UCLA and Bears stops; Reid keeps the headset."},
+    "dc": {"name": "Steve Spagnuolo", "since": 2019, "playcaller": true, "about": "Three rings in Kansas City and three straight top-six scoring defenses; the league's premier exotic-pressure designer."},
+    "offense_scheme": {"family": "West Coast (Reid tree)", "fact": "Spread-influenced, heavy motion, option routes; Reid calls it", "knowledge": "offensive-scheme-families#reid-s-kansas-city-hybrid"},
+    "defense_scheme": {"family": "Man-match pressure (Spagnuolo)", "fact": "Exotic zero and simulated blitzes", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"},
+    "note": "OC Eric Bieniemy on indefinite leave since late July 2026 (family emergency); duties split between Joe Bleymaier and Andy Heck."
   },
   "LA": {
     "head_coach": "Sean McVay",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "McVay/Shanahan wide zone",
-      "fact": "Outside zone run game, play-action keepers, condensed sets"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2017, "about": "Won Super Bowl LVI and is the namesake of the sport's most prolific coaching tree; the youngest modern HC hire at 30 and still the primary play-caller a decade in."},
+    "oc": {"name": "Nate Scheelhaase", "since": 2026, "playcaller": false, "about": "Former Illinois QB and Iowa State OC promoted internally after a second Browns HC interview; gets preseason play-calling reps alongside Dave Ragone."},
+    "dc": {"name": "Chris Shula", "since": 2024, "playcaller": true, "about": "Grandson of Don Shula in his 10th season on the Rams staff; he and Scheelhaase were ranked the NFL's No. 2 coordinator duo entering 2026."},
+    "offense_scheme": {"family": "McVay 11-personnel wide zone", "fact": "Condensed formations and play-action; McVay calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Fangio-derived two-high", "fact": "Four-man-rush emphasis under Shula", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "LAC": {
     "head_coach": "Jim Harbaugh",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Power gap run game",
-      "fact": "Multiple TEs, downhill power, play-action off it"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2024, "about": "Michigan national champion and 49ers Super Bowl coach with a run-first physical identity - and an excellent record of DC hires (Macdonald, Minter)."},
+    "oc": {"name": "Mike McDaniel", "since": 2026, "playcaller": true, "about": "Dolphins head coach 2022-25 and the most coveted offensive play-caller on the 2026 market; hired to modernize Justin Herbert's protection and passing game."},
+    "dc": {"name": "Chris O'Leary", "since": 2026, "playcaller": true, "about": "34-year-old from the Macdonald/Minter lineage - Chargers safeties coach in 2024, Western Michigan DC in 2025 - promoted to continue Minter's system rather than replace it."},
+    "offense_scheme": {"family": "Shanahan wide zone (McDaniel)", "fact": "Motion, condensed splits, speed-based play-action", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Two-high hybrid disguise (Macdonald/Minter lineage)", "fact": "Simulated pressure under O'Leary", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "LV": {
-    "head_coach": "Klint Kubliak",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "head_coach": "Klint Kubiak",
+    "hc": {"since": 2026, "about": "Son of Gary Kubiak and a Shanahan-system lifer - Vikings OC, Saints OC, then Seattle's play-caller for their 2025 Super Bowl team. First head job; calls his own plays."},
+    "oc": {"name": "Andrew Janocko", "since": 2026, "playcaller": false, "about": "Kubiak's confidant since Minnesota and his QBs coach in New Orleans and Seattle; the calls are described as a staff operation."},
+    "dc": {"name": "Rob Leonard", "since": 2026, "playcaller": true, "about": "Promoted from Raiders DL coach at 38; built his system from time under Mike Macdonald, Brian Flores and Steve Spagnuolo."},
+    "offense_scheme": {"family": "Shanahan/Kubiak wide zone", "fact": "Under-center bootleg play-action; Kubiak calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "3-4 mixed fronts, two-high shells", "fact": "Aggressive extra-rusher pressure under Leonard", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "MIA": {
     "head_coach": "Jeff Hafley",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "Former Boston College head coach who rebuilt his stock as Packers DC; a secondary specialist from the Ohio State/49ers zone-coverage world. Calls the defense himself in his first NFL head job."},
+    "oc": {"name": "Bobby Slowik", "since": 2026, "playcaller": true, "about": "Kyle Shanahan's 49ers pass-game coordinator turned Texans OC, where he ran C.J. Stroud's OROY rookie year; promoted from senior passing-game coordinator in February."},
+    "dc": {"name": "Sean Duggan", "since": 2026, "playcaller": false, "about": "Eight-year Hafley disciple across Ohio State, Boston College and Green Bay; runs the defensive room while Hafley owns game-day calls."},
+    "offense_scheme": {"family": "Shanahan wide zone", "fact": "Outside-zone play-action under Slowik", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "4-3 two-high quarters (Hafley system)", "fact": "Zone-match; Hafley calls it", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "MIN": {
     "head_coach": "Kevin O'Connell",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "McVay tree",
-      "fact": "Pass-first, layered dropback game"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2022, "about": "Sean McVay's Rams OC and a former NFL QB; 2024 Coach of the Year and the league's premier quarterback whisperer. Calls the offense himself."},
+    "oc": {"name": "Wes Phillips", "since": 2022, "playcaller": false, "about": "Third-generation coach - son of Wade, grandson of Bum - who came with O'Connell from the Rams and runs install and game-planning."},
+    "dc": {"name": "Brian Flores", "since": 2023, "playcaller": true, "about": "Former Dolphins HC whose creeper/simulated-pressure system is the most-copied blitz package in football; retained for a fourth season."},
+    "offense_scheme": {"family": "McVay/Shanahan wide zone", "fact": "11-personnel play-action; O'Connell calls it", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Flores man-match amoeba", "fact": "League-leading pressure rates, blitz-heavy fronts", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "NE": {
     "head_coach": "Mike Vrabel",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "Three-time Super Bowl winner as a Patriots linebacker and 2021 Coach of the Year with Tennessee; took New England to Super Bowl LX in his first year back. Belichick-tree culture-and-toughness coach."},
+    "oc": {"name": "Josh McDaniels", "since": 2025, "playcaller": true, "about": "In his third Patriots stint - 2026 is his 20th season in New England and 15th as OC; won 2025 AP Assistant Coach of the Year for Drake Maye's breakout, No. 2 scoring offense."},
+    "dc": {"name": "Zak Kuhr", "since": 2026, "playcaller": true, "about": "Followed Vrabel from Tennessee and took over as interim in September 2025 when Terrell Williams was diagnosed with cancer, finishing top-four in points allowed; made permanent in February."},
+    "offense_scheme": {"family": "Erhardt-Perkins multiple", "fact": "Matchup-driven, McDaniels calls it", "knowledge": "offensive-scheme-families#erhardt-perkins-a-terminology-not-a-scheme"},
+    "defense_scheme": {"family": "Multiple hybrid front (Belichick/Vrabel lineage)", "fact": "Kuhr calls it; Williams now assistant HC", "knowledge": "defensive-scheme-families#belichick-man-match-and-the-game-plan-defense"}
   },
   "NO": {
     "head_coach": "Kellen Moore",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "Former Boise State/NFL QB who was OC for the Cowboys, Chargers and the Super Bowl LIX-winning Eagles before taking the Saints job. Calls his own plays."},
+    "oc": {"name": "Doug Nussmeier", "since": 2025, "playcaller": false, "about": "Longtime college OC (Alabama, Michigan, Florida) who has worked with Moore at five stops since 2005; expanding tight-end usage in 2026."},
+    "dc": {"name": "Brandon Staley", "since": 2025, "playcaller": true, "about": "Chargers HC 2021-23 and the Rams DC who broke through under the Fangio umbrella; his first Saints defense finished top-10 overall and 4th against the pass."},
+    "offense_scheme": {"family": "Coryell-rooted spread", "fact": "Vertical concepts with RPO layers; Moore calls it", "knowledge": "offensive-scheme-families#air-coryell-the-vertical-timing-tree"},
+    "defense_scheme": {"family": "Fangio two-high (Staley)", "fact": "Light boxes, heavy six-DB usage vs heavy personnel", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "NYG": {
     "head_coach": "John Harbaugh",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Roman/Monken influence",
-      "fact": "QB-run element, vertical shots"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "Won Super Bowl XLVII in 17 seasons with Baltimore before an offseason split; a special-teams-coordinator-turned-HC from the Andy Reid Philadelphia tree, hired to bring program-building stability."},
+    "oc": {"name": "Matt Nagy", "since": 2026, "playcaller": true, "about": "2018 Coach of the Year as Bears HC, then back in Kansas City as OC for two Super Bowl wins; an experienced play-caller brought in to develop Jaxson Dart."},
+    "dc": {"name": "Dennard Wilson", "since": 2026, "playcaller": true, "about": "Titans DC the previous two seasons and Ravens DBs coach under Mike Macdonald in 2023; reunites with Harbaugh from Baltimore."},
+    "offense_scheme": {"family": "Reid West Coast spread/RPO", "fact": "Heavy pre-snap window dressing under Nagy", "knowledge": "offensive-scheme-families#reid-s-kansas-city-hybrid"},
+    "defense_scheme": {"family": "Ravens/Macdonald pattern-match", "fact": "Disguise and simulated pressures under Wilson", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "NYJ": {
     "head_coach": "Aaron Glenn",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2025, "about": "Former Jets first-round corner and three-year Lions DC under Dan Campbell; survived an ugly 2025, made sweeping staff changes, and reclaimed defensive play-calling as his 'super power.'"},
+    "oc": {"name": "Frank Reich", "since": 2026, "playcaller": true, "about": "Former Colts and Panthers head coach and the Eagles OC for the 2017 title team; Stanford's interim HC in 2025 and a 1996 Jets teammate of Glenn."},
+    "dc": {"name": "Brian Duker", "since": 2026, "playcaller": false, "about": "36-year-old who worked three seasons under Glenn in Detroit before Miami's secondary; runs the room while Glenn takes the headset."},
+    "offense_scheme": {"family": "Coryell / vertical West Coast hybrid", "fact": "Under-center play-action under Reich", "knowledge": "offensive-scheme-families#air-coryell-the-vertical-timing-tree"},
+    "defense_scheme": {"family": "Aggressive man-match pressure (Glenn/Detroit)", "fact": "Glenn calls it", "knowledge": "defensive-scheme-families#belichick-man-match-and-the-game-plan-defense"}
   },
   "PHI": {
     "head_coach": "Nick Sirianni",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2021, "about": "Frank Reich/Colts-tree coach who has been to two Super Bowls and won LIX; more CEO and motivator than scheme architect - now on his sixth play-caller in six seasons."},
+    "oc": {"name": "Sean Mannion", "since": 2026, "playcaller": true, "about": "33-year-old former backup QB with one season as Packers QB coach and zero play-calling experience - the most aggressive upside bet of the 2026 cycle. Replaces the fired Kevin Patullo."},
+    "dc": {"name": "Vic Fangio", "since": 2024, "playcaller": true, "about": "The namesake of the league's dominant modern defensive system and architect of the Super Bowl LIX defense; flanked by associate HC Clint Hurtt on the line."},
+    "offense_scheme": {"family": "LaFleur/Shanahan wide zone + Eagles RPO core", "fact": "QB-run game retained under Mannion", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Fangio two-high quarters/match", "fact": "Light boxes, four-man rush - the original article", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "PIT": {
     "head_coach": "Mike McCarthy",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "The Steelers' 17th head coach, succeeding Mike Tomlin; Super Bowl XLV winner in Green Bay and ex-Cowboys HC, a classic West Coast teacher who calls his own plays."},
+    "oc": {"name": "Brian Angelichio", "since": 2026, "playcaller": false, "about": "Came from Minnesota as passing-game coordinator under Kevin O'Connell and previously worked with McCarthy in Green Bay; the role is heavily shaped by how hands-on McCarthy is."},
+    "dc": {"name": "Patrick Graham", "since": 2026, "playcaller": true, "about": "Four years as Raiders DC plus Giants and Dolphins coordinator stops; worked under McCarthy in Green Bay in 2018."},
+    "offense_scheme": {"family": "West Coast (McCarthy)", "fact": "O'Connell play-action concepts layered in; McCarthy calls it", "knowledge": "offensive-scheme-families#west-coast-the-walsh-lineage"},
+    "defense_scheme": {"family": "Multiple, 3-4 roots (Graham)", "fact": "Deploys four-down when personnel dictates", "knowledge": "defensive-scheme-families#belichick-man-match-and-the-game-plan-defense"}
   },
   "SEA": {
     "head_coach": "Mike Macdonald",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2024, "about": "Authored the NFL's No. 1 defense as Ravens DC before taking Seattle at 36; a Harbaugh-tree defensive mind who delegates the unit to Durde rather than calling it himself."},
+    "oc": {"name": "Brian Fleury", "since": 2026, "playcaller": true, "about": "Seven seasons in San Francisco, most recently TEs coach/run-game coordinator; replaces Klint Kubiak and says he wants to 'maintain' what worked. First-time play-caller."},
+    "dc": {"name": "Aden Durde", "since": 2024, "playcaller": true, "about": "London-born former practice-squad player turned Cowboys DL coach; Seattle finished top-five in defense in 2025 and he's a fast-rising HC candidate."},
+    "offense_scheme": {"family": "Shanahan wide zone, heavy 12-personnel", "fact": "Fleury continuity from the Kubiak year", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Macdonald/Ravens pattern-match", "fact": "Disguise, sim pressures, heavy front variety", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"}
   },
   "SF": {
     "head_coach": "Kyle Shanahan",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "Shanahan wide zone",
-      "fact": "The wide-zone/play-action system half the league copies"
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2017, "about": "Son of Mike Shanahan and the architect of the modern wide-zone/play-action system copied league-wide; two Super Bowl appearances. Recovering from a serious July 2026 car accident but expected for Week 1."},
+    "oc": {"name": "Klay Kubiak", "since": 2026, "playcaller": false, "about": "Son of Gary and brother of Klint; fifth season on the staff, first as coordinator. Has handled practice play-calling for years and is doing so through Shanahan's recovery."},
+    "dc": {"name": "Raheem Morris", "since": 2026, "playcaller": true, "about": "Falcons HC 2024-25 and the Rams DC for Super Bowl LVI; backed by heavyweight hires Matt Eberflus (assistant HC/defense) and Jerry Gray."},
+    "offense_scheme": {"family": "Shanahan outside zone", "fact": "The original article - under-center play-action", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Hybrid two-high/quarters, Tampa-2 roots", "fact": "Four-man rush emphasis under Morris", "knowledge": "defensive-scheme-families#the-fangio-two-high-revolution"},
+    "note": "HC Kyle Shanahan limited in camp after a July 14, 2026 car accident (concussion, broken ribs/nose/hand); Chris Foerster running practices, expected back for Week 1."
   },
   "TB": {
     "head_coach": "Todd Bowles",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "Bowles pressure",
-      "fact": "One of the league's highest blitz rates"
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2022, "about": "Jets HC 2015-18 and the Bucs DC who called the Super Bowl LV defense; a Parcells/Arians-tree defensive coach entering a do-or-die fifth season. Runs the defense personally - there is no DC on the staff."},
+    "oc": {"name": "Zac Robinson", "since": 2026, "playcaller": true, "about": "Falcons OC for two seasons after rising through McVay's Rams staff; replaces Josh Grizzard, who left for Philadelphia."},
+    "dc": null,
+    "offense_scheme": {"family": "McVay/Shanahan wide zone", "fact": "Play-action and motion under Robinson", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Bowles man-match blitz", "fact": "Amoeba fronts and fire-zone pressure - Bowles calls it himself; no DC title on the 2026 staff", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   },
   "TEN": {
     "head_coach": "Robert Saleh",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "varies by coordinator",
-      "fact": ""
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2026, "about": "Jets head coach 2021-24, then 49ers DC in 2025; a Seattle-lineage defensive coach getting a second shot and reclaiming the defensive headset."},
+    "oc": {"name": "Brian Daboll", "since": 2026, "playcaller": true, "about": "2022 Coach of the Year as Giants HC and the Bills OC who developed Josh Allen; given essentially full autonomy to 'zig where the rest of the league zags.'"},
+    "dc": {"name": "Gus Bradley", "since": 2026, "playcaller": false, "about": "Former Jaguars HC and the original Legion of Boom coordinator whose system Saleh runs; publicly confirmed he will not call plays."},
+    "offense_scheme": {"family": "Erhardt-Perkins multiple (Daboll)", "fact": "Deliberately gap-scheme and QB-run, not zone-based", "knowledge": "offensive-scheme-families#erhardt-perkins-a-terminology-not-a-scheme"},
+    "defense_scheme": {"family": "4-3 wide-9, Seattle Cover-3 single-high", "fact": "Saleh calls it; Bradley installs", "knowledge": "defensive-scheme-families#the-seattle-cover-3-era"}
   },
   "WAS": {
     "head_coach": "Dan Quinn",
-    "offensive_coordinator": null,
-    "defensive_coordinator": null,
-    "offense_scheme": {
-      "family": "unclassified",
-      "fact": ""
-    },
-    "defense_scheme": {
-      "family": "Seattle-3 descendant",
-      "fact": "Single-high, fast flow"
-    },
-    "_note": "HC auto-derived from 2026 schedule; schemes curated by name-tree knowledge; OC/DC unknown - edit this file freely, refresh never overwrites it"
+    "hc": {"since": 2024, "about": "Won a Super Bowl as the Legion of Boom's DC and took Atlanta to Super Bowl LI; a culture-first leader who has vowed to let his new coordinator run the defense."},
+    "oc": {"name": "David Blough", "since": 2026, "playcaller": true, "about": "Former NFL QB who last played in 2023, promoted straight from assistant QBs coach at 30 - one of the youngest play-callers in the league. Replaces the fired Kliff Kingsbury."},
+    "dc": {"name": "Daronte Jones", "since": 2026, "playcaller": true, "about": "Longtime DBs coach and 2021 LSU DC arriving from Brian Flores' Minnesota staff; a first-time NFL coordinator replacing the fired Joe Whitt Jr."},
+    "offense_scheme": {"family": "Under-center wide zone + play-action", "fact": "Ben Johnson/Shanahan-influenced under Blough", "knowledge": "offensive-scheme-families#shanahan-mcvay-the-wide-zone-ecosystem"},
+    "defense_scheme": {"family": "Multiple attacking front (Flores-influenced)", "fact": "Pressure and disguise under Jones", "knowledge": "defensive-scheme-families#pressure-school-flores-the-ryans-and-the-zero-blitz-philosophy"}
   }
 }

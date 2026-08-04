@@ -1,8 +1,14 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import GlassPanel from "../components/GlassPanel";
+
+/** Must match slugify in tests/unit/test_coaches_meta.py. */
+const slugify = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
+const textOf = (node: React.ReactNode): string =>
+  Array.isArray(node) ? node.map(textOf).join("") : typeof node === "string" ? node : "";
 
 interface Chapter { slug: string; title: string; part: string; summary: string; updated: string }
 interface Full extends Chapter {
@@ -14,8 +20,24 @@ interface Full extends Chapter {
 export default function Knowledge() {
   const { slug } = useParams();
   const nav = useNavigate();
+  const location = useLocation();
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [doc, setDoc] = useState<Full | null>(null);
+
+  // scroll to #anchor once the chapter markdown is rendered
+  useEffect(() => {
+    if (!doc || !location.hash) return;
+    const id = location.hash.slice(1);
+    const t = setTimeout(() => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        el.classList.add("anchor-flash");
+        setTimeout(() => el.classList.remove("anchor-flash"), 2000);
+      }
+    }, 100);
+    return () => clearTimeout(t);
+  }, [doc, location.hash]);
 
   useEffect(() => {
     fetch("/api/knowledge").then((r) => r.json())
@@ -92,6 +114,8 @@ export default function Knowledge() {
             <article className="prose-knowledge">
               <ReactMarkdown remarkPlugins={[remarkGfm]}
                 components={{
+                  h2: ({ children }) => <h2 id={slugify(textOf(children))}>{children}</h2>,
+                  h3: ({ children }) => <h3 id={slugify(textOf(children))}>{children}</h3>,
                   a: ({ href, children }) =>
                     href?.startsWith("/") && !href.startsWith("/knowledge/") ? (
                       <Link to={href}>{children}</Link>
