@@ -17,8 +17,7 @@ test("player page deep-link renders directly", async ({ page }) => {
 });
 
 test("roster names on the team page link to players", async ({ page }) => {
-  await page.goto("/team/KC");
-  await page.getByText(/roster/i).first().waitFor();
+  await page.goto("/team/KC?tab=roster");
   const link = page.locator("table a[href^='/player/']").first();
   await link.waitFor();
   await link.click();

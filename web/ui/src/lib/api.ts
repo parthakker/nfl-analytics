@@ -53,6 +53,7 @@ export interface TeamDetail {
 export interface RosterPlayer {
   gsis: string | null; num: number | null; name: string; pos: string | null;
   status: string | null; college: string | null; exp: number | null;
+  headshot: string | null;
 }
 
 export interface LeaderColumn {

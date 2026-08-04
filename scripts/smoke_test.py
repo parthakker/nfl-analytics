@@ -29,6 +29,17 @@ CHECKS = {
         js.get("record", {}).get("w") is not None and js.get("coach", {}).get("history")
     ),
     "/api/teams/DET/epa": lambda js: len(js.get("weeks", [])) >= 15,
+    "/api/teams/DET/overview": lambda js: (
+        len(js.get("leaders", [])) == 5
+        and js.get("staff", {}).get("head_coach")
+        and len(js.get("standings", [])) == 4
+        and len(js.get("franchise", [])) > 0
+    ),
+    "/api/teams/DET/results?season=2024": lambda js: (
+        len(js.get("rows", [])) >= 17
+        and js["rows"][0].get("game_id")
+        and js["rows"][-1].get("w_td") is not None
+    ),
     "/api/teams/DET/roster": lambda js: len(js.get("players", [])) > 40,
     "/api/teams/DET/schedule": lambda js: len(js.get("games", [])) >= 17,
     "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
