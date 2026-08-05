@@ -16,6 +16,7 @@ logs/
 web/ui/node_modules/
 web/ui/dist/
 web/ui/test-results/
+web/ui/shots/
 web/ui/playwright-report/
 
 # claude code local-only config

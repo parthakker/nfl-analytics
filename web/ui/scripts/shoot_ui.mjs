@@ -18,7 +18,9 @@ import { mkdirSync } from "node:fs";
 
 const BASE = process.env.UI_BASE ?? "http://127.0.0.1:8000";
 const label = process.argv[2] ?? "shot";
-const outDir = `test-results/shots/${label}`;
+// NOT test-results/: `playwright test` wipes that directory on every run,
+// which silently deleted a whole wave of comparison shots.
+const outDir = `shots/${label}`;
 
 const ROUTES = [
   ["command", "/"],
@@ -71,4 +73,4 @@ try {
 }
 
 await browser.close();
-process.stdout.write(`\nshots → web/ui/${outDir}\n`);
+process.stdout.write(`\nshots -> web/ui/${outDir}\n`);
