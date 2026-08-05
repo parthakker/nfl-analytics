@@ -83,7 +83,9 @@ Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
    1999+ via schedules.referee on `ref_key`), injuries 2009+, snap_counts
    2012+, participation 2016–2023 only (discontinued), ftn 2022+.
 9. Weather: temp/wind NULL for domes; query `v_game_weather`, not raw cols.
-10. Aggregate officials by `official_id` / views by `ref_key`, never by name.
+10. Aggregate the raw `officials` table by `official_id`; aggregate the
+    referee VIEWS by `ref_key` (the canonical name — official_id is NULL
+    pre-2015 and nflverse reissued ids in 2023, so it splits careers).
 
 ## Conventions for answers
 

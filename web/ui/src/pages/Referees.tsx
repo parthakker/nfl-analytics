@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import GlassPanel from "../components/GlassPanel";
+import { useEffect, useMemo, useState } from "react";
 import GlowLineChart from "../components/GlowLineChart";
+import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
+import type { Column } from "../components/ui";
 
 interface Ref {
   official_id: string; name: string; games: number;
@@ -8,6 +9,8 @@ interface Ref {
   pen_per_game: number; home_pen_bias: number; avg_total: number;
   over_rate: number; home_win_rate: number; home_cover_rate: number;
 }
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 async function j<T>(p: string): Promise<T> {
   const r = await fetch(p);
@@ -26,63 +29,96 @@ export default function Referees() {
       .catch(console.error);
   }, []);
 
+  const columns = useMemo<Column<Ref>[]>(() => [
+    {
+      key: "name", label: "Referee",
+      help: "Head referee (white hat). One row per referee: careers are stitched across the 2015 boundary where the officials feed begins, and across the 2023 id reissue.",
+      render: (r) => <span className="font-medium text-ink">{r.name}</span>,
+    },
+    { key: "games", label: "G", numeric: true, help: "Regular-season and playoff games worked as head referee, 1999–2025. Only referees with 30 or more are listed." },
+    {
+      key: "era", label: "Era", value: (r) => r.first_season,
+      help: "First and last season on record as a head referee.",
+      render: (r) => <span className="text-muted">{r.first_season}–{r.last_season}</span>,
+    },
+    {
+      key: "pen_per_game", label: "Pen/gm", numeric: true,
+      help: "Accepted penalties per game, both teams combined. Compare against the league average shown above the table.",
+      // above average = orange (more flags), below = blue. Ledge is ~1.5 flags wide.
+      tint: (r) => (leagueAvg ? (leagueAvg - r.pen_per_game) / 1.5 : null),
+      render: (r) => <span className="font-semibold">{r.pen_per_game}</span>,
+    },
+    {
+      key: "home_pen_bias", label: "Home bias", numeric: true,
+      help: "Home-team flags minus away-team flags per game. Negative favors the home team.",
+      render: (r) => `${r.home_pen_bias > 0 ? "+" : ""}${r.home_pen_bias}`,
+    },
+    { key: "avg_total", label: "Avg total", numeric: true, help: "Average combined points scored in this referee's games." },
+    {
+      key: "over_rate", label: "Over %", numeric: true,
+      help: "Share of games that finished above the closing total. 50% is neutral.",
+      render: (r) => pct(r.over_rate),
+    },
+    {
+      key: "home_win_rate", label: "Home win %", numeric: true,
+      help: "Share of games won by the home team. The league baseline is about 55%.",
+      render: (r) => pct(r.home_win_rate),
+    },
+    {
+      key: "home_cover_rate", label: "Home cover %", numeric: true,
+      help: "Share of games in which the home team covered the closing spread.",
+      render: (r) => pct(r.home_cover_rate),
+    },
+  ], [leagueAvg]);
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Referee intelligence</h1>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
-          Head referees, 2015–2025 · league average {leagueAvg} penalties/game ·
-          home bias = extra flags on the home team (negative favors home) ·
-          click a ref for season trends
-        </p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Referee intelligence"
+        subtitle="Head referees, 1999–2025. Click a row for that crew's season-by-season trend."
+        meta={
+          <>
+            {leagueAvg && <Chip tone="neutral">league avg {leagueAvg} pen/gm</Chip>}
+            <Chip tone="neutral">{refs.length} referees</Chip>
+            <Chip tone="neutral">negative home bias favors the home team</Chip>
+          </>
+        }
+      />
 
       {detail && (
-        <GlassPanel title={`${detail.name} — season trends`}>
+        <Panel
+          title={`${detail.name} — season trends`}
+          actions={
+            <button type="button" onClick={() => setDetail(null)}
+                    className="text-label text-muted hover:text-ink">
+              close
+            </button>
+          }
+        >
           <GlowLineChart
             data={detail.seasons}
             xKey="season"
-            series={[{ key: "pen_per_game", name: "penalties / game", color: "var(--arc)" },
-                     { key: "avg_total_points", name: "avg total points", color: "#7d93a8" }]} />
-        </GlassPanel>
+            series={[{ key: "pen_per_game", name: "penalties / game", color: "var(--color-chart-1)" },
+                     { key: "avg_total_points", name: "avg total points", color: "var(--color-chart-2)" }]} />
+        </Panel>
       )}
 
-      <GlassPanel>
-        <table className="w-full text-left text-sm">
-          <thead>
-            <tr style={{ color: "var(--muted)" }}>
-              {["Referee", "Games", "Era", "Pen/gm", "Home bias", "Avg total",
-                "Over %", "Home win %", "Home cover %"].map((h) => (
-                <th key={h} className="py-1.5 pr-3 font-medium">{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {refs.map((r) => (
-              <tr key={r.official_id}
-                  onClick={() => j<{ name: string; seasons: Record<string, number>[] }>(
-                    `/api/referees/${r.official_id}`).then(setDetail)}
-                  className="cursor-pointer border-t transition-colors hover:bg-white/5"
-                  style={{ borderColor: "var(--stroke)" }}>
-                <td className="py-2 pr-3 font-medium">{r.name}</td>
-                <td className="py-2 pr-3 tabular-nums">{r.games}</td>
-                <td className="py-2 pr-3 text-xs" style={{ color: "var(--muted)" }}>
-                  {r.first_season}–{r.last_season}
-                </td>
-                <td className="py-2 pr-3 font-semibold tabular-nums"
-                    style={{ color: leagueAvg && r.pen_per_game > leagueAvg ? "#ec835a" : "var(--arc)" }}>
-                  {r.pen_per_game}
-                </td>
-                <td className="py-2 pr-3 tabular-nums">{r.home_pen_bias > 0 ? "+" : ""}{r.home_pen_bias}</td>
-                <td className="py-2 pr-3 tabular-nums">{r.avg_total}</td>
-                <td className="py-2 pr-3 tabular-nums">{Math.round(r.over_rate * 100)}%</td>
-                <td className="py-2 pr-3 tabular-nums">{Math.round(r.home_win_rate * 100)}%</td>
-                <td className="py-2 tabular-nums">{Math.round(r.home_cover_rate * 100)}%</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </GlassPanel>
+      <Panel flush>
+        <DataTable
+          columns={columns}
+          rows={refs}
+          rowKey={(r) => r.official_id}
+          defaultSort={{ key: "games", dir: "desc" }}
+          stickyCols={1}
+          caption="Head referee tendencies, 1999–2025"
+          empty="No referee data loaded."
+          /* official_id is the canonical NAME key, so it must be encoded */
+          onRowClick={(r) =>
+            j<{ name: string; seasons: Record<string, number>[] }>(
+              `/api/referees/${encodeURIComponent(r.official_id)}`)
+              .then(setDetail).catch(console.error)}
+        />
+      </Panel>
     </div>
   );
 }

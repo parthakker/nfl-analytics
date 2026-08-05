@@ -80,9 +80,10 @@ match; season advstats collapse traded players into 2TM/3TM rows).
 All-time H2H: `SELECT * FROM v_team_matchups WHERE team='BUF' AND
 opponent='MIA'` (directional — one row each way; wins(a→b) == losses(b→a)).
 
-Ref career: `SELECT ref_key, any_value(name), sum(games), ... FROM
-v_referee_seasons GROUP BY ref_key` — never group by name (spelling varies)
-or official_id (NULL pre-2015).
+Ref career: `SELECT ref_key, mode(name), sum(games), ... FROM
+v_referee_seasons GROUP BY ref_key` — never by official_id (NULL pre-2015 and
+reissued in 2023, so it splits one referee across rows). `ref_key` IS the
+canonical uppercase name; the view already collapses spelling variants.
 
 ## Traps
 

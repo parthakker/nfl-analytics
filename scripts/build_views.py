@@ -493,8 +493,14 @@ VIEWS = {
     # officials (2015+) joined via games.old_game_id (99.86% match), coalesced
     # with schedules.referee to extend coverage back to 2007 (and the 4 COVID
     # reschedule games the officials join drops). Aggregate on ref_key:
-    # official_id when known (2015+), normalized name otherwise (gotcha #10 —
-    # name spellings vary, so pre-2015 name-keyed rows are best-effort).
+    # the canonical uppercase NAME. official_id cannot be the key: it is NULL
+    # for every pre-2015 game (officials starts 2015, schedules.referee covers
+    # 1999+) and nflverse reissued ids in 2023, so 16 active referees carry two.
+    # Keying on official_id split Ed Hochuli into 256 games (1999-2014) plus 50
+    # (2015-2017) and showed Jerome Boger twice on the Refs page. Gotcha #10
+    # still holds for the raw officials table — the spelling drift it warns
+    # about is handled here by canon: within one official_id, the most frequent
+    # spelling wins (Brad vs Bradley Rogers), so the name key is stable.
     "v_referee_games": """
         CREATE OR REPLACE VIEW v_referee_games AS
         WITH pen AS (
@@ -505,17 +511,25 @@ VIEWS = {
                    count(*) FILTER (WHERE penalty = 1 AND penalty_team = away_team) AS pen_away
             FROM play_by_play GROUP BY game_id
         ),
-        refs AS (
-            SELECT g.game_id,
-                   coalesce(o.official_id::VARCHAR,
-                            'name:' || upper(trim(s.referee))) AS ref_key,
-                   o.official_id,
+        raw AS (
+            SELECT g.game_id, o.official_id,
                    coalesce(o.official_name, s.referee) AS official_name
             FROM games g
             LEFT JOIN officials o ON o.game_id::VARCHAR = g.old_game_id::VARCHAR
                                  AND o.position = 'Referee'
             LEFT JOIN schedules s ON s.game_id = g.game_id
             WHERE coalesce(o.official_name, s.referee) IS NOT NULL
+        ),
+        canon AS (
+            SELECT official_id, arg_max(nm, c) AS canon_name
+            FROM (SELECT official_id, upper(trim(official_name)) AS nm, count(*) AS c
+                  FROM raw WHERE official_id IS NOT NULL GROUP BY 1, 2)
+            GROUP BY official_id
+        ),
+        refs AS (
+            SELECT r.game_id, r.official_id, r.official_name,
+                   coalesce(c.canon_name, upper(trim(r.official_name))) AS ref_key
+            FROM raw r LEFT JOIN canon c USING (official_id)
         )
         SELECT r.ref_key, r.official_id, r.official_name, g.game_id, g.season,
                g.week, g.season_type, p.penalties, p.penalty_yards,
@@ -533,8 +547,8 @@ VIEWS = {
     """,
     "v_referee_seasons": """
         CREATE OR REPLACE VIEW v_referee_seasons AS
-        SELECT ref_key, any_value(official_id) AS official_id,
-               any_value(official_name) AS name, season,
+        SELECT ref_key, max(official_id) AS official_id,
+               mode(official_name) AS name, season,
                count(*) AS games,
                round(avg(penalties), 2) AS pen_per_game,
                round(avg(penalty_yards), 1) AS pen_yds_per_game,

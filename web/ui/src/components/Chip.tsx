@@ -1,9 +1,4 @@
-export default function Chip({ children, tone = "muted" }: { children: React.ReactNode; tone?: string }) {
-  const color = tone === "hot" ? "#ec835a" : tone === "arc" ? "var(--arc)" : "var(--muted)";
-  return (
-    <span className="rounded-full border px-2 py-0.5 text-[11px]"
-          style={{ borderColor: "var(--stroke)", color }}>
-      {children}
-    </span>
-  );
-}
+/** Migration shim — legacy tones (hot/arc/muted) are mapped inside ui/Chip.
+ *  TODO(wave 8): delete once every page imports from components/ui. */
+export { default } from "./ui/Chip";
+export type { ChipTone } from "./ui/Chip";

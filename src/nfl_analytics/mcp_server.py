@@ -437,7 +437,7 @@ def coach_profile(name: str) -> dict:
 
 @server.tool()
 def referee_stats(name: str = "") -> dict:
-    """Head referee tendencies 2015+: penalties/game, home penalty bias,
+    """Head referee tendencies 1999+: penalties/game, home penalty bias,
     over rate, home win/cover rates. Empty name = all refs ranked."""
     with read_conn() as con:
         if name:
@@ -457,10 +457,10 @@ def referee_stats(name: str = "") -> dict:
                    round(sum(pen_per_game*games)/sum(games), 2) AS pen_per_game,
                    round(sum(over_rate*games)/sum(games), 3) AS over_rate,
                    round(sum(home_cover_rate*games)/sum(games), 3) AS home_cover_rate
-            FROM v_referee_seasons GROUP BY official_id
+            FROM v_referee_seasons GROUP BY ref_key
             HAVING sum(games) >= 30 ORDER BY pen_per_game DESC
         """,
-            filters_applied="career, min 30 games, 2015+",
+            filters_applied="career, min 30 games, 1999+",
         )
 
 
