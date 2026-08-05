@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Chip from "../components/Chip";
 import GlassPanel from "../components/GlassPanel";
-import GlowLineChart from "../components/GlowLineChart";
+import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
 
@@ -332,9 +332,11 @@ export default function Matchup() {
               )}
             </div>
             {d.market.line_history.length > 1 && (
-              <GlowLineChart data={d.market.line_history} xKey="ts"
-                series={[{ key: "spread", name: "Spread (home)", color: "var(--arc)" },
-                         { key: "total", name: "Total", color: "#7d93a8" }]} />
+              <LineChart data={d.market.line_history} xKey="ts" xLabel="Snapshot"
+                title="Line movement"
+                series={[{ key: "spread", name: "Spread (home)" },
+                         { key: "total", name: "Total" }]}
+                digits={1} />
             )}
             {s && s.ats_games > 0 && (
               <p className="text-xs" style={{ color: "var(--muted)" }}>

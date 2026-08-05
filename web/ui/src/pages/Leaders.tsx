@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  CartesianGrid, ReferenceLine, Scatter, ScatterChart, Tooltip,
-  XAxis, YAxis, ResponsiveContainer,
-} from "recharts";
+import { ScatterPlot, type ScatterPoint } from "../components/charts";
 import GlassPanel from "../components/GlassPanel";
 import Tip from "../components/Tip";
 import { api, type LeaderRow, type LeadersResponse } from "../lib/api";
@@ -141,9 +138,17 @@ export default function Leaders() {
   const scatterData = useMemo(() => {
     if (!d) return [];
     return d.rows
-      .map((r) => ({ ...r, x: num(r[scatterCfg.x]), y: num(r[scatterCfg.y]) }))
-      .filter((r) => r.x != null && r.y != null);
-  }, [d, scatterCfg]);
+      .map((r) => ({
+        ...r,
+        x: num(r[scatterCfg.x]),
+        y: num(r[scatterCfg.y]),
+        label: r.player,
+        // team ink identifies the dot; ScatterPlot falls back to slot 1
+        color: hexToRgba(meta?.teams[r.team]?.glow?.startsWith("#")
+          ? meta.teams[r.team].glow : CHART_1_HEX, 0.85),
+      }))
+      .filter((r) => r.x != null && r.y != null) as unknown as ScatterPoint[];
+  }, [d, scatterCfg, meta]);
 
   if (!d) return <div className="space-y-5"><h1 className="text-2xl font-bold tracking-tight">Stat leaders</h1></div>;
   const qcfg = QUAL[family];
@@ -259,46 +264,27 @@ export default function Leaders() {
 
       {view === "scatter" ? (
         <GlassPanel title={`${d.label} — ${scatterCfg.x} vs ${scatterCfg.y} (qualified, ${d.season})`}>
-          <ResponsiveContainer width="100%" height={440}>
-            <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
-              <CartesianGrid stroke="var(--stroke)" />
-              <XAxis dataKey="x" type="number" name={scatterCfg.x} domain={["auto", "auto"]}
-                     tick={{ fill: "var(--muted)", fontSize: 11 }} stroke="var(--stroke)" />
-              <YAxis dataKey="y" type="number" name={scatterCfg.y} domain={["auto", "auto"]}
-                     tick={{ fill: "var(--muted)", fontSize: 11 }} stroke="var(--stroke)" />
-              {num(d.league_avg[scatterCfg.y]) != null && (
-                <ReferenceLine y={d.league_avg[scatterCfg.y]!} stroke="var(--muted)" strokeDasharray="4 4" />
-              )}
-              {num(d.league_avg[scatterCfg.x]) != null && (
-                <ReferenceLine x={d.league_avg[scatterCfg.x]!} stroke="var(--muted)" strokeDasharray="4 4" />
-              )}
-              <Tooltip cursor={{ strokeDasharray: "3 3" }}
-                content={({ payload }) => {
-                  const r = payload?.[0]?.payload as (LeaderRow & { x: number; y: number }) | undefined;
-                  if (!r) return null;
-                  return (
-                    <div className="glass px-3 py-2 text-xs">
-                      <div className="font-semibold">{r.player} ({r.team})</div>
-                      <div style={{ color: "var(--muted)" }}>
-                        {scatterCfg.x}: {r.x} · {scatterCfg.y}: {r.y}
-                      </div>
-                    </div>
-                  );
-                }} />
-              <Scatter data={scatterData}
-                       onClick={(p) => p && nav(`/player/${(p as unknown as LeaderRow).player_id}`)}
-                       shape={(props: { cx?: number; cy?: number; payload?: LeaderRow }) => {
-                  const team = props.payload?.team ?? "";
-                  const color = meta?.teams[team]?.glow ?? CHART_1_HEX;
-                  return <circle cx={props.cx} cy={props.cy} r={5}
-                                 fill={hexToRgba(color.startsWith("#") ? color : CHART_1_HEX, 0.8)}
-                                 style={{ cursor: "pointer" }} />;
-                }} />
-            </ScatterChart>
-          </ResponsiveContainer>
-          <p className="text-xs" style={{ color: "var(--muted)" }}>
-            Dashed lines = qualified-field average. Click a dot to open the player.
-          </p>
+          <ScatterPlot
+            series={[{ name: `${d.label} (qualified)`, points: scatterData }]}
+            xLabel={scatterCfg.x}
+            yLabel={scatterCfg.y}
+            height={440}
+            meanX={num(d.league_avg[scatterCfg.x])}
+            meanY={num(d.league_avg[scatterCfg.y])}
+            onPointClick={(p) => nav(`/player/${(p as unknown as LeaderRow).player_id}`)}
+            renderTooltip={(p) => {
+              const r = p as unknown as LeaderRow;
+              return (
+                <>
+                  <div className="font-semibold">{r.player} ({r.team})</div>
+                  <div className="text-muted">
+                    {scatterCfg.x}: <span className="tabular-nums text-ink">{p.x}</span> ·{" "}
+                    {scatterCfg.y}: <span className="tabular-nums text-ink">{p.y}</span>
+                  </div>
+                </>
+              );
+            }}
+            note="Dashed lines are the qualified-field average. Click a dot to open that player." />
         </GlassPanel>
       ) : (
         <GlassPanel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`}>

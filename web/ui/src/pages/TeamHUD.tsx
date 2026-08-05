@@ -5,8 +5,8 @@ import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
 import Chip from "../components/Chip";
 import GlassPanel from "../components/GlassPanel";
-import GlowLineChart from "../components/GlowLineChart";
-import StatRing from "../components/StatRing";
+import { LineChart } from "../components/charts";
+import { StatTile } from "../components/ui";
 import Tip from "../components/Tip";
 
 /* ── types (page-local; single-page endpoints) ─────────────────────────── */
@@ -155,17 +155,17 @@ export default function TeamHUD() {
               {" · "}{ov.season}
             </p>
           </div>
-          <div className="ml-auto flex gap-6">
-            <StatRing label={`${ov.season} record`} value={`${h.w}–${h.l}${h.t ? `–${h.t}` : ""}`}
-                      fraction={games ? h.w / games : 0} />
-            <Tip text={HELP.pf}>
-              <StatRing label="points / game" value={h.pf_pg?.toFixed(1) ?? "—"}
-                        sub={h.pf_rank ? `#${h.pf_rank}` : ""} fraction={(h.pf_pg ?? 0) / 35} />
-            </Tip>
-            <Tip text={HELP.pa}>
-              <StatRing label="allowed / game" value={h.pa_pg?.toFixed(1) ?? "—"}
-                        sub={h.pa_rank ? `#${h.pa_rank}` : ""} fraction={1 - (h.pa_pg ?? 35) / 35} />
-            </Tip>
+          <div className="ml-auto grid w-full max-w-md grid-cols-3 gap-2">
+            <StatTile label={`${ov.season} record`}
+                      value={`${h.w}–${h.l}${h.t ? `–${h.t}` : ""}`}
+                      meter={games ? h.w / games : 0}
+                      sub={games ? `${Math.round((h.w / games) * 100)}% win rate` : undefined} />
+            <StatTile label="points / game" value={h.pf_pg?.toFixed(1) ?? "—"}
+                      rank={h.pf_rank ?? null} meter={(h.pf_pg ?? 0) / 35}
+                      help={HELP.pf} />
+            <StatTile label="allowed / game" value={h.pa_pg?.toFixed(1) ?? "—"}
+                      rank={h.pa_rank ?? null} meter={1 - (h.pa_pg ?? 35) / 35}
+                      help={HELP.pa} />
           </div>
         </div>
       </div>
@@ -579,9 +579,9 @@ export default function TeamHUD() {
                   <option key={sn} value={sn} style={{ color: "#000" }}>{sn}</option>))}
               </select>
             </div>
-            <GlowLineChart data={epaWeeks} xKey="week"
-              series={[{ key: "off", name: "Offense", color: "var(--accent)" },
-                       { key: "def", name: "Defense", color: "#7d93a8" }]} />
+            <LineChart data={epaWeeks} xKey="week" xLabel="Week"
+              series={[{ key: "off", name: "Offense" },
+                       { key: "def", name: "Defense" }]} digits={3} />
           </GlassPanel>
           <GlassPanel title="Franchise results by season">
             <table className="w-full text-left text-sm">

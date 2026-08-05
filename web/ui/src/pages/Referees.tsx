@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import GlowLineChart from "../components/GlowLineChart";
+import { LineChart } from "../components/charts";
 import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
 import type { Column } from "../components/ui";
 
@@ -95,11 +95,12 @@ export default function Referees() {
             </button>
           }
         >
-          <GlowLineChart
+          <LineChart
             data={detail.seasons}
-            xKey="season"
-            series={[{ key: "pen_per_game", name: "penalties / game", color: "var(--color-chart-1)" },
-                     { key: "avg_total_points", name: "avg total points", color: "var(--color-chart-2)" }]} />
+            xKey="season" xLabel="Season"
+            series={[{ key: "pen_per_game", name: "penalties / game" },
+                     { key: "avg_total_points", name: "avg total points" }]}
+            digits={1} />
         </Panel>
       )}
 

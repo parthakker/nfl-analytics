@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import Chip from "../components/Chip";
-import FingerprintRadar from "../components/FingerprintRadar";
+import { LineChart, Radar } from "../components/charts";
 import GlassPanel from "../components/GlassPanel";
-import GlowLineChart from "../components/GlowLineChart";
 import { useMeta } from "../lib/MetaContext";
 import { hexToRgba } from "../lib/color";
 
@@ -152,9 +151,10 @@ export default function CoachPage() {
             {d.role === "DC" ? "; lower EPA allowed is better" : ""}). Tenure
             starts {d.since}; the season before is shown for contrast.
           </p>
-          <GlowLineChart
+          <LineChart
             data={(d.unit_seasons ?? []).map((s) => ({ ...s }))} xKey="season"
-            series={[{ key: "epa", name: d.unit_label ?? "EPA", color: "var(--accent)" }]} />
+            xLabel="Season"
+            series={[{ key: "epa", name: d.unit_label ?? "EPA" }]} />
           <table className="mt-3 w-full text-left text-sm">
             <thead><tr style={{ color: "var(--muted)" }}>
               {["Season", "EPA/play", "League rank"].map((h) => (
@@ -227,7 +227,7 @@ export default function CoachPage() {
       {seasons.length > 0 && (
         <div className="grid gap-6 lg:grid-cols-2">
           <GlassPanel title={`Scheme fingerprint — ${d.fingerprint_note}`}>
-            <FingerprintRadar data={d.fingerprint ?? []} />
+            <Radar data={d.fingerprint ?? []} />
             <p className="text-xs" style={{ color: "var(--muted)" }}>
               Each axis is a league percentile (100 = most extreme). Pass defense
               is inverted: higher = better defense.

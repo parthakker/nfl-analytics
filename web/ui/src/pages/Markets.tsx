@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, type MarketRow } from "../lib/api";
 import GlassPanel from "../components/GlassPanel";
-import GlowLineChart from "../components/GlowLineChart";
-import Sparkline from "../components/Sparkline";
+import { LineChart, Sparkline } from "../components/charts";
 import { useMeta } from "../lib/MetaContext";
 
 const KINDS = [["game", "Games"], ["spread", "Spreads"], ["total", "Totals"],
@@ -44,10 +43,11 @@ export default function Markets() {
 
       {hist && (
         <GlassPanel title={hist.title}>
-          <GlowLineChart
+          <LineChart
             data={hist.points.map((p) => ({ ts: p.ts.slice(5, 16).replace("T", " "), prob: p.prob }))}
-            xKey="ts"
-            series={[{ key: "prob", name: "implied probability", color: "var(--arc)" }]} />
+            xKey="ts" xLabel="Snapshot"
+            series={[{ key: "prob", name: "implied probability" }]}
+            reference={{ y: 0.5, label: "coin flip" }} />
         </GlassPanel>
       )}
 

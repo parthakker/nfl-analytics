@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, type NewsItem } from "../lib/api";
 import GlassPanel from "../components/GlassPanel";
-import GlowLineChart from "../components/GlowLineChart";
+import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
 
@@ -109,8 +109,8 @@ export default function PlayerPage() {
                   .map((s) => <option key={s} value={s} style={{ color: "#000" }}>{s}</option>)}
               </select>
             </div>
-            <GlowLineChart data={weekly} xKey="week"
-              series={[{ key: "ppr", name: "PPR points", color: "var(--accent)" }]} />
+            <LineChart data={weekly} xKey="week" xLabel="Week"
+              series={[{ key: "ppr", name: "PPR points" }]} digits={1} />
           </div>
         </GlassPanel>
         <GlassPanel title="Recent news">
