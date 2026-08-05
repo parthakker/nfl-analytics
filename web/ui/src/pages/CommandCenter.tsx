@@ -15,9 +15,8 @@ function TeamNode({ code, w, l }: { code: string; w: number; l: number }) {
   if (!t) return null;
   return (
     <button onClick={() => nav(`/team/${code}`)}
-      className="group flex flex-col items-center gap-1 rounded-xl p-2 transition-transform hover:-translate-y-0.5"
-      style={{ ["--accent-glow" as string]: `${t.glow}88` }}>
-      <img src={t.logo} alt={t.name} className="logo-glow h-12 w-12 transition-transform group-hover:scale-110" />
+      className="group flex flex-col items-center gap-1 rounded-[var(--radius-control)] p-2 transition-colors hover:bg-surface-2">
+      <img src={t.logo} alt={t.name} className="h-12 w-12 transition-transform group-hover:scale-110" />
       <span className="text-xs font-bold">{code}</span>
       <span className="text-[11px] tabular-nums" style={{ color: "var(--muted)" }}>
         {w}–{l}

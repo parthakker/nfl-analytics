@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import { api, type NewsItem, type RosterPlayer, type TeamScheduleGame } from "../lib/api";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useTeamTokens } from "../lib/useTeamTokens";
 import Chip from "../components/Chip";
 import GlassPanel from "../components/GlassPanel";
 import { LineChart } from "../components/charts";
@@ -121,6 +122,8 @@ export default function TeamHUD() {
     api.teamEpa(c, epaSeason).then((r) => setEpaWeeks(r.weeks)).catch(console.error);
   }, [c, tab, epaSeason]);
 
+  const { style: teamStyle } = useTeamTokens(c);
+
   const positions = useMemo(
     () => [...new Set(roster.map((p) => p.pos).filter(Boolean))].sort() as string[],
     [roster]);
@@ -131,12 +134,12 @@ export default function TeamHUD() {
   const s = ov.staff;
 
   return (
-    <div className="space-y-6"
-         style={{ ["--accent" as string]: t.glow,
-                  ["--accent-glow" as string]: hexToRgba(t.glow, 0.5) }}>
+    // team tokens are IDENTITY only: a rail, a wash, a logo backdrop.
+    // --accent stays fixed so "clickable" means the same thing on every page.
+    <div className="space-y-6" style={teamStyle}>
       {/* banner */}
-      <div className="glass relative overflow-hidden p-8"
-           style={{ background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.55)}, var(--glass) 65%)` }}>
+      <div className="rail-team relative overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface p-8"
+           style={{ background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.35)}, var(--color-surface) 60%)` }}>
         <img src={t.logo} alt="" aria-hidden
              className="pointer-events-none absolute -right-10 -top-14 h-64 w-64 opacity-15" />
         <div className="relative flex flex-wrap items-center gap-6">

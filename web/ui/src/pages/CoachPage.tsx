@@ -4,7 +4,7 @@ import Chip from "../components/Chip";
 import { LineChart, Radar } from "../components/charts";
 import GlassPanel from "../components/GlassPanel";
 import { useMeta } from "../lib/MetaContext";
-import { hexToRgba } from "../lib/color";
+import { useTeamTokens } from "../lib/useTeamTokens";
 
 interface Scheme {
   family: string;
@@ -103,20 +103,20 @@ export default function CoachPage() {
       .then(setD).catch((e) => setErr(String(e)));
   }, [name, params]);
 
-  if (err) return <p style={{ color: "var(--muted)" }}>No record found. {err}</p>;
+  // hooks must run before any early return
+  const { style: teamStyle } = useTeamTokens(d?.current_team ?? null);
+
+  if (err) return <p className="text-muted">No record found. {err}</p>;
   if (!d) return null;
   const t = d.current_team ? meta?.teams[d.current_team] : null;
-  const glow = t?.glow;
 
   /* ───────────────────────── coordinator view ───────────────────────── */
   if (d.role !== "HC") {
     const scheme = d.scheme as Scheme;
     return (
-      <div className="space-y-6"
-           style={glow ? { ["--accent" as string]: glow,
-                           ["--accent-glow" as string]: hexToRgba(glow, 0.5) } : undefined}>
-        <div className="glass flex flex-wrap items-center gap-5 p-6">
-          {t && <img src={t.logo} alt="" className="logo-glow h-14 w-14" />}
+      <div className="space-y-6" style={teamStyle}>
+        <div className="rail-team flex flex-wrap items-center gap-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6">
+          {t && <img src={t.logo} alt="" className="h-14 w-14" />}
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-bold tracking-tight">{d.coach}</h1>
@@ -188,11 +188,9 @@ export default function CoachPage() {
     }), { w: 0, g: 0, pw: 0, pg: 0 });
 
   return (
-    <div className="space-y-6"
-         style={glow ? { ["--accent" as string]: glow,
-                         ["--accent-glow" as string]: hexToRgba(glow, 0.5) } : undefined}>
-      <div className="glass flex flex-wrap items-center gap-5 p-6">
-        {t && <img src={t.logo} alt="" className="logo-glow h-14 w-14" />}
+    <div className="space-y-6" style={teamStyle}>
+      <div className="rail-team flex flex-wrap items-center gap-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6">
+        {t && <img src={t.logo} alt="" className="h-14 w-14" />}
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{d.coach}</h1>

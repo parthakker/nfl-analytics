@@ -28,7 +28,7 @@ const ROUTES = [
   ["team-CLE", "/team/CLE"],
   ["team-results", "/team/KC?tab=results"],
   ["team-roster", "/team/KC?tab=roster"],
-  ["matchup-DEN-CIN", "/matchup/2025_11_DEN_CIN"],
+  ["matchup-DEN-CIN", "/matchup/2024_17_DEN_CIN"],
   ["matchup-BAL-KC", "/matchup/2024_01_BAL_KC"],
   ["player", "/player/00-0033873"],
   ["coaches", "/coaches"],

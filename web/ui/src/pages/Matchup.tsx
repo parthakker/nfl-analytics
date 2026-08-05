@@ -5,6 +5,7 @@ import GlassPanel from "../components/GlassPanel";
 import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useTeamPairTokens } from "../lib/useTeamTokens";
 
 interface Side {
   code: string; coach: string | null; qb: string | null;
@@ -109,24 +110,28 @@ export default function Matchup() {
       .then(setD).catch((e) => setErr(String(e)));
   }, [gameId]);
 
-  if (err) return <p style={{ color: "var(--muted)" }}>No matchup found. {err}</p>;
+  // hooks before early returns; the pair hook demotes the away side to
+  // neutral when the two hues collide (DEN and CIN are both #FB4F14)
+  const pair = useTeamPairTokens(d?.game.away_team ?? null, d?.game.home_team ?? null);
+
+  if (err) return <p className="text-muted">No matchup found. {err}</p>;
   if (!d || !meta) return null;
   const ta = meta.teams[d.game.away_team];
   const th = meta.teams[d.game.home_team];
-  const aGlow = ta?.glow ?? "var(--arc)";
-  const hGlow = th?.glow ?? "var(--arc)";
+  const aGlow = pair.away.ink;
+  const hGlow = pair.home.ink;
   const s = d.series;
   const w = d.weather;
 
   return (
     <div className="space-y-6">
       {/* split banner: away color -> glass -> home color */}
-      <div className="glass relative overflow-hidden p-7" style={{
-        background: `linear-gradient(105deg, ${hexToRgba(ta?.color ?? "#123", 0.5)}, var(--glass) 42%, var(--glass) 58%, ${hexToRgba(th?.color ?? "#123", 0.5)})` }}>
+      <div className="relative overflow-hidden rounded-[var(--radius-panel)] border border-border p-7" style={{
+        background: `linear-gradient(105deg, ${hexToRgba(ta?.color ?? "#123", 0.3)}, var(--color-surface) 40%, var(--color-surface) 60%, ${hexToRgba(th?.color ?? "#123", 0.3)})` }}>
         <div className="relative flex items-center gap-5">
           <Link to={`/team/${d.game.away_team}`} className="flex items-center gap-4">
             <img src={ta?.logo} alt={d.game.away_team} className="h-16 w-16"
-                 style={{ filter: `drop-shadow(0 0 12px ${hexToRgba(aGlow, 0.6)})` }} />
+                 />
             <div>
               <div className="text-xl font-bold tracking-tight">{ta?.name ?? d.game.away_team}</div>
               <div className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
@@ -164,7 +169,7 @@ export default function Matchup() {
               </div>
             </div>
             <img src={th?.logo} alt={d.game.home_team} className="h-16 w-16"
-                 style={{ filter: `drop-shadow(0 0 12px ${hexToRgba(hGlow, 0.6)})` }} />
+                 />
           </Link>
         </div>
       </div>

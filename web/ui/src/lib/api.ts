@@ -1,8 +1,20 @@
+export interface TeamTokens {
+  /** text and rules on a dark surface — contrast-clamped, hue preserved */
+  ink: string;
+  /** a filled chip, bar or rail */
+  solid: string;
+  /** 10% tint for a banner or a selected row */
+  wash: string;
+}
+
 export interface TeamMeta {
   name: string;
   conf: string;
   div: string;
+  /** the brand hex, unmodified — for a logo backdrop, never for text */
   color: string;
+  tokens: TeamTokens;
+  /** @deprecated the old single accent colour; equals tokens.ink */
   glow: string;
   logo: string;
 }

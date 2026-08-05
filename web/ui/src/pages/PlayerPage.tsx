@@ -5,6 +5,7 @@ import GlassPanel from "../components/GlassPanel";
 import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useTeamTokens } from "../lib/useTeamTokens";
 
 type Info = {
   name: string; pos: string; team: string; headshot: string | null;
@@ -34,22 +35,22 @@ export default function PlayerPage() {
     }).catch((e) => setErr(String(e)));
   }, [gsis]);
 
-  if (err) return <p style={{ color: "var(--muted)" }}>Player not found. {err}</p>;
+  // hooks must run before any early return
+  const { style: teamStyle } = useTeamTokens(info?.team ?? null);
+
+  if (err) return <p className="text-muted">Player not found. {err}</p>;
   if (!info) return null;
   const t = meta?.teams[info.team];
   const weekly = allWeekly.filter((w) => w.season === chartSeason);
 
   return (
-    <div className="space-y-6"
-         style={t ? { ["--accent" as string]: t.glow,
-                      ["--accent-glow" as string]: hexToRgba(t.glow, 0.5) } : undefined}>
-      <div className="glass relative overflow-hidden p-6"
-           style={t ? { background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.45)}, var(--glass) 65%)` } : undefined}>
+    <div className="space-y-6" style={teamStyle}>
+      <div className="rail-team relative overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface p-6"
+           style={t ? { background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.3)}, var(--color-surface) 60%)` } : undefined}>
         <div className="flex flex-wrap items-center gap-5">
           {info.headshot && (
             <img src={info.headshot} alt={info.name}
                  className="h-20 w-20 rounded-full object-cover"
-                 style={{ boxShadow: "0 0 18px var(--accent-glow)" }}
                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           )}
           <div>
