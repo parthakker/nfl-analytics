@@ -1,48 +1,48 @@
 <svg viewBox="0 0 800 450" xmlns="http://www.w3.org/2000/svg" font-family="Inter, system-ui, sans-serif">
   <!-- subtle field surface -->
-  <rect x="30" y="50" width="740" height="380" fill="#22c55e" fill-opacity="0.08" rx="8"/>
+  <rect x="30" y="50" width="740" height="380" fill="#3fd08b" fill-opacity="0.08" rx="8"/>
   <!-- title -->
-  <text x="400" y="32" fill="#cbd5e1" font-size="16" text-anchor="middle" font-weight="600">Nickel (4-2-5) vs 11 Personnel — technique numbers on the line</text>
+  <text x="400" y="32" fill="#e6edf3" font-size="16" text-anchor="middle" font-weight="600">Nickel (4-2-5) vs 11 Personnel — technique numbers on the line</text>
 
   <!-- SAFETIES: two-high shell -->
-  <circle cx="285" cy="90" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="285" y="95" fill="#cbd5e1" font-size="12" text-anchor="middle">S</text>
-  <circle cx="515" cy="90" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="515" y="95" fill="#cbd5e1" font-size="12" text-anchor="middle">S</text>
-  <text x="400" y="95" fill="#94a3b8" font-size="12" text-anchor="middle">two-high shell (free / box roles rotate post-snap)</text>
+  <circle cx="285" cy="90" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="285" y="95" fill="#e6edf3" font-size="12" text-anchor="middle">S</text>
+  <circle cx="515" cy="90" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="515" y="95" fill="#e6edf3" font-size="12" text-anchor="middle">S</text>
+  <text x="400" y="95" fill="#98a2b0" font-size="12" text-anchor="middle">two-high shell (free / box roles rotate post-snap)</text>
 
   <!-- CORNERS -->
-  <circle cx="95" cy="240" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="95" y="245" fill="#cbd5e1" font-size="12" text-anchor="middle">CB</text>
-  <text x="95" y="212" fill="#94a3b8" font-size="12" text-anchor="middle">press</text>
-  <circle cx="705" cy="200" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="705" y="205" fill="#cbd5e1" font-size="12" text-anchor="middle">CB</text>
-  <text x="705" y="172" fill="#94a3b8" font-size="12" text-anchor="middle">off coverage</text>
+  <circle cx="95" cy="240" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="95" y="245" fill="#e6edf3" font-size="12" text-anchor="middle">CB</text>
+  <text x="95" y="212" fill="#98a2b0" font-size="12" text-anchor="middle">press</text>
+  <circle cx="705" cy="200" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="705" y="205" fill="#e6edf3" font-size="12" text-anchor="middle">CB</text>
+  <text x="705" y="172" fill="#98a2b0" font-size="12" text-anchor="middle">off coverage</text>
 
   <!-- NICKEL over the slot -->
-  <circle cx="200" cy="255" r="16" stroke="#22d3ee" stroke-width="2.5" fill="none"/>
-  <text x="200" y="260" fill="#cbd5e1" font-size="12" text-anchor="middle">N</text>
-  <text x="200" y="228" fill="#22d3ee" font-size="12" text-anchor="middle">nickel / star</text>
+  <circle cx="200" cy="255" r="16" stroke="#4c8dff" stroke-width="2.5" fill="none"/>
+  <text x="200" y="260" fill="#e6edf3" font-size="12" text-anchor="middle">N</text>
+  <text x="200" y="228" fill="#4c8dff" font-size="12" text-anchor="middle">nickel / star</text>
 
   <!-- LINEBACKERS -->
-  <circle cx="360" cy="215" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="360" y="220" fill="#cbd5e1" font-size="12" text-anchor="middle">M</text>
-  <text x="360" y="188" fill="#94a3b8" font-size="12" text-anchor="middle">MIKE (calls it)</text>
-  <circle cx="465" cy="215" r="16" stroke="#94a3b8" stroke-width="2" fill="none"/>
-  <text x="465" y="220" fill="#cbd5e1" font-size="12" text-anchor="middle">W</text>
-  <text x="480" y="188" fill="#94a3b8" font-size="12" text-anchor="middle">WILL (run &amp; chase)</text>
+  <circle cx="360" cy="215" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="360" y="220" fill="#e6edf3" font-size="12" text-anchor="middle">M</text>
+  <text x="360" y="188" fill="#98a2b0" font-size="12" text-anchor="middle">MIKE (calls it)</text>
+  <circle cx="465" cy="215" r="16" stroke="#98a2b0" stroke-width="2" fill="none"/>
+  <text x="465" y="220" fill="#e6edf3" font-size="12" text-anchor="middle">W</text>
+  <text x="480" y="188" fill="#98a2b0" font-size="12" text-anchor="middle">WILL (run &amp; chase)</text>
 
   <!-- DEFENSIVE LINE with technique labels -->
-  <g stroke="#94a3b8" stroke-width="2.5" fill="none">
+  <g stroke="#98a2b0" stroke-width="2.5" fill="none">
     <circle cx="290" cy="285" r="16"/>
     <circle cx="381" cy="285" r="16"/>
     <circle cx="457" cy="285" r="16"/>
     <circle cx="512" cy="285" r="16"/>
   </g>
-  <g fill="#cbd5e1" font-size="12" text-anchor="middle">
+  <g fill="#e6edf3" font-size="12" text-anchor="middle">
     <text x="290" y="290">E</text><text x="381" y="290">NT</text><text x="457" y="290">DT</text><text x="512" y="290">E</text>
   </g>
-  <g fill="#22d3ee" font-size="12" text-anchor="middle" font-weight="600">
+  <g fill="#4c8dff" font-size="12" text-anchor="middle" font-weight="600">
     <text x="262" y="262">wide-9</text>
     <text x="381" y="262">1-tech</text>
     <text x="457" y="262">3-tech</text>
@@ -50,11 +50,11 @@
   </g>
 
   <!-- line of scrimmage -->
-  <line x1="40" y1="312" x2="760" y2="312" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="8 6"/>
-  <text x="752" y="304" fill="#22d3ee" font-size="12" text-anchor="end">line of scrimmage</text>
+  <line x1="40" y1="312" x2="760" y2="312" stroke="#4c8dff" stroke-width="1.5" stroke-dasharray="8 6"/>
+  <text x="752" y="304" fill="#4c8dff" font-size="12" text-anchor="end">line of scrimmage</text>
 
   <!-- GHOST OFFENSE for reference -->
-  <g stroke="#94a3b8" stroke-width="1.5" fill="none" opacity="0.35">
+  <g stroke="#98a2b0" stroke-width="1.5" fill="none" opacity="0.35">
     <circle cx="316" cy="340" r="14"/>
     <circle cx="358" cy="340" r="14"/>
     <circle cx="400" cy="340" r="14"/>
@@ -67,7 +67,7 @@
     <circle cx="400" cy="408" r="14"/>
     <circle cx="335" cy="408" r="14"/>
   </g>
-  <g fill="#94a3b8" font-size="11" text-anchor="middle" opacity="0.55">
+  <g fill="#98a2b0" font-size="11" text-anchor="middle" opacity="0.55">
     <text x="316" y="344">T</text><text x="358" y="344">G</text><text x="400" y="344">C</text>
     <text x="442" y="344">G</text><text x="484" y="344">T</text><text x="530" y="344">Y</text>
     <text x="95" y="344">X</text><text x="200" y="372">slot</text><text x="705" y="372">Z</text>
@@ -75,5 +75,5 @@
   </g>
 
   <!-- technique key -->
-  <text x="400" y="440" fill="#94a3b8" font-size="12" text-anchor="middle">Technique = alignment vs the OL: 0 head-up on C, 1 shade of C, 3 outside the G, 5 outside the T, 9 wide of the TE/T</text>
+  <text x="400" y="440" fill="#98a2b0" font-size="12" text-anchor="middle">Technique = alignment vs the OL: 0 head-up on C, 1 shade of C, 3 outside the G, 5 outside the T, 9 wide of the TE/T</text>
 </svg>
