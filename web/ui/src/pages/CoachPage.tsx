@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import Chip from "../components/Chip";
 import { LineChart, Radar } from "../components/charts";
-import GlassPanel from "../components/GlassPanel";
+import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
+import type { Column } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
 import { useTeamTokens } from "../lib/useTeamTokens";
 
@@ -45,18 +45,12 @@ interface Detail {
 
 function SchemePanel({ title, scheme }: { title: string; scheme: Scheme }) {
   return (
-    <Link to={`/knowledge/${scheme.knowledge.replace("#", "#")}`} className="block">
-      <GlassPanel title={title} className="h-full transition-transform hover:-translate-y-0.5">
-        <div className="glow-text text-lg font-semibold" style={{ color: "var(--accent)" }}>
-          {scheme.family}
-        </div>
-        <p className="mt-1 text-sm" style={{ color: "var(--muted)" }}>
-          {scheme.fact || "—"}
-        </p>
-        <p className="mt-2 text-xs font-semibold" style={{ color: "var(--arc)" }}>
-          learn this scheme →
-        </p>
-      </GlassPanel>
+    <Link to={`/knowledge/${scheme.knowledge}`} className="block h-full">
+      <Panel title={title} className="h-full transition-colors hover:border-accent/50 hover:bg-surface-2">
+        <div className="text-h2 font-semibold text-accent">{scheme.family}</div>
+        <p className="mt-1 text-body text-muted">{scheme.fact || "—"}</p>
+        <p className="mt-2 text-label font-semibold text-accent">learn this scheme →</p>
+      </Panel>
     </Link>
   );
 }
@@ -64,27 +58,27 @@ function SchemePanel({ title, scheme }: { title: string; scheme: Scheme }) {
 function StaffCard({ role, block, team }: { role: string; block: StaffBlock | null; team: string | null }) {
   if (!block) {
     return (
-      <GlassPanel title={`${role === "OC" ? "Offensive" : "Defensive"} coordinator`}>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
+      <Panel title={`${role === "OC" ? "Offensive" : "Defensive"} coordinator`}>
+        <p className="text-body text-muted">
           No {role} title on this staff — the head coach runs the unit himself.
         </p>
-      </GlassPanel>
+      </Panel>
     );
   }
   return (
-    <GlassPanel title={`${role === "OC" ? "Offensive" : "Defensive"} coordinator`}>
-      <div className="flex items-center gap-2">
+    <Panel title={`${role === "OC" ? "Offensive" : "Defensive"} coordinator`}>
+      <div className="flex flex-wrap items-center gap-2">
         <Link to={`/coach/${encodeURIComponent(block.name)}?role=${role}`}
-              className="text-lg font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+              className="text-h2 font-semibold text-accent hover:underline">
           {block.name}
         </Link>
-        {block.playcaller && <Chip tone="arc">calls plays</Chip>}
-        <span className="ml-auto text-xs" style={{ color: "var(--muted)" }}>
+        {block.playcaller && <Chip tone="accent">calls plays</Chip>}
+        <span className="ml-auto text-micro text-muted">
           since {block.since}{team ? ` · ${team}` : ""}
         </span>
       </div>
-      <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>{block.about}</p>
-    </GlassPanel>
+      <p className="mt-2 text-body text-muted">{block.about}</p>
+    </Panel>
   );
 }
 
@@ -106,6 +100,60 @@ export default function CoachPage() {
   // hooks must run before any early return
   const { style: teamStyle } = useTeamTokens(d?.current_team ?? null);
 
+  const unitColumns = useMemo<Column<{ season: number; epa: number; rank: number }>[]>(() => [
+    {
+      key: "season", label: "Season", numeric: true,
+      help: "The arrow marks the first season of this coordinator's tenure.",
+      render: (s) => <>{s.season}{s.season === d?.since ? " ←" : ""}</>,
+    },
+    {
+      key: "epa", label: "EPA/play", numeric: true,
+      help: "Expected points added per play by this unit, regular season.",
+      render: (s) => (s.epa > 0 ? `+${s.epa}` : s.epa),
+    },
+    {
+      key: "rank", label: "League rank", numeric: true,
+      help: "Where that EPA ranked among all 32 teams.",
+      render: (s) => `#${s.rank}`,
+    },
+  ], [d?.since]);
+
+  const seasonColumns = useMemo<Column<Record<string, number | string | null>>[]>(() => [
+    { key: "season", label: "Season", numeric: true, help: "Season coached." },
+    { key: "team", label: "Team", help: "Team coached that season." },
+    {
+      key: "record", label: "Record", numeric: true,
+      value: (s) => (Number(s.reg_games) ? Number(s.reg_wins) / Number(s.reg_games) : 0),
+      help: "Regular-season wins and losses, sorted by win percentage.",
+      render: (s) => `${s.reg_wins}\u2013${Number(s.reg_games) - Number(s.reg_wins)}`,
+    },
+    {
+      key: "playoffs", label: "Playoffs", numeric: true, value: (s) => Number(s.post_wins) || 0,
+      help: "Postseason wins and losses that year.",
+      render: (s) => (Number(s.post_games) > 0
+        ? `${s.post_wins}\u2013${Number(s.post_games) - Number(s.post_wins)}` : "\u2014"),
+    },
+    { key: "ppg", label: "PPG", numeric: true, help: "Points scored per game." },
+    {
+      key: "ats", label: "ATS", numeric: true,
+      value: (s) => (Number(s.ats_games) ? Number(s.ats_wins) / Number(s.ats_games) : 0),
+      help: "Record against the closing spread. Pushes are excluded.",
+      render: (s) => (Number(s.ats_games) > 0
+        ? `${s.ats_wins}\u2013${Number(s.ats_games) - Number(s.ats_wins)}` : "\u2014"),
+    },
+    {
+      key: "go_rate", label: "4th-down", numeric: true,
+      help: "How often this coach went for it on 4th down where the analytics say go.",
+      render: (s) => (s.go_rate != null ? `${Math.round(Number(s.go_rate) * 100)}%` : "\u2014"),
+    },
+    {
+      key: "proe", label: "PROE", numeric: true,
+      help: "Pass rate over expected: how much more this coach passed than the league would in the same situation.",
+      render: (s) => (s.proe != null
+        ? `${Number(s.proe) > 0 ? "+" : ""}${(Number(s.proe) * 100).toFixed(1)}%` : "\u2014"),
+    },
+  ], []);
+
   if (err) return <p className="text-muted">No record found. {err}</p>;
   if (!d) return null;
   const t = d.current_team ? meta?.teams[d.current_team] : null;
@@ -115,62 +163,58 @@ export default function CoachPage() {
     const scheme = d.scheme as Scheme;
     return (
       <div className="space-y-6" style={teamStyle}>
-        <div className="rail-team flex flex-wrap items-center gap-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6">
-          {t && <img src={t.logo} alt="" className="h-14 w-14" />}
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold tracking-tight">{d.coach}</h1>
-              <Chip tone="arc">{d.role === "OC" ? "Offensive coordinator" : "Defensive coordinator"}</Chip>
-              {d.playcaller && <Chip tone="hot">calls plays</Chip>}
-            </div>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
-              {t?.name} · since {d.since} · head coach{" "}
-              <Link to={`/coach/${encodeURIComponent(d.head_coach ?? "")}`}
-                    className="hover:underline" style={{ color: "var(--accent)" }}>
-                {d.head_coach}
-              </Link>
-            </p>
-          </div>
+        <div className="rail-team rounded-[var(--radius-panel)] border border-border bg-surface p-6">
+          <PageHeader
+            crumbs={[{ label: "Coaches", to: "/coaches" }, { label: d.coach }]}
+            media={t ? <img src={t.logo} alt={t.name} className="h-14 w-14" /> : undefined}
+            title={d.coach}
+            subtitle={
+              <>
+                {t?.name} · since {d.since} · head coach{" "}
+                <Link to={`/coach/${encodeURIComponent(d.head_coach ?? "")}`}
+                      className="text-accent hover:underline">
+                  {d.head_coach}
+                </Link>
+              </>
+            }
+            meta={
+              <>
+                <Chip tone="accent">
+                  {d.role === "OC" ? "Offensive coordinator" : "Defensive coordinator"}
+                </Chip>
+                {d.playcaller && <Chip tone="warning">calls plays</Chip>}
+              </>
+            } />
         </div>
 
-        {d.team_note && (
-          <p className="text-sm italic" style={{ color: "var(--muted)" }}>⚑ {d.team_note}</p>
-        )}
+        {d.team_note && <p className="text-body italic text-muted">⚑ {d.team_note}</p>}
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <GlassPanel title="About">
-            <p className="text-sm leading-relaxed">{d.about}</p>
-          </GlassPanel>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel title="About">
+            <p className="text-body leading-relaxed text-ink">{d.about}</p>
+          </Panel>
           <SchemePanel title={d.role === "OC" ? "Offensive identity" : "Defensive identity"}
                        scheme={scheme} />
         </div>
 
-        <GlassPanel title={`Unit performance — ${d.unit_label}`}>
-          <p className="mb-2 text-xs" style={{ color: "var(--muted)" }}>
-            Team {d.role === "OC" ? "offense" : "defense"} by season (rank of 32
-            {d.role === "DC" ? "; lower EPA allowed is better" : ""}). Tenure
-            starts {d.since}; the season before is shown for contrast.
-          </p>
+        <Panel
+          title={`Unit performance — ${d.unit_label}`}
+          note={`Team ${d.role === "OC" ? "offense" : "defense"} by season, ranked out of 32${
+            d.role === "DC" ? ". Lower EPA allowed is better" : ""}. Tenure starts ${d.since}; the season before is shown for contrast.`}
+        >
           <LineChart
             data={(d.unit_seasons ?? []).map((s) => ({ ...s }))} xKey="season"
             xLabel="Season"
             series={[{ key: "epa", name: d.unit_label ?? "EPA" }]} />
-          <table className="mt-3 w-full text-left text-sm">
-            <thead><tr style={{ color: "var(--muted)" }}>
-              {["Season", "EPA/play", "League rank"].map((h) => (
-                <th key={h} className="py-1 pr-3 font-medium">{h}</th>))}
-            </tr></thead>
-            <tbody>
-              {(d.unit_seasons ?? []).map((s) => (
-                <tr key={s.season} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                  <td className="py-1 pr-3">{s.season}{s.season === d.since ? " ←" : ""}</td>
-                  <td className="py-1 pr-3">{s.epa > 0 ? `+${s.epa}` : s.epa}</td>
-                  <td className="py-1">#{s.rank}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </GlassPanel>
+          <div className="mt-3">
+            <DataTable
+              columns={unitColumns}
+              rows={d.unit_seasons ?? []}
+              rowKey={(s) => String(s.season)}
+              defaultSort={{ key: "season", dir: "desc" }}
+              empty="No seasons on record for this unit." />
+          </div>
+        </Panel>
       </div>
     );
   }
@@ -189,30 +233,28 @@ export default function CoachPage() {
 
   return (
     <div className="space-y-6" style={teamStyle}>
-      <div className="rail-team flex flex-wrap items-center gap-5 rounded-[var(--radius-panel)] border border-border bg-surface p-6">
-        {t && <img src={t.logo} alt="" className="h-14 w-14" />}
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{d.coach}</h1>
-            <Chip tone="arc">Head coach</Chip>
-          </div>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            {seasons.length > 0
-              ? `${career.w}–${career.g - career.w} regular season · ${career.pw}–${career.pg - career.pw} playoffs`
-              : `first NFL head-coaching season: ${d.since ?? "—"}`}
-            {t && ` · ${t.name}`}
-          </p>
-        </div>
+      <div className="rail-team rounded-[var(--radius-panel)] border border-border bg-surface p-6">
+        <PageHeader
+          crumbs={[{ label: "Coaches", to: "/coaches" }, { label: d.coach }]}
+          media={t ? <img src={t.logo} alt={t.name} className="h-14 w-14" /> : undefined}
+          title={d.coach}
+          subtitle={
+            <>
+              {seasons.length > 0
+                ? `${career.w}–${career.g - career.w} regular season · ${career.pw}–${career.pg - career.pw} playoffs`
+                : `first NFL head-coaching season: ${d.since ?? "—"}`}
+              {t && ` · ${t.name}`}
+            </>
+          }
+          meta={<Chip tone="accent">Head coach</Chip>} />
       </div>
 
-      {d.team_note && (
-        <p className="text-sm italic" style={{ color: "var(--muted)" }}>⚑ {d.team_note}</p>
-      )}
+      {d.team_note && <p className="text-body italic text-muted">⚑ {d.team_note}</p>}
 
       {d.about && (
-        <GlassPanel title="About">
-          <p className="text-sm leading-relaxed">{d.about}</p>
-        </GlassPanel>
+        <Panel title="About">
+          <p className="text-body leading-relaxed text-ink">{d.about}</p>
+        </Panel>
       )}
 
       {scheme && (
@@ -223,73 +265,52 @@ export default function CoachPage() {
       )}
 
       {seasons.length > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <GlassPanel title={`Scheme fingerprint — ${d.fingerprint_note}`}>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Panel
+            title={`Scheme fingerprint — ${d.fingerprint_note}`}
+            note="Each axis is a league percentile, where 100 is the most extreme. Pass defense is inverted, so further out is always better."
+          >
             <Radar data={d.fingerprint ?? []} />
-            <p className="text-xs" style={{ color: "var(--muted)" }}>
-              Each axis is a league percentile (100 = most extreme). Pass defense
-              is inverted: higher = better defense.
-            </p>
-          </GlassPanel>
+          </Panel>
 
-          <GlassPanel title="Head-to-head rivals (3+ games)">
-            <ul className="space-y-2 text-sm">
+          <Panel title="Head-to-head rivals (3+ games)">
+            <ul className="space-y-2 text-body">
+              {(d.rivals ?? []).length === 0 && (
+                <li className="text-muted">No opponent faced three or more times.</li>
+              )}
               {(d.rivals ?? []).map((r) => (
                 <li key={r.opp_coach} className="flex items-center gap-3">
                   <Link to={`/coach/${encodeURIComponent(r.opp_coach)}`}
-                        className="font-medium hover:underline">{r.opp_coach}</Link>
-                  <span className="ml-auto tabular-nums"
-                        style={{ color: r.wins * 2 > r.games ? "#0ca30c" : r.wins * 2 < r.games ? "#d03b3b" : "var(--muted)" }}>
+                        className="font-medium text-accent hover:underline">{r.opp_coach}</Link>
+                  <span className={`ml-auto tabular-nums ${
+                    r.wins * 2 > r.games ? "text-positive"
+                      : r.wins * 2 < r.games ? "text-negative" : "text-muted"}`}>
                     {r.wins}–{r.games - r.wins}
                   </span>
                 </li>
               ))}
             </ul>
-          </GlassPanel>
+          </Panel>
         </div>
       )}
 
       {seasons.length > 0 && (
-        <GlassPanel title="Season by season">
-          <div className="max-h-96 overflow-y-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="sticky top-0" style={{ background: "var(--bg-1)" }}>
-                <tr style={{ color: "var(--muted)" }}>
-                  {["Season", "Team", "Record", "Playoffs", "PPG", "ATS", "4th-down", "PROE"].map((h) => (
-                    <th key={h} className="py-1.5 pr-3 font-medium">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[...seasons].reverse().map((s, i) => (
-                  <tr key={i} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                    <td className="py-1.5 pr-3">{s.season}</td>
-                    <td className="py-1.5 pr-3">{s.team}</td>
-                    <td className="py-1.5 pr-3">{s.reg_wins}–{Number(s.reg_games) - Number(s.reg_wins)}</td>
-                    <td className="py-1.5 pr-3">
-                      {Number(s.post_games) > 0 ? `${s.post_wins}–${Number(s.post_games) - Number(s.post_wins)}` : "—"}
-                    </td>
-                    <td className="py-1.5 pr-3">{s.ppg}</td>
-                    <td className="py-1.5 pr-3">
-                      {Number(s.ats_games) > 0 ? `${s.ats_wins}–${Number(s.ats_games) - Number(s.ats_wins)}` : "—"}
-                    </td>
-                    <td className="py-1.5 pr-3">
-                      {s.go_rate != null ? `${Math.round(Number(s.go_rate) * 100)}%` : "—"}
-                    </td>
-                    <td className="py-1.5">
-                      {s.proe != null ? `${Number(s.proe) > 0 ? "+" : ""}${(Number(s.proe) * 100).toFixed(1)}%` : "—"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </GlassPanel>
+        <Panel title="Season by season" flush>
+          <DataTable
+            columns={seasonColumns}
+            rows={seasons}
+            rowKey={(s) => `${s.season}-${s.team}`}
+            defaultSort={{ key: "season", dir: "desc" }}
+            stickyCols={1}
+            maxHeight="24rem"
+            caption={`${d.coach} season by season`}
+            empty="No seasons on record." />
+        </Panel>
       )}
 
       {d.staff && (
         <div>
-          <h2 className="mb-3 text-sm font-bold uppercase tracking-widest" style={{ color: "var(--arc)" }}>
+          <h2 className="mb-3 text-label font-bold uppercase tracking-[0.14em] text-muted">
             Current staff{t ? ` — ${t.name}` : ""}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">

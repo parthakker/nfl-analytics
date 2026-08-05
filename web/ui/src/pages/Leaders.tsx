@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ScatterPlot, type ScatterPoint } from "../components/charts";
-import GlassPanel from "../components/GlassPanel";
-import Tip from "../components/Tip";
+import { Field, PageHeader, Panel, PillGroup, Select, Tip, Toolbar } from "../components/ui";
 import { api, type LeaderRow, type LeadersResponse } from "../lib/api";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
@@ -47,8 +46,11 @@ const num = (v: unknown): number | null =>
 // Literal copies of tokens, needed where a hex (not a CSS var) is required:
 // hexToRgba() maths and recharts fill props. TODO(wave 5): read these from
 // the chart theme when this page migrates to <DataTable>/<ScatterPlot>.
-const ACCENT_HEX = "#4c8dff"; // --color-accent
-const CHART_1_HEX = "#3987e5"; // --color-chart-1
+/** Reads a token's computed value. recharts and hexToRgba need a real colour
+ *  string, not a var() reference — this keeps the value single-sourced in
+ *  tokens.css instead of duplicating the hex here, where it would drift. */
+const token = (name: string) =>
+  getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 export default function Leaders() {
   const meta = useMeta();
@@ -128,9 +130,14 @@ export default function Leaders() {
     const lo = num(d.p10[key]);
     const hi = num(d.p90[key]);
     if (lo == null || hi == null) return {};
-    if (v >= hi) return { color: "var(--arc)", fontWeight: 600,
-                          background: hexToRgba(ACCENT_HEX, 0.1) };
-    if (v <= lo) return { color: "#fb923c", background: "rgba(251,146,60,0.07)" };
+    // diverging pair from the token layer: dark at the centre, bright at the
+    // extremes, so a league-average row recedes into the surface
+    if (v >= hi) return {
+      color: "var(--color-tint-hi)", fontWeight: 600,
+      background: "color-mix(in oklab, var(--color-tint-hi) 14%, transparent)" };
+    if (v <= lo) return {
+      color: "var(--color-tint-lo)",
+      background: "color-mix(in oklab, var(--color-tint-lo) 12%, transparent)" };
     return {};
   };
 
@@ -144,116 +151,92 @@ export default function Leaders() {
         y: num(r[scatterCfg.y]),
         label: r.player,
         // team ink identifies the dot; ScatterPlot falls back to slot 1
-        color: hexToRgba(meta?.teams[r.team]?.glow?.startsWith("#")
-          ? meta.teams[r.team].glow : CHART_1_HEX, 0.85),
+        color: hexToRgba(meta?.teams[r.team]?.tokens?.ink?.startsWith("#")
+          ? meta.teams[r.team].tokens.ink : token("--color-chart-1"), 0.85),
       }))
       .filter((r) => r.x != null && r.y != null) as unknown as ScatterPoint[];
   }, [d, scatterCfg, meta]);
 
-  if (!d) return <div className="space-y-5"><h1 className="text-2xl font-bold tracking-tight">Stat leaders</h1></div>;
+  if (!d) return <PageHeader title="Stat leaders" subtitle="Loading…" />;
   const qcfg = QUAL[family];
   const sortLabel = d.columns.find((c) => c.key === activeSort)?.label ?? activeSort;
 
   return (
     // breakout: this page earns more width than the shell's max-w-7xl column
     <div className="space-y-5" style={{ marginInline: "calc(50% - min(48vw, 55rem))" }}>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Stat leaders</h1>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
-          Click a column to sort it, a name to open the player. Rate columns are
-          tinted vs the qualified field (blue = top 10%, orange = bottom 10%).
-        </p>
-      </div>
+      <PageHeader
+        title="Stat leaders"
+        subtitle="Click a column to sort it, a name to open the player. Rate columns are tinted against the qualified field: blue is the top 10%, orange the bottom 10%." />
 
-      {/* filter bar */}
-      <div className="flex flex-wrap items-center gap-2">
-        {FAMILIES.map(([key, label]) => (
-          <button key={key} onClick={() => pickFamily(key)}
-            className="rounded-full border px-3 py-1 text-sm font-semibold"
-            style={{ borderColor: family === key ? "var(--arc)" : "var(--stroke)",
-                     color: family === key ? "var(--arc)" : "var(--muted)" }}>
-            {label}
-          </button>
-        ))}
+      <div className="flex flex-wrap items-center gap-3">
+        <PillGroup
+          ariaLabel="Stat family"
+          options={FAMILIES.map(([value, label]) => ({ value, label }))}
+          value={family}
+          onChange={pickFamily} />
         {POSITIONS[family].length > 0 && (
-          <>
-            <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
-            {POSITIONS[family].map((p) => (
-              <button key={p} onClick={() => setPosition(position === p ? "" : p)}
-                className="rounded-full border px-2.5 py-0.5 text-xs font-semibold"
-                style={{ borderColor: position === p ? "var(--arc)" : "var(--stroke)",
-                         color: position === p ? "var(--arc)" : "var(--muted)" }}>
-                {p}
-              </button>
-            ))}
-          </>
+          <PillGroup
+            ariaLabel="Position" size="sm" clearable
+            options={POSITIONS[family].map((x) => ({ value: x, label: x }))}
+            value={position}
+            onChange={setPosition} />
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <select value={d.season}
-                onChange={(e) => setSeason(+e.target.value)}
-                className="rounded-lg border bg-transparent px-2 py-1 text-sm"
-                style={{ borderColor: "var(--stroke)" }}>
-          {d.seasons.map((s) => <option key={s} value={s} style={{ color: "#000" }}>{s}</option>)}
-        </select>
-        {(["REG", "POST", "ALL"] as const).map((st) => (
-          <Tip key={st} text={st === "REG" ? "Regular season only" : st === "POST" ? "Playoffs only" : "Regular season + playoffs"}>
-            <button onClick={() => setSeasonType(st)}
-              className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
-              style={{ borderColor: seasonType === st ? "var(--arc)" : "var(--stroke)",
-                       color: seasonType === st ? "var(--arc)" : "var(--muted)" }}>
-              {st}
-            </button>
-          </Tip>
-        ))}
-        <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
-        {(["table", "scatter"] as const).map((v) => (
-          <button key={v} onClick={() => setView(v)}
-            className="rounded-lg border px-2.5 py-1 text-xs font-semibold"
-            style={{ borderColor: view === v ? "var(--arc)" : "var(--stroke)",
-                     color: view === v ? "var(--arc)" : "var(--muted)" }}>
-            {v === "table" ? "Table" : "Chart"}
-          </button>
-        ))}
-        <Tip text="Show counting stats (yards, TDs, receptions…) per game played. True rates like Y/A are unaffected.">
-          <button onClick={() => setPerGame(!perGame)}
-            className="rounded-full border px-3 py-1 text-xs font-semibold"
-            style={{ borderColor: perGame ? "var(--arc)" : "var(--stroke)",
-                     color: perGame ? "var(--arc)" : "var(--muted)" }}>
-            Per game
-          </button>
-        </Tip>
-        <label className="flex items-center gap-1.5 text-xs" style={{ color: "var(--muted)" }}>
-          Show
-          <select value={limit} onChange={(e) => setLimit(+e.target.value)}
-                  className="rounded-lg border bg-transparent px-2 py-1 text-xs"
-                  style={{ borderColor: "var(--stroke)", color: "var(--text)" }}>
-            {[25, 50, 100].map((l) => (
-              <option key={l} value={l} style={{ color: "#000" }}>Top {l}</option>
-            ))}
-          </select>
-        </label>
-        <input value={query} onChange={(e) => setQuery(e.target.value)}
-               placeholder="find player…"
-               className="ml-auto rounded-lg border bg-transparent px-2 py-1 text-sm outline-none"
-               style={{ borderColor: "var(--stroke)", color: "var(--text)" }} />
-      </div>
+      <Toolbar
+        trailing={
+          <input value={query} onChange={(e) => setQuery(e.target.value)}
+                 placeholder="find player…"
+                 aria-label="Find player"
+                 className="rounded-[var(--radius-control)] border border-border bg-surface-2 px-2 py-1 text-body text-ink outline-none placeholder:text-faint" />
+        }
+      >
+        <Select
+          size="sm" ariaLabel="Season" value={d.season}
+          onChange={(v) => setSeason(+v)}
+          options={d.seasons.map((x) => ({ value: x, label: String(x) }))} />
+        <PillGroup
+          ariaLabel="Season type" size="sm"
+          options={[
+            { value: "REG", label: "REG", help: "Regular season only" },
+            { value: "POST", label: "POST", help: "Playoffs only" },
+            { value: "ALL", label: "ALL", help: "Regular season + playoffs" },
+          ]}
+          value={seasonType}
+          onChange={(v) => setSeasonType(v as "REG" | "POST" | "ALL")} />
+        <PillGroup
+          ariaLabel="View" size="sm"
+          options={[{ value: "table", label: "Table" }, { value: "scatter", label: "Chart" }]}
+          value={view}
+          onChange={(v) => setView(v as "table" | "scatter")} />
+        <PillGroup
+          ariaLabel="Per game" size="sm"
+          options={[{ value: "per", label: "Per game",
+                      help: "Show counting stats (yards, TDs, receptions…) per game played. True rates like Y/A are unaffected." }]}
+          value={perGame ? "per" : ""}
+          clearable
+          onChange={() => setPerGame(!perGame)} />
+        <Field label="Show">
+          <Select
+            size="sm" ariaLabel="Row limit" value={limit}
+            onChange={(v) => setLimit(+v)}
+            options={[25, 50, 100].map((l) => ({ value: l, label: `Top ${l}` }))} />
+        </Field>
+      </Toolbar>
 
       {/* leader cards */}
       <div className="grid gap-3 sm:grid-cols-5">
         {d.rows.slice(0, 5).map((r, i) => (
           <Link key={r.player_id} to={`/player/${r.player_id}`}
-                className="glass flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5">
+                className="flex items-center gap-3 rounded-[var(--radius-panel)] border border-border bg-surface p-3 transition-colors hover:border-accent/50 hover:bg-surface-2">
             {r.headshot ? (
               <img src={r.headshot} alt="" className="h-10 w-10 rounded-full object-cover"
                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-            ) : <span className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-bold"
-                      style={{ background: "var(--glass)", color: "var(--muted)" }}>{i + 1}</span>}
+            ) : <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-h2 font-bold text-muted">{i + 1}</span>}
             <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">{r.player}</div>
-              <div className="text-xs" style={{ color: "var(--muted)" }}>
-                {r.team} · <span style={{ color: "var(--arc)" }} className="tabular-nums font-semibold">
+              <div className="truncate text-body font-semibold text-ink">{r.player}</div>
+              <div className="text-micro text-muted">
+                {r.team} · <span className="font-semibold tabular-nums text-accent">
                   {display(r, activeSort, d.columns.find((c) => c.key === activeSort)?.kind ?? "count")}
                 </span> {sortLabel}
               </div>
@@ -263,7 +246,7 @@ export default function Leaders() {
       </div>
 
       {view === "scatter" ? (
-        <GlassPanel title={`${d.label} — ${scatterCfg.x} vs ${scatterCfg.y} (qualified, ${d.season})`}>
+        <Panel title={`${d.label} — ${scatterCfg.x} vs ${scatterCfg.y} (qualified, ${d.season})`}>
           <ScatterPlot
             series={[{ name: `${d.label} (qualified)`, points: scatterData }]}
             xLabel={scatterCfg.x}
@@ -285,34 +268,34 @@ export default function Leaders() {
               );
             }}
             note="Dashed lines are the qualified-field average. Click a dot to open that player." />
-        </GlassPanel>
+        </Panel>
       ) : (
-        <GlassPanel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`}>
-          <div className="relative mb-2 flex items-center gap-2 text-xs" style={{ color: "var(--muted)" }}>
+        <Panel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`}>
+          <div className="relative mb-2 flex items-center gap-2 text-xs" style={{ color: "var(--color-muted)" }}>
             <span>
               {d.qualified.toLocaleString()} of {d.total_players.toLocaleString()} players qualify
               {qual > 0 ? ` (min ${qual} ${qcfg.label.replace("min ", "")})` : ""}
             </span>
             <button onClick={() => setQualOpen(!qualOpen)} className="hover:underline"
-                    style={{ color: "var(--arc)" }}>
+                    style={{ color: "var(--color-accent)" }}>
               adjust
             </button>
             {qualOpen && (
               <div className="absolute left-0 top-5 z-40 rounded-xl border p-3"
-                   style={{ background: "var(--bg-1)", borderColor: "var(--stroke)" }}>
+                   style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}>
                 <label className="flex items-center gap-2">
                   {qcfg.label}
                   <input type="range" min={0} max={qcfg.max} step={qcfg.step} value={qual}
                          onChange={(e) => setQual(+e.target.value)} className="w-40" />
-                  <span className="tabular-nums font-semibold" style={{ color: "var(--text)" }}>{qual}</span>
+                  <span className="tabular-nums font-semibold" style={{ color: "var(--color-ink)" }}>{qual}</span>
                 </label>
                 <div className="mt-1.5 flex gap-3">
                   <button onClick={() => setQual(QUAL[family].auto)} className="hover:underline"
-                          style={{ color: "var(--arc)" }}>auto ({QUAL[family].auto})</button>
+                          style={{ color: "var(--color-accent)" }}>auto ({QUAL[family].auto})</button>
                   <button onClick={() => setQual(0)} className="hover:underline"
-                          style={{ color: "var(--muted)" }}>everyone</button>
+                          style={{ color: "var(--color-muted)" }}>everyone</button>
                   <button onClick={() => setQualOpen(false)} className="ml-auto hover:underline"
-                          style={{ color: "var(--muted)" }}>done</button>
+                          style={{ color: "var(--color-muted)" }}>done</button>
                 </div>
               </div>
             )}
@@ -320,16 +303,16 @@ export default function Leaders() {
           <div className="scroll-x">
             <table className="w-max min-w-full whitespace-nowrap text-left text-[15px]">
               <thead>
-                <tr style={{ color: "var(--muted)" }}>
-                  <th className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 font-medium" style={{ background: "var(--bg-1)" }}>#</th>
+                <tr style={{ color: "var(--color-muted)" }}>
+                  <th className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 font-medium" style={{ background: "var(--color-surface)" }}>#</th>
                   <th className="sticky z-10 min-w-56 py-2 pr-4 font-medium"
-                      style={{ left: "2.5rem", background: "var(--bg-1)",
-                               boxShadow: "8px 0 12px -8px rgba(0,0,0,0.7)" }}>Player</th>
+                      style={{ left: "2.5rem", background: "var(--color-surface)",
+                               boxShadow: "8px 0 12px -8px color-mix(in oklab, var(--color-canvas) 80%, transparent)" }}>Player</th>
                   {d.columns.map((c) => (
                     <th key={c.key} className="py-1.5 pr-3 font-medium">
                       <Tip text={c.help}>
                         <button onClick={() => pickSort(c.key)} className="hover:underline"
-                          style={{ color: activeSort === c.key ? "var(--arc)" : undefined }}>
+                          style={{ color: activeSort === c.key ? "var(--color-accent)" : undefined }}>
                           {c.label}{activeSort === c.key ? (d.dir === "desc" ? " ↓" : " ↑") : ""}
                         </button>
                       </Tip>
@@ -339,13 +322,13 @@ export default function Leaders() {
               </thead>
               <tbody>
                 {rows.map((r, i) => (
-                  <tr key={r.player_id} className="border-t transition-colors hover:bg-white/5"
-                      style={{ borderColor: "var(--stroke)" }}>
+                  <tr key={r.player_id} className="border-t transition-colors hover:bg-surface-2"
+                      style={{ borderColor: "var(--color-border)" }}>
                     <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 text-xs tabular-nums"
-                        style={{ color: "var(--muted)", background: "var(--bg-1)" }}>{i + 1}</td>
+                        style={{ color: "var(--color-muted)", background: "var(--color-surface)" }}>{i + 1}</td>
                     <td className="sticky z-10 min-w-56 py-2 pr-4"
-                        style={{ left: "2.5rem", background: "var(--bg-1)",
-                                 boxShadow: "8px 0 12px -8px rgba(0,0,0,0.7)" }}>
+                        style={{ left: "2.5rem", background: "var(--color-surface)",
+                                 boxShadow: "8px 0 12px -8px color-mix(in oklab, var(--color-canvas) 80%, transparent)" }}>
                       <span className="flex items-center gap-2">
                         {r.headshot && (
                           <img src={r.headshot} alt="" className="h-7 w-7 rounded-full object-cover"
@@ -355,7 +338,7 @@ export default function Leaders() {
                           <Link to={`/player/${r.player_id}`} className="font-medium hover:underline">
                             {r.player}
                           </Link>
-                          <span className="ml-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                          <span className="ml-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
                             {r.pos} · {r.team}
                           </span>
                         </span>
@@ -372,8 +355,8 @@ export default function Leaders() {
                             className={`py-2 pr-4 tabular-nums ${leader ? "font-bold" : ""}`}
                             style={{
                               ...(isSort ? {
-                                background: `linear-gradient(90deg, ${hexToRgba(ACCENT_HEX, 0.16)} ${barPct}%, transparent ${barPct}%)`,
-                                color: "var(--arc)",
+                                background: `linear-gradient(90deg, color-mix(in oklab, var(--color-accent) 16%, transparent) ${barPct}%, transparent ${barPct}%)`,
+                                color: "var(--color-accent)",
                               } : tint(c.key, c.kind, v)),
                             }}>
                           {display(r, c.key, c.kind === "count_g" ? "rate" : c.kind)}
@@ -382,10 +365,10 @@ export default function Leaders() {
                     })}
                   </tr>
                 ))}
-                <tr className="border-t italic" style={{ borderColor: "var(--stroke)", color: "var(--muted)" }}>
-                  <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2" style={{ background: "var(--bg-1)" }} />
+                <tr className="border-t italic" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+                  <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2" style={{ background: "var(--color-surface)" }} />
                   <td className="sticky z-10 min-w-56 py-2 pr-4 text-xs"
-                      style={{ left: "2.5rem", background: "var(--bg-1)" }}>
+                      style={{ left: "2.5rem", background: "var(--color-surface)" }}>
                     Lg avg (qualified)
                   </td>
                   {d.columns.map((c) => {
@@ -400,7 +383,7 @@ export default function Leaders() {
               </tbody>
             </table>
           </div>
-        </GlassPanel>
+        </Panel>
       )}
     </div>
   );

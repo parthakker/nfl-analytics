@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import Chip from "../components/Chip";
-import GlassPanel from "../components/GlassPanel";
+import { Panel } from "../components/ui";
 import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
@@ -72,7 +72,7 @@ function SideCol({ s, accent, meetsLeft }: { s: Side; accent: string; meetsLeft?
         {s.is_off_bye && <Chip tone="hot">off bye</Chip>}
         {s.short_week && <Chip tone="hot">short week</Chip>}
       </div>
-      <p className="text-xs" style={{ color: "var(--muted)" }}>
+      <p className="text-xs" style={{ color: "var(--color-muted)" }}>
         {s.coach ?? "—"}{s.qb ? ` · ${s.qb}` : ""}
       </p>
       {s.epa && (
@@ -87,8 +87,8 @@ function SideCol({ s, accent, meetsLeft }: { s: Side; accent: string; meetsLeft?
           <Link key={f.game_id} to={`/matchup/${f.game_id}`}
                 title={`${f.site === "home" ? "vs" : "@"} ${f.opponent} ${f.team_score}–${f.opp_score}`}
                 className="flex h-5 w-5 items-center justify-center rounded-full font-bold"
-                style={{ background: f.win === 1 ? "rgba(12,163,12,.25)" : f.win === 0 ? "rgba(208,59,59,.25)" : "var(--glass)",
-                         color: f.win === 1 ? "#4ade80" : f.win === 0 ? "#f87171" : "var(--muted)" }}>
+                style={{ background: f.win === 1 ? "color-mix(in oklab, var(--color-positive) 22%, transparent)" : f.win === 0 ? "color-mix(in oklab, var(--color-negative) 22%, transparent)" : "var(--color-surface)",
+                         color: f.win === 1 ? "var(--color-positive)" : f.win === 0 ? "var(--color-negative)" : "var(--color-muted)" }}>
             {f.win === 1 ? "W" : f.win === 0 ? "L" : "T"}
           </Link>
         ))}
@@ -111,7 +111,7 @@ export default function Matchup() {
   }, [gameId]);
 
   // hooks before early returns; the pair hook demotes the away side to
-  // neutral when the two hues collide (DEN and CIN are both #FB4F14)
+  // neutral when the two hues collide (DEN and CIN share a source colour)
   const pair = useTeamPairTokens(d?.game.away_team ?? null, d?.game.home_team ?? null);
 
   if (err) return <p className="text-muted">No matchup found. {err}</p>;
@@ -125,16 +125,16 @@ export default function Matchup() {
 
   return (
     <div className="space-y-6">
-      {/* split banner: away color -> glass -> home color */}
+      {/* split banner: away wash -> surface -> home wash */}
       <div className="relative overflow-hidden rounded-[var(--radius-panel)] border border-border p-7" style={{
-        background: `linear-gradient(105deg, ${hexToRgba(ta?.color ?? "#123", 0.3)}, var(--color-surface) 40%, var(--color-surface) 60%, ${hexToRgba(th?.color ?? "#123", 0.3)})` }}>
+        background: `linear-gradient(105deg, ${ta ? hexToRgba(ta.color, 0.3) : "var(--color-surface)"}, var(--color-surface) 40%, var(--color-surface) 60%, ${th ? hexToRgba(th.color, 0.3) : "var(--color-surface)"})` }}>
         <div className="relative flex items-center gap-5">
           <Link to={`/team/${d.game.away_team}`} className="flex items-center gap-4">
             <img src={ta?.logo} alt={d.game.away_team} className="h-16 w-16"
                  />
             <div>
               <div className="text-xl font-bold tracking-tight">{ta?.name ?? d.game.away_team}</div>
-              <div className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+              <div className="text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                 {d.teams.away.record.w}–{d.teams.away.record.l}
                 {d.teams.away.record.t ? `–${d.teams.away.record.t}` : ""}
               </div>
@@ -144,26 +144,26 @@ export default function Matchup() {
             {d.game.final ? (
               <div className="text-3xl font-bold tabular-nums tracking-tight">
                 {d.game.away_score}–{d.game.home_score}
-                {d.game.overtime ? <span className="ml-1 text-sm" style={{ color: "var(--muted)" }}>OT</span> : null}
+                {d.game.overtime ? <span className="ml-1 text-sm" style={{ color: "var(--color-muted)" }}>OT</span> : null}
               </div>
             ) : (
-              <div className="text-lg font-semibold" style={{ color: "var(--arc)" }}>
+              <div className="text-lg font-semibold" style={{ color: "var(--color-accent)" }}>
                 {d.game.gametime ?? "TBD"} ET
               </div>
             )}
-            <div className="text-xs" style={{ color: "var(--muted)" }}>
+            <div className="text-xs" style={{ color: "var(--color-muted)" }}>
               {d.game.season} · {d.game.season_type === "POST" ? d.game.game_type : `Week ${d.game.week}`} · {d.game.date}
             </div>
-            <div className="mt-0.5 text-xs" style={{ color: "var(--muted)" }}>
+            <div className="mt-0.5 text-xs" style={{ color: "var(--color-muted)" }}>
               {d.venue.venue_name ?? "—"}{d.venue.venue_city ? ` · ${d.venue.venue_city}` : ""}
-              {d.venue.is_international && <span style={{ color: "var(--arc)" }}> · international</span>}
+              {d.venue.is_international && <span style={{ color: "var(--color-accent)" }}> · international</span>}
               {d.venue.neutral_site && !d.venue.is_international && " · neutral site"}
             </div>
           </div>
           <Link to={`/team/${d.game.home_team}`} className="flex items-center gap-4 text-right">
             <div>
               <div className="text-xl font-bold tracking-tight">{th?.name ?? d.game.home_team}</div>
-              <div className="text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+              <div className="text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                 {d.teams.home.record.w}–{d.teams.home.record.l}
                 {d.teams.home.record.t ? `–${d.teams.home.record.t}` : ""}
               </div>
@@ -174,23 +174,23 @@ export default function Matchup() {
         </div>
       </div>
 
-      <GlassPanel title="Travel, rest & form">
+      <Panel title="Travel, rest & form">
         <div className="flex flex-wrap items-start gap-6">
           <SideCol s={d.teams.away} accent={aGlow} />
           <SideCol s={d.teams.home} accent={hGlow} meetsLeft />
         </div>
-      </GlassPanel>
+      </Panel>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <GlassPanel title={`All-time series (since ${s?.first_meeting_season ?? "—"})`}>
+        <Panel title={`All-time series (since ${s?.first_meeting_season ?? "—"})`}>
           {s ? (
             <div className="space-y-2 text-sm">
               <div className="flex items-baseline gap-3">
                 <span className="text-2xl font-bold tabular-nums">{s.away_wins}–{s.home_wins}{s.ties ? `–${s.ties}` : ""}</span>
-                <span style={{ color: "var(--muted)" }}>{d.game.away_team} leads?
+                <span style={{ color: "var(--color-muted)" }}>{d.game.away_team} leads?
                   {s.away_wins > s.home_wins ? ` yes` : s.away_wins < s.home_wins ? ` no` : " tied"}</span>
               </div>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
+              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                 {s.games} meetings · avg margin {s.avg_margin > 0 ? "+" : ""}{s.avg_margin} ({d.game.away_team}) ·
                 avg total {s.avg_total} · streak: {s.current_streak > 0
                   ? `${d.game.away_team} won ${s.current_streak}`
@@ -200,39 +200,39 @@ export default function Matchup() {
                 {s.last5.map((m) => (
                   <li key={m.game_id}>
                     <Link to={`/matchup/${m.game_id}`} className="flex gap-2 hover:underline">
-                      <span style={{ color: "var(--muted)" }}>{m.date}</span>
+                      <span style={{ color: "var(--color-muted)" }}>{m.date}</span>
                       <span className="tabular-nums">{m.away_pts}–{m.home_pts}</span>
                       <span style={{ color: m.away_win === 1 ? aGlow : hGlow }}>
                         {m.away_win === 1 ? d.game.away_team : m.away_win === 0 ? d.game.home_team : "tie"}
                       </span>
-                      <span className="ml-auto truncate" style={{ color: "var(--muted)" }}>{m.venue_name}</span>
+                      <span className="ml-auto truncate" style={{ color: "var(--color-muted)" }}>{m.venue_name}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
               <Link to={`/h2h/${d.game.away_team}/${d.game.home_team}`}
                     className="inline-block text-xs font-semibold hover:underline"
-                    style={{ color: "var(--arc)" }}>
+                    style={{ color: "var(--color-accent)" }}>
                 full series history →
               </Link>
             </div>
-          ) : <p className="text-sm" style={{ color: "var(--muted)" }}>First ever meeting.</p>}
-        </GlassPanel>
+          ) : <p className="text-sm" style={{ color: "var(--color-muted)" }}>First ever meeting.</p>}
+        </Panel>
 
-        <GlassPanel title="Coaching matchup">
+        <Panel title="Coaching matchup">
           {d.coach_h2h ? (
             <div className="space-y-2 text-sm">
               <p>
                 <Link to={`/coach/${encodeURIComponent(d.coach_h2h.away_coach)}`}
                       className="font-semibold hover:underline">{d.coach_h2h.away_coach}</Link>
-                <span style={{ color: "var(--muted)" }}> vs </span>
+                <span style={{ color: "var(--color-muted)" }}> vs </span>
                 <Link to={`/coach/${encodeURIComponent(d.coach_h2h.home_coach)}`}
                       className="font-semibold hover:underline">{d.coach_h2h.home_coach}</Link>
               </p>
               <p className="text-2xl font-bold tabular-nums">
                 {Math.round(d.coach_h2h.wins)}–{Math.round(d.coach_h2h.games - d.coach_h2h.wins)}
               </p>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
+              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                 {d.coach_h2h.games} meetings since {d.coach_h2h.first_season} ·
                 {" "}{d.coach_h2h.away_coach.split(" ").slice(-1)} ATS {d.coach_h2h.ats_wins}–{d.coach_h2h.ats_games - d.coach_h2h.ats_wins} ·
                 avg score {d.coach_h2h.avg_pf}–{d.coach_h2h.avg_pa}
@@ -242,20 +242,20 @@ export default function Matchup() {
                   <Link key={m.game_id} to={`/matchup/${m.game_id}`}
                         title={`${m.season} wk ${m.week}: ${m.away_coach_pts}–${m.home_coach_pts}`}
                         className="flex h-5 w-5 items-center justify-center rounded-full font-bold"
-                        style={{ background: m.win === 1 ? "rgba(12,163,12,.25)" : "rgba(208,59,59,.25)",
-                                 color: m.win === 1 ? "#4ade80" : "#f87171" }}>
+                        style={{ background: m.win === 1 ? "color-mix(in oklab, var(--color-positive) 22%, transparent)" : "color-mix(in oklab, var(--color-negative) 22%, transparent)",
+                                 color: m.win === 1 ? "var(--color-positive)" : "var(--color-negative)" }}>
                     {m.win === 1 ? "W" : "L"}
                   </Link>
                 ))}
               </div>
             </div>
-          ) : <p className="text-sm" style={{ color: "var(--muted)" }}>
+          ) : <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                 No prior meetings between these coaches.</p>}
-        </GlassPanel>
+        </Panel>
 
-        <GlassPanel title="Weather">
+        <Panel title="Weather">
           {w && (w.is_indoor ? (
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
+            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
               Indoors ({w.roof}) — climate controlled, call it 68° and calm.
             </p>
           ) : w.temp_f != null ? (
@@ -264,7 +264,7 @@ export default function Matchup() {
                 {w.wind_mph != null && <span className="ml-2 text-base font-semibold">
                   {w.wind_dir ?? ""} {Math.round(w.wind_mph)} mph</span>}
               </p>
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
+              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                 {w.sky ? `${w.sky} · ` : ""}
                 {w.humidity_pct != null ? `humidity ${Math.round(w.humidity_pct)}% · ` : ""}
                 {w.gust_mph != null ? `gusts ${Math.round(w.gust_mph)} · ` : ""}
@@ -273,27 +273,27 @@ export default function Matchup() {
               </p>
             </div>
           ) : (
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
+            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
               Outdoors — forecast lands within 16 days of kickoff.
             </p>
           ))}
-        </GlassPanel>
+        </Panel>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <GlassPanel title="Referee">
+        <Panel title="Referee">
           {d.referee?.name ? (
             <div className="space-y-2 text-sm">
               <p className="font-semibold">{d.referee.name}</p>
               {d.referee.career && (
-                <p className="text-xs" style={{ color: "var(--muted)" }}>
+                <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                   {d.referee.career.games} games · {d.referee.career.pen_per_game} pen/gm ·
                   over rate {pct(d.referee.career.over_rate)} ·
                   home cover {pct(d.referee.career.home_cover_rate)}
                 </p>
               )}
               <table className="w-full text-left text-xs">
-                <thead><tr style={{ color: "var(--muted)" }}>
+                <thead><tr style={{ color: "var(--color-muted)" }}>
                   {["Team", "G", "W%", "ATS", "Pen/gm", "Pen diff", "Over%"].map((h) =>
                     <th key={h} className="py-1 pr-2 font-medium">{h}</th>)}
                 </tr></thead>
@@ -301,7 +301,7 @@ export default function Matchup() {
                   {[d.game.away_team, d.game.home_team].map((t) => {
                     const r = d.referee!.team_splits[t];
                     return (
-                      <tr key={t} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
+                      <tr key={t} className="border-t tabular-nums" style={{ borderColor: "var(--color-border)" }}>
                         <td className="py-1 pr-2 font-semibold">{t}</td>
                         {r ? (<>
                           <td className="py-1 pr-2">{r.games}</td>
@@ -310,7 +310,7 @@ export default function Matchup() {
                           <td className="py-1 pr-2">{r.pen_on_team_pg}</td>
                           <td className="py-1 pr-2">{r.pen_diff_pg > 0 ? `+${r.pen_diff_pg}` : r.pen_diff_pg}</td>
                           <td className="py-1">{pct(r.over_rate, 0)}</td>
-                        </>) : <td colSpan={6} className="py-1" style={{ color: "var(--muted)" }}>no history with this crew</td>}
+                        </>) : <td colSpan={6} className="py-1" style={{ color: "var(--color-muted)" }}>no history with this crew</td>}
                       </tr>
                     );
                   })}
@@ -318,13 +318,13 @@ export default function Matchup() {
               </table>
             </div>
           ) : (
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
+            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
               {d.referee?.note ?? "No referee recorded."}
             </p>
           )}
-        </GlassPanel>
+        </Panel>
 
-        <GlassPanel title="Market">
+        <Panel title="Market">
           <div className="space-y-2 text-sm">
             <div className="flex flex-wrap gap-2">
               <Chip tone="arc">{d.market.spread_line != null
@@ -344,16 +344,16 @@ export default function Matchup() {
                 digits={1} />
             )}
             {s && s.ats_games > 0 && (
-              <p className="text-xs" style={{ color: "var(--muted)" }}>
+              <p className="text-xs" style={{ color: "var(--color-muted)" }}>
                 Series ATS: {d.game.away_team} {s.ats_wins}–{s.ats_games - s.ats_wins} in lined meetings.
               </p>
             )}
           </div>
-        </GlassPanel>
+        </Panel>
       </div>
 
       {(d.injuries.away.length > 0 || d.injuries.home.length > 0) && (
-        <GlassPanel title={`Injury report — week ${d.game.week}`}>
+        <Panel title={`Injury report — week ${d.game.week}`}>
           <div className="grid gap-6 sm:grid-cols-2">
             {(["away", "home"] as const).map((side) => (
               <div key={side}>
@@ -364,21 +364,21 @@ export default function Matchup() {
                   {d.injuries[side].map((r, i) => (
                     <li key={i} className="flex gap-2">
                       <span className="font-medium">{r.player}</span>
-                      <span style={{ color: "var(--muted)" }}>{r.position}</span>
+                      <span style={{ color: "var(--color-muted)" }}>{r.position}</span>
                       <span className="ml-auto" style={{
-                        color: r.status === "Out" ? "#f87171" :
-                               r.status === "Questionable" ? "#facc15" : "var(--muted)" }}>
+                        color: r.status === "Out" ? "var(--color-negative)" :
+                               r.status === "Questionable" ? "var(--color-warning)" : "var(--color-muted)" }}>
                         {r.status}{r.injury ? ` (${r.injury})` : ""}
                       </span>
                     </li>
                   ))}
                   {d.injuries[side].length === 0 && (
-                    <li style={{ color: "var(--muted)" }}>none reported</li>)}
+                    <li style={{ color: "var(--color-muted)" }}>none reported</li>)}
                 </ul>
               </div>
             ))}
           </div>
-        </GlassPanel>
+        </Panel>
       )}
     </div>
   );

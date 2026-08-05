@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import GlassPanel from "../components/GlassPanel";
+import { DataTable, Field, PageHeader, Panel, Select, Toolbar } from "../components/ui";
+import type { Column } from "../components/ui";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useTeamPairTokens } from "../lib/useTeamTokens";
 
 interface Summary {
   games: number; a_wins: number; b_wins: number; ties: number;
@@ -29,9 +31,17 @@ interface Data {
   games: GameRow[];
 }
 
-const TYPE_OPTS = [["", "All games"], ["REG", "Regular season"], ["POST", "Playoffs"]] as const;
-const SITE_OPTS = [["", "Any site"], ["a_home", "at first team"], ["b_home", "at second team"],
-                   ["neutral", "Neutral"]] as const;
+const TYPE_OPTS = [
+  { value: "", label: "All games" },
+  { value: "REG", label: "Regular season" },
+  { value: "POST", label: "Playoffs" },
+];
+const SITE_OPTS = [
+  { value: "", label: "Any site" },
+  { value: "a_home", label: "at first team" },
+  { value: "b_home", label: "at second team" },
+  { value: "neutral", label: "Neutral" },
+];
 
 export default function H2HExplorer() {
   const { a = "", b = "" } = useParams();
@@ -54,185 +64,206 @@ export default function H2HExplorer() {
       .then(setD).catch(console.error);
   }, [a, b, stype, site]);
 
+  const pair = useTeamPairTokens(d?.teams[0] ?? null, d?.teams[1] ?? null);
+
   const codes = meta ? Object.keys(meta.teams).sort() : [];
   const ta = meta?.teams[d?.teams[0] ?? ""];
   const tb = meta?.teams[d?.teams[1] ?? ""];
   const sum = d?.summary;
+  const [A, B] = d?.teams ?? ["", ""];
+
+  const gameColumns = useMemo<Column<GameRow>[]>(() => [
+    {
+      key: "date", label: "Date", width: "8rem",
+      help: "Kickoff date. Playoff meetings are tagged with the round.",
+      render: (g) => (
+        <span className="text-muted">
+          {g.date}
+          {g.season_type === "POST" && (
+            <span className="ml-1 font-bold text-accent">{g.game_type}</span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "site", label: "Site",
+      help: "Which team hosted. Neutral covers international and Super Bowl sites.",
+      render: (g) => (g.site === "home" ? `at ${A}` : g.site === "away" ? `at ${B}` : "neutral"),
+    },
+    {
+      key: "score", label: "Score", numeric: true, value: (g) => g.margin_a,
+      help: `Final score, ${A} first. Sorted by margin.`,
+      render: (g) => `${g.a_score}–${g.b_score}${g.overtime ? " OT" : ""}`,
+    },
+    {
+      key: "winner", label: "Winner", value: (g) => g.a_win,
+      help: "Team colour marks the winner; a tie shows as muted text.",
+      render: (g) => (
+        <span className="font-semibold" style={{
+          color: g.a_win === 1 ? pair.away.ink : g.a_win === 0 ? pair.home.ink : "var(--color-muted)",
+        }}>
+          {g.a_win === 1 ? A : g.a_win === 0 ? B : "tie"}
+        </span>
+      ),
+    },
+    {
+      key: "spread_line_a", label: "Spread", numeric: true,
+      help: `Closing spread from ${A}'s side, with a tick for covered and a cross for not.`,
+      render: (g) => (
+        <span className="text-muted">
+          {g.spread_line_a != null
+            ? `${A} ${g.spread_line_a > 0 ? "-" : "+"}${Math.abs(g.spread_line_a)}${
+                g.covered_a == null ? "" : g.covered_a ? " ✓" : " ✗"}`
+            : "—"}
+        </span>
+      ),
+    },
+    {
+      key: "venue_name", label: "Venue", help: "Stadium the game was played in.",
+      render: (g) => <span className="block max-w-36 truncate text-muted">{g.venue_name ?? "—"}</span>,
+    },
+    {
+      key: "qbs", label: "QBs", sortable: false,
+      help: "Starting quarterbacks, first team then second.",
+      render: (g) => (
+        <span className="block max-w-44 truncate text-muted">{g.a_qb ?? "—"} / {g.b_qb ?? "—"}</span>
+      ),
+    },
+    {
+      key: "referee", label: "Ref", help: "Head referee for the game.",
+      render: (g) => <span className="block max-w-28 truncate text-muted">{g.referee ?? "—"}</span>,
+    },
+  ], [A, B, pair]);
+
+  const splitRow = (label: string, right: React.ReactNode) => (
+    <tr className="border-t border-border">
+      <td className="py-1.5 pr-3 text-muted">{label}</td>
+      <td className="py-1.5 tabular-nums text-ink">{right}</td>
+    </tr>
+  );
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Head-to-head explorer</h1>
-        <p className="text-sm" style={{ color: "var(--muted)" }}>
-          Any two franchises, every meeting since 1999 — relocations merged
-          (STL→LA, SD→LAC, OAK→LV). Click a game for the full matchup card.
-        </p>
-      </div>
+    <div className="space-y-4">
+      <PageHeader
+        title="Head-to-head explorer"
+        subtitle="Any two franchises, every meeting since 1999. Relocations are merged (STL→LA, SD→LAC, OAK→LV). Click a game for the full matchup card." />
 
-      <div className="flex flex-wrap items-center gap-2">
-        {[["first", pa, setPa], ["second", pb, setPb]].map(([lbl, val, set]) => (
-          <select key={lbl as string} value={val as string}
-                  onChange={(e) => (set as (v: string) => void)(e.target.value)}
-                  className="rounded-lg border bg-transparent px-2 py-1.5 text-sm font-semibold"
-                  style={{ borderColor: "var(--stroke)" }}>
-            <option value="" style={{ color: "#000" }}>{lbl as string} team…</option>
-            {codes.map((c) => <option key={c} value={c} style={{ color: "#000" }}>{c}</option>)}
-          </select>
-        ))}
+      <Toolbar>
+        <Field label="First">
+          <Select size="sm" ariaLabel="First team" value={pa} onChange={setPa}
+                  options={[{ value: "", label: "first team…" },
+                            ...codes.map((c) => ({ value: c, label: c }))]} />
+        </Field>
+        <Field label="Second">
+          <Select size="sm" ariaLabel="Second team" value={pb} onChange={setPb}
+                  options={[{ value: "", label: "second team…" },
+                            ...codes.map((c) => ({ value: c, label: c }))]} />
+        </Field>
         <button onClick={() => pa && pb && pa !== pb && nav(`/h2h/${pa}/${pb}`)}
                 disabled={!pa || !pb || pa === pb}
-                className="rounded-full border px-4 py-1.5 text-sm font-semibold disabled:opacity-40"
-                style={{ borderColor: "var(--arc)", color: "var(--arc)" }}>
+                className="rounded-full border border-accent/50 bg-accent-bg px-4 py-1 text-body font-semibold text-accent disabled:opacity-40">
           Compare
         </button>
         {d && (
           <>
-            <span className="mx-1 h-5 w-px" style={{ background: "var(--stroke)" }} />
-            {[[TYPE_OPTS, stype, setStype], [SITE_OPTS, site, setSite]].map(([opts, val, set], i) => (
-              <select key={i} value={val as string}
-                      onChange={(e) => (set as (v: string) => void)(e.target.value)}
-                      className="rounded-lg border bg-transparent px-2 py-1.5 text-sm"
-                      style={{ borderColor: "var(--stroke)" }}>
-                {(opts as readonly (readonly [string, string])[]).map(([v, l]) => (
-                  <option key={v} value={v} style={{ color: "#000" }}>{l}</option>))}
-              </select>
-            ))}
+            <Field label="Type">
+              <Select size="sm" ariaLabel="Season type" value={stype}
+                      onChange={setStype} options={TYPE_OPTS} />
+            </Field>
+            <Field label="Site">
+              <Select size="sm" ariaLabel="Site" value={site}
+                      onChange={setSite} options={SITE_OPTS} />
+            </Field>
           </>
         )}
-      </div>
+      </Toolbar>
 
       {d && sum && ta && tb && (
         <>
-          <div className="glass relative overflow-hidden p-6" style={{
-            background: `linear-gradient(105deg, ${hexToRgba(ta.color, 0.45)}, var(--glass) 45%, var(--glass) 55%, ${hexToRgba(tb.color, 0.45)})` }}>
-            <div className="flex items-center gap-5">
-              <Link to={`/team/${d.teams[0]}`}><img src={ta.logo} alt="" className="logo-glow h-14 w-14" /></Link>
-              <div className="text-lg font-bold">{ta.name}</div>
+          <div className="relative overflow-hidden rounded-[var(--radius-panel)] border border-border p-6" style={{
+            background: `linear-gradient(105deg, ${hexToRgba(ta.color, 0.3)}, var(--color-surface) 42%, var(--color-surface) 58%, ${hexToRgba(tb.color, 0.3)})` }}>
+            <div className="flex flex-wrap items-center gap-5">
+              <Link to={`/team/${A}`}><img src={ta.logo} alt={ta.name} className="h-14 w-14" /></Link>
+              <div className="text-h2 font-bold text-ink">{ta.name}</div>
               <div className="mx-auto text-center">
-                <div className="text-3xl font-bold tabular-nums tracking-tight">
+                <div className="font-display text-display font-bold tabular-nums text-ink">
                   {sum.a_wins}–{sum.b_wins}{sum.ties ? `–${sum.ties}` : ""}
                 </div>
-                <div className="text-xs" style={{ color: "var(--muted)" }}>
+                <div className="text-micro text-muted">
                   {sum.games} meetings · {sum.first_season}–{sum.last_season}
                   {d.streak && d.streak.current_streak !== 0 && (
-                    <> · {d.streak.current_streak > 0 ? d.teams[0] : d.teams[1]} won last{" "}
+                    <> · {d.streak.current_streak > 0 ? A : B} won last{" "}
                       {Math.abs(d.streak.current_streak)}</>
                   )}
                 </div>
               </div>
-              <div className="text-right text-lg font-bold">{tb.name}</div>
-              <Link to={`/team/${d.teams[1]}`}><img src={tb.logo} alt="" className="logo-glow h-14 w-14" /></Link>
+              <div className="text-right text-h2 font-bold text-ink">{tb.name}</div>
+              <Link to={`/team/${B}`}><img src={tb.logo} alt={tb.name} className="h-14 w-14" /></Link>
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-3">
-            <GlassPanel title="Site splits">
-              <table className="w-full text-left text-sm">
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Panel title="Site splits">
+              <table className="w-full text-left text-table">
                 <tbody>
-                  {[[`at ${d.teams[0]}`, sum.a_home_wins, sum.a_home_games],
-                    [`at ${d.teams[1]}`, sum.a_away_wins, sum.a_away_games],
-                    ["neutral", null, sum.neutral_games]].map(([lbl, w, g], i) => (
-                    <tr key={i} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                      <td className="py-1.5 pr-3" style={{ color: "var(--muted)" }}>{lbl}</td>
-                      <td className="py-1.5 pr-3">{g as number} games</td>
-                      <td className="py-1.5">{w != null ? `${d.teams[0]} ${w}–${(g as number) - (w as number)}` : "—"}</td>
-                    </tr>
-                  ))}
-                  <tr className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                    <td className="py-1.5 pr-3" style={{ color: "var(--muted)" }}>avg margin</td>
-                    <td className="py-1.5 pr-3" colSpan={2}>
-                      {sum.avg_margin_a > 0 ? `${d.teams[0]} +${sum.avg_margin_a}` :
-                       sum.avg_margin_a < 0 ? `${d.teams[1]} +${-sum.avg_margin_a}` : "even"} · total {sum.avg_total}
-                    </td>
-                  </tr>
-                  <tr className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                    <td className="py-1.5 pr-3" style={{ color: "var(--muted)" }}>ATS ({d.teams[0]})</td>
-                    <td className="py-1.5" colSpan={2}>{sum.a_covers}–{sum.ats_games - sum.a_covers}</td>
-                  </tr>
+                  {splitRow(`at ${A}`, `${sum.a_home_games} g · ${A} ${sum.a_home_wins}–${sum.a_home_games - sum.a_home_wins}`)}
+                  {splitRow(`at ${B}`, `${sum.a_away_games} g · ${A} ${sum.a_away_wins}–${sum.a_away_games - sum.a_away_wins}`)}
+                  {splitRow("neutral", `${sum.neutral_games} g`)}
+                  {splitRow("avg margin",
+                    `${sum.avg_margin_a > 0 ? `${A} +${sum.avg_margin_a}`
+                      : sum.avg_margin_a < 0 ? `${B} +${-sum.avg_margin_a}` : "even"} · total ${sum.avg_total}`)}
+                  {splitRow(`ATS (${A})`, `${sum.a_covers}–${sum.ats_games - sum.a_covers}`)}
                 </tbody>
               </table>
-            </GlassPanel>
+            </Panel>
 
-            <GlassPanel title="By era">
+            <Panel title="By era">
               <div className="max-h-56 overflow-y-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-table">
                   <tbody>
                     {d.splits.by_decade.map((r) => (
-                      <tr key={r.era} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                        <td className="py-1 pr-3" style={{ color: "var(--muted)" }}>{r.era}</td>
-                        <td className="py-1 pr-3">{r.g} g</td>
-                        <td className="py-1">{d.teams[0]} {r.a_wins}–{r.g - r.a_wins}</td>
+                      <tr key={r.era} className="border-t border-border">
+                        <td className="py-1 pr-3 text-muted">{r.era}</td>
+                        <td className="py-1 pr-3 tabular-nums">{r.g} g</td>
+                        <td className="py-1 tabular-nums">{A} {r.a_wins}–{r.g - r.a_wins}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </GlassPanel>
+            </Panel>
 
-            <GlassPanel title="By venue">
+            <Panel title="By venue">
               <div className="max-h-56 overflow-y-auto">
-                <table className="w-full text-left text-sm">
+                <table className="w-full text-left text-table">
                   <tbody>
                     {d.splits.by_venue.map((r) => (
-                      <tr key={r.venue} className="border-t tabular-nums" style={{ borderColor: "var(--stroke)" }}>
-                        <td className="max-w-40 truncate py-1 pr-3" style={{ color: "var(--muted)" }}>{r.venue}</td>
-                        <td className="py-1 pr-3">{r.g} g</td>
-                        <td className="py-1">{d.teams[0]} {r.a_wins}–{r.g - r.a_wins}</td>
+                      <tr key={r.venue} className="border-t border-border">
+                        <td className="max-w-40 truncate py-1 pr-3 text-muted">{r.venue}</td>
+                        <td className="py-1 pr-3 tabular-nums">{r.g} g</td>
+                        <td className="py-1 tabular-nums">{A} {r.a_wins}–{r.g - r.a_wins}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </GlassPanel>
+            </Panel>
           </div>
 
-          <GlassPanel title={`Every meeting (${d.games.length})`}>
-            <div className="max-h-[32rem] overflow-y-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="sticky top-0" style={{ background: "var(--bg-1)" }}>
-                  <tr style={{ color: "var(--muted)" }}>
-                    {["Date", "Site", "Score", "Winner", "Spread", "Venue", "QBs", "Ref"].map((h) => (
-                      <th key={h} className="py-1.5 pr-3 font-medium">{h}</th>))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {d.games.map((g) => (
-                    <tr key={g.game_id} onClick={() => nav(`/matchup/${g.game_id}`)}
-                        className="cursor-pointer border-t transition-colors hover:bg-white/5"
-                        style={{ borderColor: "var(--stroke)" }}>
-                      <td className="py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>
-                        {g.date}{g.season_type === "POST" && (
-                          <span className="ml-1 font-bold" style={{ color: "var(--arc)" }}>{g.game_type}</span>)}
-                      </td>
-                      <td className="py-1.5 pr-3 text-xs">
-                        {g.site === "home" ? `at ${d.teams[0]}` : g.site === "away" ? `at ${d.teams[1]}` : "neutral"}
-                      </td>
-                      <td className="py-1.5 pr-3 tabular-nums">{g.a_score}–{g.b_score}{g.overtime ? " OT" : ""}</td>
-                      <td className="py-1.5 pr-3 font-semibold" style={{
-                        color: g.a_win === 1 ? (ta?.glow ?? "inherit") : g.a_win === 0 ? (tb?.glow ?? "inherit") : "var(--muted)" }}>
-                        {g.a_win === 1 ? d.teams[0] : g.a_win === 0 ? d.teams[1] : "tie"}
-                      </td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
-                        {g.spread_line_a != null
-                          ? `${d.teams[0]} ${g.spread_line_a > 0 ? "-" : "+"}${Math.abs(g.spread_line_a)}${
-                              g.covered_a == null ? "" : g.covered_a ? " ✓" : " ✗"}`
-                          : "—"}
-                      </td>
-                      <td className="max-w-36 truncate py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>
-                        {g.venue_name}</td>
-                      <td className="max-w-44 truncate py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>
-                        {g.a_qb ?? "—"} / {g.b_qb ?? "—"}</td>
-                      <td className="max-w-28 truncate py-1.5 text-xs" style={{ color: "var(--muted)" }}>
-                        {g.referee ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </GlassPanel>
+          <Panel title={`Every meeting (${d.games.length})`} flush>
+            <DataTable
+              columns={gameColumns}
+              rows={d.games}
+              rowKey={(g) => g.game_id}
+              stickyCols={1}
+              maxHeight="32rem"
+              caption={`${A} versus ${B}, every meeting`}
+              empty="No meetings match these filters."
+              rowHref={(g) => `/matchup/${g.game_id}`} />
+          </Panel>
         </>
       )}
-      {!d && a && b && <p style={{ color: "var(--muted)" }}>Loading…</p>}
+      {!d && a && b && <p className="text-muted">Loading…</p>}
     </div>
   );
 }

@@ -4,11 +4,8 @@ import { api, type NewsItem, type RosterPlayer, type TeamScheduleGame } from "..
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
 import { useTeamTokens } from "../lib/useTeamTokens";
-import Chip from "../components/Chip";
-import GlassPanel from "../components/GlassPanel";
 import { LineChart } from "../components/charts";
-import { StatTile } from "../components/ui";
-import Tip from "../components/Tip";
+import { Chip, Field, PageHeader, Panel, PillGroup, Select, StatTile, Tip, Toolbar } from "../components/ui";
 
 /* ── types (page-local; single-page endpoints) ─────────────────────────── */
 interface StaffBlock { name: string; since: number; playcaller: boolean; about: string }
@@ -142,23 +139,25 @@ export default function TeamHUD() {
            style={{ background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.35)}, var(--color-surface) 60%)` }}>
         <img src={t.logo} alt="" aria-hidden
              className="pointer-events-none absolute -right-10 -top-14 h-64 w-64 opacity-15" />
-        <div className="relative flex flex-wrap items-center gap-6">
-          <img src={t.logo} alt={t.name} className="logo-glow h-20 w-20" />
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t.name}</h1>
-            <p className="text-sm" style={{ color: "var(--muted)" }}>
-              {ov.div_rank ? `${ov.div_rank}${["st", "nd", "rd"][ov.div_rank - 1] ?? "th"} ${ov.division}` : `${t.conf} ${t.div}`}
-              {" · head coach "}
-              {s.head_coach ? (
-                <Link to={`/coach/${encodeURIComponent(s.head_coach)}`}
-                      className="font-semibold hover:underline" style={{ color: "var(--accent)" }}>
-                  {s.head_coach}
-                </Link>
-              ) : "—"}
-              {" · "}{ov.season}
-            </p>
-          </div>
-          <div className="ml-auto grid w-full max-w-md grid-cols-3 gap-2">
+        <div className="relative">
+          <PageHeader
+            crumbs={[{ label: "Teams", to: "/" }, { label: t.name }]}
+            media={<img src={t.logo} alt={t.name} className="h-20 w-20" />}
+            title={t.name}
+            subtitle={
+              <>
+                {ov.div_rank ? `${ov.div_rank}${["st", "nd", "rd"][ov.div_rank - 1] ?? "th"} ${ov.division}` : `${t.conf} ${t.div}`}
+                {" · head coach "}
+                {s.head_coach ? (
+                  <Link to={`/coach/${encodeURIComponent(s.head_coach)}`}
+                        className="font-semibold text-accent hover:underline">
+                    {s.head_coach}
+                  </Link>
+                ) : "—"}
+                {" · "}{ov.season}
+              </>
+            } />
+          <div className="grid gap-2 sm:grid-cols-3">
             <StatTile label={`${ov.season} record`}
                       value={`${h.w}–${h.l}${h.t ? `–${h.t}` : ""}`}
                       meter={games ? h.w / games : 0}
@@ -173,19 +172,14 @@ export default function TeamHUD() {
         </div>
       </div>
 
-      {s.note && <p className="text-sm italic" style={{ color: "var(--muted)" }}>⚑ {s.note}</p>}
+      {s.note && <p className="text-body italic text-muted">⚑ {s.note}</p>}
 
       {/* tabs */}
-      <div className="flex flex-wrap gap-2">
-        {TABS.map(([key, label]) => (
-          <button key={key} onClick={() => setTab(key)}
-            className="rounded-full border px-3 py-1 text-sm font-semibold"
-            style={{ borderColor: tab === key ? "var(--accent)" : "var(--stroke)",
-                     color: tab === key ? "var(--accent)" : "var(--muted)" }}>
-            {label}
-          </button>
-        ))}
-      </div>
+      <PillGroup
+        ariaLabel="Team view"
+        options={TABS.map(([value, label]) => ({ value, label }))}
+        value={tab}
+        onChange={(v) => setTab(v)} />
 
       {/* ───────────────────────────── OVERVIEW ───────────────────────────── */}
       {tab === "overview" && (
@@ -197,11 +191,11 @@ export default function TeamHUD() {
                 ["Pass EPA", ov.epa.pass_epa, ov.epa.pass_rank, HELP.epa_pass],
                 ["Rush EPA", ov.epa.rush_epa, ov.epa.rush_rank, HELP.epa_rush]].map(([lbl, v, rank, help]) => (
                 <Tip key={lbl as string} text={help as string}>
-                  <div className="glass w-full p-3 text-center">
-                    <div className="text-xs uppercase tracking-wider" style={{ color: "var(--muted)" }}>{lbl}</div>
-                    <div className="mt-1 text-xl font-bold tabular-nums" style={{ color: "var(--accent)" }}>
+                  <div className="rounded-[var(--radius-panel)] border border-border bg-surface w-full p-3 text-center">
+                    <div className="text-micro uppercase tracking-[0.12em] text-muted">{lbl}</div>
+                    <div className="font-display mt-1 text-h1 font-bold text-ink">
                       {(v as number) > 0 ? "+" : ""}{v as number}
-                      <span className="ml-1.5 text-sm font-semibold" style={{ color: "var(--muted)" }}>#{rank as number}</span>
+                      <span className="ml-1.5 text-h3 font-semibold text-muted">#{rank as number}</span>
                     </div>
                   </div>
                 </Tip>
@@ -210,66 +204,66 @@ export default function TeamHUD() {
           )}
 
           <div className="grid gap-4 lg:grid-cols-3">
-            <GlassPanel title="Head coach">
+            <Panel title="Head coach">
               {s.head_coach && (
                 <>
                   <Link to={`/coach/${encodeURIComponent(s.head_coach)}`}
-                        className="text-lg font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+                        className="text-lg font-semibold hover:underline" style={{ color: "var(--color-accent)" }}>
                     {s.head_coach}
                   </Link>
-                  <p className="text-xs" style={{ color: "var(--muted)" }}>since {s.hc?.since}</p>
-                  <p className="mt-2 text-sm" style={{ color: "var(--muted)" }}>{s.hc?.about}</p>
+                  <p className="text-xs" style={{ color: "var(--color-muted)" }}>since {s.hc?.since}</p>
+                  <p className="mt-2 text-sm" style={{ color: "var(--color-muted)" }}>{s.hc?.about}</p>
                 </>
               )}
-            </GlassPanel>
+            </Panel>
             {(["oc", "dc"] as const).map((role) => {
               const b = s[role];
               const scheme = role === "oc" ? s.offense_scheme : s.defense_scheme;
               return (
-                <GlassPanel key={role} title={role === "oc" ? "Offensive coordinator" : "Defensive coordinator"}>
+                <Panel key={role} title={role === "oc" ? "Offensive coordinator" : "Defensive coordinator"}>
                   {b ? (
                     <>
                       <span className="flex items-center gap-2">
                         <Link to={`/coach/${encodeURIComponent(b.name)}?role=${role.toUpperCase()}`}
-                              className="text-lg font-semibold hover:underline" style={{ color: "var(--accent)" }}>
+                              className="text-lg font-semibold hover:underline" style={{ color: "var(--color-accent)" }}>
                           {b.name}
                         </Link>
                         {b.playcaller && <Chip tone="arc">calls plays</Chip>}
                       </span>
-                      <p className="text-xs" style={{ color: "var(--muted)" }}>since {b.since}</p>
+                      <p className="text-xs" style={{ color: "var(--color-muted)" }}>since {b.since}</p>
                     </>
                   ) : (
-                    <p className="text-sm" style={{ color: "var(--muted)" }}>
+                    <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                       No {role.toUpperCase()} title — the head coach runs this unit.
                     </p>
                   )}
                   {scheme && (
                     <Link to={`/knowledge/${scheme.knowledge}`}
-                          className="mt-2 block text-sm hover:underline" style={{ color: "var(--arc)" }}>
+                          className="mt-2 block text-sm hover:underline" style={{ color: "var(--color-accent)" }}>
                       {scheme.family} →
                     </Link>
                   )}
-                </GlassPanel>
+                </Panel>
               );
             })}
           </div>
 
           <div>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-widest" style={{ color: "var(--arc)" }}>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-widest" style={{ color: "var(--color-accent)" }}>
               {ov.season} team leaders
             </h2>
             <div className="grid gap-3 sm:grid-cols-5">
               {ov.leaders.map((ld) => (
                 <Link key={ld.key} to={ld.player_id ? `/player/${ld.player_id}` : "#"}
-                      className="glass flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5">
+                      className="rounded-[var(--radius-panel)] border border-border bg-surface flex items-center gap-3 p-3 transition-transform hover:-translate-y-0.5">
                   {ld.headshot && (
                     <img src={ld.headshot} alt="" className="h-10 w-10 rounded-full object-cover"
                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
                   )}
                   <div className="min-w-0">
                     <div className="truncate text-sm font-semibold">{ld.name ?? "—"}</div>
-                    <div className="text-xs" style={{ color: "var(--muted)" }}>
-                      <span className="tabular-nums font-semibold" style={{ color: "var(--accent)" }}>
+                    <div className="text-xs" style={{ color: "var(--color-muted)" }}>
+                      <span className="tabular-nums font-semibold" style={{ color: "var(--color-accent)" }}>
                         {ld.value?.toLocaleString() ?? "—"}
                       </span>{" "}{ld.label}
                     </div>
@@ -280,9 +274,9 @@ export default function TeamHUD() {
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <GlassPanel title={`${ov.division ?? "Division"} standings`}>
+            <Panel title={`${ov.division ?? "Division"} standings`}>
               <table className="w-full text-left text-sm">
-                <thead><tr style={{ color: "var(--muted)" }}>
+                <thead><tr style={{ color: "var(--color-muted)" }}>
                   {["Team", "W", "L", "T", "PCT", "PF", "PA"].map((hd) => (
                     <th key={hd} className="py-1 pr-3 font-medium">{hd}</th>))}
                 </tr></thead>
@@ -290,8 +284,8 @@ export default function TeamHUD() {
                   {ov.standings.map((row) => (
                     <tr key={row.team}
                         className={`border-t tabular-nums ${row.team === c ? "font-bold" : ""}`}
-                        style={{ borderColor: "var(--stroke)",
-                                 background: row.team === c ? "rgba(255,255,255,0.04)" : undefined }}>
+                        style={{ borderColor: "var(--color-border)",
+                                 background: row.team === c ? "var(--color-surface-2)" : undefined }}>
                       <td className="py-1.5 pr-3">
                         <Link to={`/team/${row.team}`} className="flex items-center gap-2 hover:underline">
                           {meta?.teams[row.team] && (
@@ -309,9 +303,9 @@ export default function TeamHUD() {
                   ))}
                 </tbody>
               </table>
-            </GlassPanel>
+            </Panel>
 
-            <GlassPanel title="Travel & rest profile">
+            <Panel title="Travel & rest profile">
               <div className="flex flex-wrap gap-2">
                 <Tip text={HELP.miles}><Chip tone="arc">{(ov.travel.total_travel_miles ?? 0).toLocaleString()} mi this season</Chip></Tip>
                 <Tip text="Average one-way miles for road games"><Chip>{ov.travel.avg_road_trip_miles?.toLocaleString() ?? "—"} mi avg road trip</Chip></Tip>
@@ -320,91 +314,91 @@ export default function TeamHUD() {
                 <Tip text="Games abroad"><Chip tone={ov.travel.international_games ? "hot" : "muted"}>{ov.travel.international_games ?? 0} international</Chip></Tip>
                 <Tip text="Games on 5 or fewer days rest"><Chip>{ov.travel.short_weeks ?? 0} short weeks</Chip></Tip>
               </div>
-              <p className="mt-3 text-xs" style={{ color: "var(--muted)" }}>
+              <p className="mt-3 text-xs" style={{ color: "var(--color-muted)" }}>
                 Computed from the curated venue database — home-base haversine miles per game.
               </p>
-            </GlassPanel>
+            </Panel>
           </div>
 
-          <GlassPanel title="2026 schedule">
+          <Panel title="2026 schedule">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {sched.map((g) => (
                 <Link key={g.week} to={`/matchup/${g.game_id}`}
-                      className="min-w-32 rounded-xl border p-2.5 text-center text-xs transition-colors hover:bg-white/5"
-                      style={{ borderColor: "var(--stroke)" }}>
-                  <div className="font-bold" style={{ color: "var(--muted)" }}>WK {g.week}</div>
+                      className="min-w-32 rounded-xl border p-2.5 text-center text-xs transition-colors hover:bg-surface-2"
+                      style={{ borderColor: "var(--color-border)" }}>
+                  <div className="font-bold" style={{ color: "var(--color-muted)" }}>WK {g.week}</div>
                   <div className="mt-1 font-semibold">{g.home ? "vs" : "@"} {g.opponent}</div>
-                  <div className="mt-0.5" style={{ color: "var(--muted)" }}>{g.date}</div>
-                  {g.line_text && <div className="mt-1" style={{ color: "var(--accent)" }}>{g.line_text}</div>}
+                  <div className="mt-0.5" style={{ color: "var(--color-muted)" }}>{g.date}</div>
+                  {g.line_text && <div className="mt-1" style={{ color: "var(--color-accent)" }}>{g.line_text}</div>}
                 </Link>
               ))}
             </div>
-          </GlassPanel>
+          </Panel>
 
-          <GlassPanel title="Franchise, season by season (2007+)">
+          <Panel title="Franchise, season by season (2007+)">
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {ov.franchise.map((f) => (
                 <button key={f.season}
                         onClick={() => { setResSeason(f.season); setTab("results"); }}
-                        className="min-w-16 rounded-lg border p-1.5 text-center text-[11px] transition-colors hover:bg-white/5"
-                        style={{ borderColor: f.playoffs === "SB champs" ? "var(--accent)" : "var(--stroke)" }}>
-                  <div style={{ color: "var(--muted)" }}>{f.season}</div>
+                        className="min-w-16 rounded-lg border p-1.5 text-center text-[11px] transition-colors hover:bg-surface-2"
+                        style={{ borderColor: f.playoffs === "SB champs" ? "var(--color-accent)" : "var(--color-border)" }}>
+                  <div style={{ color: "var(--color-muted)" }}>{f.season}</div>
                   <div className="font-bold tabular-nums">{f.w}–{f.l}{f.t ? `–${f.t}` : ""}</div>
                   {f.playoffs && (
                     <div className="mt-0.5 font-semibold"
-                         style={{ color: f.playoffs === "SB champs" ? "var(--accent)" : "var(--muted)" }}>
+                         style={{ color: f.playoffs === "SB champs" ? "var(--color-accent)" : "var(--color-muted)" }}>
                       {f.playoffs}
                     </div>
                   )}
                 </button>
               ))}
             </div>
-          </GlassPanel>
+          </Panel>
 
           {ov.injuries.length > 0 && (
-            <GlassPanel title="Injury report (latest week)">
+            <Panel title="Injury report (latest week)">
               <ul className="grid gap-1 text-sm sm:grid-cols-2">
                 {ov.injuries.map((r, i) => (
                   <li key={i} className="flex gap-2">
                     <span className="font-medium">{r.player}</span>
-                    <span style={{ color: "var(--muted)" }}>{r.position}</span>
+                    <span style={{ color: "var(--color-muted)" }}>{r.position}</span>
                     <span className="ml-auto" style={{
-                      color: r.status === "Out" ? "#f87171" : r.status === "Questionable" ? "#facc15" : "var(--muted)" }}>
+                      color: r.status === "Out" ? "var(--color-negative)" : r.status === "Questionable" ? "var(--color-warning)" : "var(--color-muted)" }}>
                       {r.status}{r.injury ? ` (${r.injury})` : ""}
                     </span>
                   </li>
                 ))}
               </ul>
-            </GlassPanel>
+            </Panel>
           )}
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <GlassPanel title="Latest news">
+            <Panel title="Latest news">
               <ul className="space-y-2 text-sm">
                 {news.slice(0, 8).map((n, i) => (
                   <li key={i}>
-                    <a href={n.url} target="_blank" rel="noreferrer" className="hover:text-white">{n.headline}</a>
-                    <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>{n.ts?.slice(0, 10)}</span>
+                    <a href={n.url} target="_blank" rel="noreferrer" className="hover:text-accent">{n.headline}</a>
+                    <span className="ml-2 text-xs" style={{ color: "var(--color-muted)" }}>{n.ts?.slice(0, 10)}</span>
                   </li>
                 ))}
               </ul>
-            </GlassPanel>
+            </Panel>
 
-            <GlassPanel title="Coach lineage">
+            <Panel title="Coach lineage">
               <ol className="max-h-72 space-y-2 overflow-y-auto pr-1 text-sm">
                 {coachHist.map((hrow) => (
                   <li key={hrow.season} className="flex items-center gap-3">
-                    <span className="tabular-nums" style={{ color: "var(--muted)" }}>{hrow.season}</span>
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--accent)" }} />
+                    <span className="tabular-nums" style={{ color: "var(--color-muted)" }}>{hrow.season}</span>
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ background: "var(--color-accent)" }} />
                     <Link to={`/coach/${encodeURIComponent(hrow.coach)}`}
                           className="font-medium hover:underline">{hrow.coach}</Link>
-                    <span className="ml-auto tabular-nums" style={{ color: "var(--muted)" }}>
+                    <span className="ml-auto tabular-nums" style={{ color: "var(--color-muted)" }}>
                       {hrow.wins}–{hrow.games - hrow.wins}
                     </span>
                   </li>
                 ))}
               </ol>
-            </GlassPanel>
+            </Panel>
           </div>
         </>
       )}
@@ -412,23 +406,24 @@ export default function TeamHUD() {
       {/* ───────────────────────────── RESULTS ────────────────────────────── */}
       {tab === "results" && res && (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <select value={res.season} onChange={(e) => setResSeason(+e.target.value)}
-                    className="rounded-lg border bg-transparent px-2 py-1.5 text-sm"
-                    style={{ borderColor: "var(--stroke)" }}>
-              {res.seasons.map((sn) => <option key={sn} value={sn} style={{ color: "#000" }}>{sn}</option>)}
-            </select>
-            <Chip tone="arc">{res.summary.w}–{res.summary.l}{res.summary.t ? `–${res.summary.t}` : ""}</Chip>
+          <Toolbar>
+            <Field label="Season">
+              <Select
+                size="sm" ariaLabel="Results season" value={res.season}
+                onChange={(v) => setResSeason(+v)}
+                options={res.seasons.map((sn) => ({ value: sn, label: String(sn) }))} />
+            </Field>
+            <Chip tone="accent">{res.summary.w}–{res.summary.l}{res.summary.t ? `–${res.summary.t}` : ""}</Chip>
             <Tip text={HELP.ats_sum}><Chip>ATS {res.summary.ats_w}–{res.summary.ats_l}</Chip></Tip>
             <Tip text={HELP.ou_sum}><Chip>O/U {res.summary.overs}–{res.summary.unders}</Chip></Tip>
             <Chip>home {res.summary.home_w}–{res.summary.home_l}</Chip>
             <Chip>road {res.summary.away_w}–{res.summary.away_l}</Chip>
-          </div>
-          <GlassPanel>
+          </Toolbar>
+          <Panel>
             <div className="scroll-x">
               <table className="w-max min-w-full whitespace-nowrap text-left text-sm">
                 <thead>
-                  <tr style={{ color: "var(--muted)" }}>
+                  <tr style={{ color: "var(--color-muted)" }}>
                     <th className="py-1.5 pr-3 font-medium">Wk</th>
                     <th className="py-1.5 pr-3 font-medium">Date</th>
                     <th className="py-1.5 pr-3 font-medium">Opponent</th>
@@ -447,17 +442,17 @@ export default function TeamHUD() {
                 <tbody>
                   {res.rows.map((g) => (
                     <tr key={g.game_id} onClick={() => nav(`/matchup/${g.game_id}`)}
-                        className="cursor-pointer border-t transition-colors hover:bg-white/5"
-                        style={{ borderColor: "var(--stroke)" }}>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                        className="cursor-pointer border-t transition-colors hover:bg-surface-2"
+                        style={{ borderColor: "var(--color-border)" }}>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                         {g.season_type === "POST"
-                          ? <span className="font-bold" style={{ color: "var(--arc)" }}>{g.game_type}</span>
+                          ? <span className="font-bold" style={{ color: "var(--color-accent)" }}>{g.game_type}</span>
                           : g.week}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>{g.date}</td>
+                      <td className="py-1.5 pr-3 text-xs" style={{ color: "var(--color-muted)" }}>{g.date}</td>
                       <td className="py-1.5 pr-3">
                         <span className="flex items-center gap-1.5">
-                          <span className="text-xs" style={{ color: "var(--muted)" }}>
+                          <span className="text-xs" style={{ color: "var(--color-muted)" }}>
                             {g.site === "home" ? "vs" : g.site === "away" ? "@" : "n"}
                           </span>
                           {meta?.teams[g.opponent] && (
@@ -467,38 +462,38 @@ export default function TeamHUD() {
                       </td>
                       <td className="py-1.5 pr-3 tabular-nums">
                         <span className="font-bold"
-                              style={{ color: g.win === 1 ? "#4ade80" : g.win === 0 ? "#f87171" : "var(--muted)" }}>
+                              style={{ color: g.win === 1 ? "var(--color-positive)" : g.win === 0 ? "var(--color-negative)" : "var(--color-muted)" }}>
                           {g.win === 1 ? "W" : g.win === 0 ? "L" : "T"}
                         </span>{" "}
                         {g.team_score}–{g.opp_score}{g.overtime ? " OT" : ""}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                         {g.season_type === "REG" ? `${g.w_td}–${g.l_td}${g.t_td ? `–${g.t_td}` : ""}` : "—"}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>{g.streak ?? "—"}</td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>{g.streak ?? "—"}</td>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                         {g.spread_line_team != null
                           ? (g.spread_line_team > 0 ? `-${g.spread_line_team}` : `+${-g.spread_line_team}`)
                           : "—"}
                       </td>
                       <td className="py-1.5 pr-3 text-xs">
                         {g.covered == null ? "—" : g.covered
-                          ? <span style={{ color: "#4ade80" }}>✓</span>
-                          : <span style={{ color: "#f87171" }}>✗</span>}
+                          ? <span style={{ color: "var(--color-positive)" }}>✓</span>
+                          : <span style={{ color: "var(--color-negative)" }}>✗</span>}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>
+                      <td className="py-1.5 pr-3 text-xs" style={{ color: "var(--color-muted)" }}>
                         {g.went_over == null ? "—" : g.went_over ? `O ${g.total_line}` : `U ${g.total_line}`}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                         {g.rest_days_sched ?? "—"}
                       </td>
-                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--muted)" }}>
+                      <td className="py-1.5 pr-3 text-xs tabular-nums" style={{ color: "var(--color-muted)" }}>
                         {g.travel_miles != null && g.travel_miles > 25 ? `${g.travel_miles.toLocaleString()} mi` : "—"}
                       </td>
-                      <td className="max-w-52 truncate py-1.5 pr-3 text-xs" style={{ color: "var(--muted)" }}>
+                      <td className="max-w-52 truncate py-1.5 pr-3 text-xs" style={{ color: "var(--color-muted)" }}>
                         {g.team_qb ?? "—"} v {g.opp_qb ?? "—"}
                       </td>
-                      <td className="max-w-32 truncate py-1.5 text-xs" style={{ color: "var(--muted)" }}>
+                      <td className="max-w-32 truncate py-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
                         {g.referee ?? "—"}
                       </td>
                     </tr>
@@ -506,36 +501,34 @@ export default function TeamHUD() {
                 </tbody>
               </table>
             </div>
-            <p className="mt-2 text-xs" style={{ color: "var(--muted)" }}>
+            <p className="mt-2 text-xs" style={{ color: "var(--color-muted)" }}>
               Click any game for the full matchup card — travel, refs, weather, market and series history.
             </p>
-          </GlassPanel>
+          </Panel>
         </>
       )}
 
       {/* ───────────────────────────── ROSTER ─────────────────────────────── */}
       {tab === "roster" && (
-        <GlassPanel title={`${rosterSeason} roster (${roster.length})`}>
-          <div className="mb-2 flex flex-wrap items-center gap-1.5">
-            <select value={rosterSeason} onChange={(e) => { setRosterSeason(+e.target.value); setPosFilter(""); }}
-                    className="mr-2 rounded-lg border bg-transparent px-2 py-1 text-sm"
-                    style={{ borderColor: "var(--stroke)" }}>
-              {(rosterSeasons.length ? rosterSeasons : [2026]).map((sn) => (
-                <option key={sn} value={sn} style={{ color: "#000" }}>{sn}</option>))}
-            </select>
-            {positions.map((p) => (
-              <button key={p} onClick={() => setPosFilter(posFilter === p ? "" : p)}
-                className="rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors"
-                style={{ borderColor: posFilter === p ? "var(--accent)" : "var(--stroke)",
-                         color: posFilter === p ? "var(--accent)" : "var(--muted)" }}>
-                {p}
-              </button>
-            ))}
+        <Panel title={`${rosterSeason} roster (${roster.length})`}>
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <Field label="Season">
+              <Select
+                size="sm" ariaLabel="Roster season" value={rosterSeason}
+                onChange={(v) => { setRosterSeason(+v); setPosFilter(""); }}
+                options={(rosterSeasons.length ? rosterSeasons : [2026])
+                  .map((sn) => ({ value: sn, label: String(sn) }))} />
+            </Field>
+            <PillGroup
+              ariaLabel="Position filter" size="sm" clearable
+              options={positions.map((x) => ({ value: x, label: x }))}
+              value={posFilter}
+              onChange={setPosFilter} />
           </div>
           <div className="max-h-[32rem] overflow-y-auto">
             <table className="w-full text-left text-sm">
-              <thead className="sticky top-0" style={{ background: "var(--bg-1)" }}>
-                <tr style={{ color: "var(--muted)" }}>
+              <thead className="sticky top-0" style={{ background: "var(--color-surface)" }}>
+                <tr style={{ color: "var(--color-muted)" }}>
                   <th className="py-1 pr-2 font-medium">#</th>
                   <th className="py-1 pr-2 font-medium">Player</th>
                   <th className="py-1 pr-2 font-medium">Pos</th>
@@ -544,9 +537,9 @@ export default function TeamHUD() {
               </thead>
               <tbody>
                 {roster.filter((p) => !posFilter || p.pos === posFilter).map((p) => (
-                  <tr key={p.gsis ?? p.name} className="border-t transition-colors hover:bg-white/5"
-                      style={{ borderColor: "var(--stroke)" }}>
-                    <td className="py-1.5 pr-2 tabular-nums" style={{ color: "var(--muted)" }}>{p.num ?? ""}</td>
+                  <tr key={p.gsis ?? p.name} className="border-t transition-colors hover:bg-surface-2"
+                      style={{ borderColor: "var(--color-border)" }}>
+                    <td className="py-1.5 pr-2 tabular-nums" style={{ color: "var(--color-muted)" }}>{p.num ?? ""}</td>
                     <td className="py-1.5 pr-2 font-medium">
                       <span className="flex items-center gap-2">
                         {p.headshot && (
@@ -558,55 +551,55 @@ export default function TeamHUD() {
                       </span>
                     </td>
                     <td className="py-1.5 pr-2">{p.pos}</td>
-                    <td className="py-1.5 text-xs" style={{ color: "var(--muted)" }}>{p.college}</td>
+                    <td className="py-1.5 text-xs" style={{ color: "var(--color-muted)" }}>{p.college}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </GlassPanel>
+        </Panel>
       )}
 
       {/* ───────────────────────────── STATS ──────────────────────────────── */}
       {tab === "stats" && (
         <>
-          <GlassPanel title="Weekly efficiency (EPA per play)">
+          <Panel title="Weekly efficiency (EPA per play)">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs" style={{ color: "var(--muted)" }}>
+              <span className="text-xs" style={{ color: "var(--color-muted)" }}>
                 Offense: higher is better · Defense: lower is better (what they allowed)
               </span>
               <select value={epaSeason} onChange={(e) => setEpaSeason(+e.target.value)}
                       className="rounded-lg border bg-transparent px-2 py-1 text-sm"
-                      style={{ borderColor: "var(--stroke)", color: "var(--text)" }}>
+                      style={{ borderColor: "var(--color-border)", color: "var(--color-ink)" }}>
                 {Array.from({ length: 2025 - 2007 + 1 }, (_, i) => 2025 - i).map((sn) => (
-                  <option key={sn} value={sn} style={{ color: "#000" }}>{sn}</option>))}
+                  <option key={sn} value={sn}>{sn}</option>))}
               </select>
             </div>
             <LineChart data={epaWeeks} xKey="week" xLabel="Week"
               series={[{ key: "off", name: "Offense" },
                        { key: "def", name: "Defense" }]} digits={3} />
-          </GlassPanel>
-          <GlassPanel title="Franchise results by season">
+          </Panel>
+          <Panel title="Franchise results by season">
             <table className="w-full text-left text-sm">
-              <thead><tr style={{ color: "var(--muted)" }}>
+              <thead><tr style={{ color: "var(--color-muted)" }}>
                 {["Season", "Record", "Playoffs"].map((hd) => (
                   <th key={hd} className="py-1 pr-3 font-medium">{hd}</th>))}
               </tr></thead>
               <tbody>
                 {[...ov.franchise].reverse().map((f) => (
-                  <tr key={f.season} className="cursor-pointer border-t tabular-nums transition-colors hover:bg-white/5"
+                  <tr key={f.season} className="cursor-pointer border-t tabular-nums transition-colors hover:bg-surface-2"
                       onClick={() => { setResSeason(f.season); setTab("results"); }}
-                      style={{ borderColor: "var(--stroke)" }}>
+                      style={{ borderColor: "var(--color-border)" }}>
                     <td className="py-1.5 pr-3">{f.season}</td>
                     <td className="py-1.5 pr-3">{f.w}–{f.l}{f.t ? `–${f.t}` : ""}</td>
-                    <td className="py-1.5" style={{ color: f.playoffs === "SB champs" ? "var(--accent)" : "var(--muted)" }}>
+                    <td className="py-1.5" style={{ color: f.playoffs === "SB champs" ? "var(--color-accent)" : "var(--color-muted)" }}>
                       {f.playoffs ?? "—"}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </GlassPanel>
+          </Panel>
         </>
       )}
     </div>

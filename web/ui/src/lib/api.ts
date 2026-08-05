@@ -14,8 +14,6 @@ export interface TeamMeta {
   /** the brand hex, unmodified — for a logo backdrop, never for text */
   color: string;
   tokens: TeamTokens;
-  /** @deprecated the old single accent colour; equals tokens.ink */
-  glow: string;
   logo: string;
 }
 

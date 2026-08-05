@@ -1,47 +1,10 @@
-/* Style entry point. Real definitions live in ./styles/*. */
+/* Style entry point. Real definitions live in ./styles/*.
+ *
+ * The temporary compatibility layer that lived here (--arc, --glass, .glow-text
+ * and friends) is gone: every page now reads the tokens directly. Nothing
+ * should ever reintroduce those names — scripts/check_tokens.mjs fails the
+ * build if it finds one. */
 @import "./styles/tokens.css";
 @import "./styles/base.css";
 @import "./styles/utilities.css";
 @import "./styles/prose.css";
-
-/* ═══════════════════════════════════════════════════════════════════════════
- * TEMPORARY COMPATIBILITY LAYER — TODO(wave 8): delete this whole block.
- *
- * Every page still writes the legacy variable names inline (var(--arc),
- * var(--muted), style={{ borderColor: "var(--stroke)" }}, className="glass").
- * Re-pointing those names at the new tokens re-skins all 15 pages without
- * editing a single page file, so the visual change ships in one commit and
- * every existing Playwright spec keeps passing.
- *
- * Pages migrate to real utilities in waves 2-5. When the last one is done,
- * delete this block; check_tokens.mjs (wave 8) then fails on any surviving
- * use of these names, which is what stops the old system coming back.
- * ══════════════════════════════════════════════════════════════════════════ */
-:root {
-  --arc: var(--color-accent);
-  --accent: var(--color-accent);
-  /* neutralises all 9 glow filters at once — they resolve to transparent */
-  --accent-glow: transparent;
-  --bg-0: var(--color-canvas);
-  --bg-1: var(--color-surface);
-  --glass: var(--color-surface);
-  --stroke: var(--color-border);
-  --text: var(--color-ink);
-  --muted: var(--color-muted);
-}
-
-/* Was: rgba fill + backdrop-blur(14px) + an outward accent glow + radius 16.
-   Now a flat surface with a hairline border — blur behind a scrolling stat
-   table is noise, and glow is decoration competing with data. */
-.glass {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-panel);
-}
-
-.glow-text {
-  text-shadow: none;
-}
-.logo-glow {
-  filter: none;
-}

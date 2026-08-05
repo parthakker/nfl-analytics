@@ -6,6 +6,7 @@ import type { TeamTokens } from "./api";
 const NEUTRAL: TeamTokens = {
   ink: "var(--color-muted)",
   solid: "var(--color-surface-3)",
+  // token-ok: mirrors deps.team_pair_tokens so client and server agree
   wash: "rgba(152,162,176,0.10)",
 };
 

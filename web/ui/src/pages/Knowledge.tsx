@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import GlassPanel from "../components/GlassPanel";
+import { PageHeader, Panel } from "../components/ui";
 
 /** Must match slugify in tests/unit/test_coaches_meta.py. */
 const slugify = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -57,24 +57,20 @@ export default function Knowledge() {
   if (!slug) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">The NFL Knowledge Book</h1>
-          <p className="text-sm" style={{ color: "var(--muted)" }}>
-            Football from first principles — the game, the schemes, the rulebook,
-            and the numbers. Chapters are plain markdown in docs/knowledge/;
-            edit them anytime, no rebuild needed.
-          </p>
-        </div>
+        <PageHeader
+          title="The NFL Knowledge Book"
+          subtitle="Football from first principles — the game, the schemes, the rulebook and the numbers." />
         {parts.map((p) => (
           <div key={p}>
-            <h2 className="mb-3 text-sm font-bold uppercase tracking-widest"
-                style={{ color: "var(--arc)" }}>Part {p}</h2>
+            <h2 className="mb-3 text-label font-bold uppercase tracking-[0.14em] text-muted">
+              Part {p}
+            </h2>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {chapters.filter((c) => c.part === p).map((c) => (
                 <Link key={c.slug} to={`/knowledge/${c.slug}`}
-                      className="glass block p-4 transition-transform hover:-translate-y-0.5">
-                  <div className="font-semibold">{c.title}</div>
-                  <p className="mt-1 text-xs" style={{ color: "var(--muted)" }}>{c.summary}</p>
+                      className="block rounded-[var(--radius-panel)] border border-border bg-surface p-4 transition-colors hover:border-accent/50 hover:bg-surface-2">
+                  <div className="font-semibold text-ink">{c.title}</div>
+                  <p className="mt-1 text-label text-muted">{c.summary}</p>
                 </Link>
               ))}
             </div>
@@ -87,18 +83,22 @@ export default function Knowledge() {
   return (
     <div className="flex gap-8">
       <aside className="sticky top-20 hidden max-h-[80vh] w-56 shrink-0 space-y-4 self-start overflow-y-auto lg:block">
-        <Link to="/knowledge" className="text-xs font-bold uppercase tracking-widest hover:underline"
-              style={{ color: "var(--arc)" }}>← contents</Link>
+        <Link to="/knowledge"
+              className="text-label font-bold uppercase tracking-[0.14em] text-accent hover:underline">
+          ← contents
+        </Link>
         {parts.map((p) => (
           <div key={p}>
-            <div className="mb-1 text-[11px] font-bold uppercase tracking-wider"
-                 style={{ color: "var(--muted)" }}>{p}</div>
-            <ul className="space-y-0.5 text-sm">
+            <div className="mb-1 text-micro font-bold uppercase tracking-wider text-muted">{p}</div>
+            <ul className="space-y-0.5 text-body">
               {chapters.filter((c) => c.part === p).map((c) => (
                 <li key={c.slug}>
                   <Link to={`/knowledge/${c.slug}`}
-                        className={`block rounded px-2 py-1 ${c.slug === slug ? "font-semibold" : "hover:bg-white/5"}`}
-                        style={{ color: c.slug === slug ? "var(--arc)" : "var(--text)" }}>
+                        aria-current={c.slug === slug ? "page" : undefined}
+                        className={`block rounded-[var(--radius-chip)] px-2 py-1 ${
+                          c.slug === slug
+                            ? "bg-accent-bg font-semibold text-accent"
+                            : "text-muted hover:bg-surface-2 hover:text-ink"}`}>
                     {c.title}
                   </Link>
                 </li>
@@ -110,7 +110,7 @@ export default function Knowledge() {
 
       <div className="min-w-0 flex-1">
         {doc ? (
-          <GlassPanel>
+          <Panel>
             <article className="prose-knowledge">
               <ReactMarkdown remarkPlugins={[remarkGfm]}
                 components={{
@@ -128,22 +128,22 @@ export default function Knowledge() {
                 {doc.markdown}
               </ReactMarkdown>
             </article>
-            <div className="mt-8 flex border-t pt-4 text-sm" style={{ borderColor: "var(--stroke)" }}>
+            <div className="mt-8 flex border-t border-border pt-4 text-body">
               {doc.prev && (
                 <button onClick={() => nav(`/knowledge/${doc.prev!.slug}`)}
-                        className="hover:underline" style={{ color: "var(--arc)" }}>
+                        className="text-accent hover:underline">
                   ← {doc.prev.title}
                 </button>
               )}
               {doc.next && (
                 <button onClick={() => nav(`/knowledge/${doc.next!.slug}`)}
-                        className="ml-auto hover:underline" style={{ color: "var(--arc)" }}>
+                        className="ml-auto text-accent hover:underline">
                   {doc.next.title} →
                 </button>
               )}
             </div>
-          </GlassPanel>
-        ) : <p style={{ color: "var(--muted)" }}>Loading…</p>}
+          </Panel>
+        ) : <p className="text-muted">Loading…</p>}
       </div>
     </div>
   );

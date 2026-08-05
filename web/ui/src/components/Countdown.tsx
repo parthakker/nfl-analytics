@@ -22,11 +22,11 @@ export default function Countdown({ iso }: { iso: string }) {
     <div className="flex items-end gap-4">
       {cells.map(([v, label]) => (
         <div key={label} className="text-center">
-          <div className="glow-text text-4xl font-bold tabular-nums"
-               style={{ color: "var(--arc)" }}>
+          <div className="text-4xl font-bold tabular-nums"
+               style={{ color: "var(--color-accent)" }}>
             {String(v).padStart(2, "0")}
           </div>
-          <div className="text-[10px] uppercase tracking-widest" style={{ color: "var(--muted)" }}>
+          <div className="text-[10px] uppercase tracking-widest" style={{ color: "var(--color-muted)" }}>
             {label}
           </div>
         </div>

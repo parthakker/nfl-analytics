@@ -21,9 +21,6 @@ def meta() -> dict:
             "div": t[2],
             "color": t[5],
             "tokens": tok,
-            # `glow` is the old single colour the UI set as --accent. Kept one
-            # wave so nothing 404s mid-migration. TODO(wave 5): delete.
-            "glow": tok["ink"],
             "logo": teams_meta.logo_url(code),
         }
     return {"teams": teams, "divisions": teams_meta.DIVISIONS, "kickoff_2026": kickoff}

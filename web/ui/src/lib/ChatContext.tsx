@@ -22,8 +22,8 @@ function ThinkingHUD({ hint, startedAt }: { hint: string; startedAt: number }) {
   }, []);
   const secs = Math.floor((Date.now() - startedAt) / 1000);
   return (
-    <div className="flex items-center gap-3 text-sm" style={{ color: "var(--muted)" }}>
-      <span className="pulse text-base" style={{ color: "var(--arc)" }}>◉</span>
+    <div className="flex items-center gap-3 text-sm" style={{ color: "var(--color-muted)" }}>
+      <span className="pulse text-base" style={{ color: "var(--color-accent)" }}>◉</span>
       <span>{hint}</span>
       <span className="ml-auto tabular-nums">{secs}s</span>
     </div>
@@ -105,29 +105,32 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ open: () => setOpen(true), close: () => setOpen(false), isOpen }}>
       {children}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 p-4 pt-16 backdrop-blur-sm"
+        // token-ok: a modal scrim is the one place blur is still a material.
+        // It separates a transient overlay from the page, and nothing is being
+        // read through it — unlike the stat tables blur used to sit behind.
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-canvas/70 p-4 pt-16 backdrop-blur-sm"
              onClick={() => setOpen(false)}>
-          <div className="glass flex max-h-[80vh] w-full max-w-3xl flex-col p-5"
+          <div className="rounded-[var(--radius-panel)] border border-border bg-surface flex max-h-[80vh] w-full max-w-3xl flex-col p-5"
                onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center gap-3">
-              <span className="glow-text font-bold" style={{ color: "var(--arc)" }}>
+              <span className="font-bold" style={{ color: "var(--color-accent)" }}>
                 ◉ ANALYST LINK
               </span>
               <button onClick={newConversation}
-                className="ml-auto rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-white/5"
-                style={{ borderColor: "var(--stroke)", color: "var(--muted)" }}>
+                className="ml-auto rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-surface-2"
+                style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
                 new conversation
               </button>
               <button onClick={() => setOpen(false)}
-                className="rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-white/5"
-                style={{ borderColor: "var(--stroke)", color: "var(--muted)" }}>
+                className="rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-surface-2"
+                style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
                 esc
               </button>
             </div>
 
             <div ref={listRef} className="min-h-40 flex-1 space-y-4 overflow-y-auto pr-2">
               {msgs.length === 0 && (
-                <p className="text-sm" style={{ color: "var(--muted)" }}>
+                <p className="text-sm" style={{ color: "var(--color-muted)" }}>
                   Direct line to your NFL analyst — full access to the warehouse,
                   news, and market tracker. Answers take 20–60 seconds because it
                   runs real queries. Try: <em>"Who led the league in rushing in 2025?"</em>
@@ -136,7 +139,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "user" ? "text-right" : ""}>
                   <div className={`inline-block max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-left text-sm leading-relaxed ${
-                    m.role === "user" ? "bg-white/10" : "glass"}`}>
+                    m.role === "user" ? "bg-accent-bg" : "border border-border bg-surface-2"}`}>
                     {m.text || (busy && i === msgs.length - 1 ? "…" : "")}
                   </div>
                 </div>
@@ -149,11 +152,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
                 onKeyDown={(e) => e.key === "Enter" && send()}
                 disabled={busy} autoFocus
                 placeholder={busy ? "analyzing…" : "ask about any team, player, game, or market"}
-                className="flex-1 rounded-xl border bg-transparent px-4 py-2.5 text-sm outline-none transition-shadow focus:shadow-[0_0_20px_-4px_var(--accent-glow)]"
-                style={{ borderColor: "var(--stroke)", color: "var(--text)" }} />
+                className="flex-1 rounded-[var(--radius-control)] border border-border bg-surface-2 px-4 py-2.5 text-body text-ink outline-none placeholder:text-faint" />
               <button onClick={send} disabled={busy || !draft.trim()}
-                className="rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-white/5 disabled:opacity-40"
-                style={{ borderColor: "var(--stroke)", color: "var(--arc)" }}>
+                className="rounded-[var(--radius-control)] border border-accent/50 bg-accent-bg px-4 py-2.5 text-body font-semibold text-accent transition-colors hover:border-accent disabled:opacity-40">
                 send
               </button>
               {/* reserved: mic button slot (voice phase) */}
