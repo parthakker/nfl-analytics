@@ -1,6 +1,6 @@
 # Data Completeness Audit
 
-Generated 2026-08-03 14:34.
+Generated 2026-08-04 06:45.
 
 ## Game coverage: schedule vs play-by-play
 

@@ -1,135 +1,47 @@
-@import "tailwindcss";
-@import "@fontsource-variable/inter";
+/* Style entry point. Real definitions live in ./styles/*. */
+@import "./styles/tokens.css";
+@import "./styles/base.css";
+@import "./styles/utilities.css";
+@import "./styles/prose.css";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * TEMPORARY COMPATIBILITY LAYER — TODO(wave 8): delete this whole block.
+ *
+ * Every page still writes the legacy variable names inline (var(--arc),
+ * var(--muted), style={{ borderColor: "var(--stroke)" }}, className="glass").
+ * Re-pointing those names at the new tokens re-skins all 15 pages without
+ * editing a single page file, so the visual change ships in one commit and
+ * every existing Playwright spec keeps passing.
+ *
+ * Pages migrate to real utilities in waves 2-5. When the last one is done,
+ * delete this block; check_tokens.mjs (wave 8) then fails on any surviving
+ * use of these names, which is what stops the old system coming back.
+ * ══════════════════════════════════════════════════════════════════════════ */
 :root {
-  --arc: #22d3ee;
-  --accent: var(--arc);
-  --accent-glow: rgba(34, 211, 238, 0.5);
-  --bg-0: #04070c;
-  --bg-1: #0a1017;
-  --glass: rgba(16, 24, 36, 0.55);
-  --stroke: rgba(148, 197, 255, 0.14);
-  --text: #dbe7f3;
-  --muted: #7d93a8;
+  --arc: var(--color-accent);
+  --accent: var(--color-accent);
+  /* neutralises all 9 glow filters at once — they resolve to transparent */
+  --accent-glow: transparent;
+  --bg-0: var(--color-canvas);
+  --bg-1: var(--color-surface);
+  --glass: var(--color-surface);
+  --stroke: var(--color-border);
+  --text: var(--color-ink);
+  --muted: var(--color-muted);
 }
 
-html, body, #root { height: 100%; }
-
-body {
-  margin: 0;
-  background: var(--bg-0);
-  color: var(--text);
-  font-family: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* layered ambient background */
-.shell-bg {
-  position: fixed; inset: 0; z-index: -1; overflow: hidden;
-  background:
-    radial-gradient(1200px 700px at 70% -10%, rgba(34, 211, 238, 0.08), transparent 60%),
-    radial-gradient(900px 600px at 10% 110%, rgba(34, 211, 238, 0.05), transparent 55%),
-    var(--bg-0);
-}
-.shell-bg::before {
-  content: ""; position: absolute; inset: 0; opacity: 0.05;
-  background:
-    repeating-linear-gradient(0deg, transparent, transparent 47px, var(--arc) 48px),
-    repeating-linear-gradient(90deg, transparent, transparent 47px, var(--arc) 48px);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .shell-bg::after {
-    content: ""; position: absolute; width: 42rem; height: 42rem;
-    border-radius: 50%; filter: blur(120px);
-    background: rgba(34, 211, 238, 0.07);
-    animation: drift 26s ease-in-out infinite alternate;
-  }
-  @keyframes drift {
-    from { transform: translate(-10%, 60%); }
-    to   { transform: translate(110%, 10%); }
-  }
-}
-
+/* Was: rgba fill + backdrop-blur(14px) + an outward accent glow + radius 16.
+   Now a flat surface with a hairline border — blur behind a scrolling stat
+   table is noise, and glow is decoration competing with data. */
 .glass {
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-  border: 1px solid var(--stroke);
-  border-radius: 16px;
-  box-shadow: 0 0 24px -8px var(--accent-glow),
-              inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-panel);
 }
 
-.glow-text { text-shadow: 0 0 18px var(--accent-glow); }
-
-.logo-glow { filter: drop-shadow(0 0 10px var(--accent-glow)); }
-
-@media (prefers-reduced-motion: no-preference) {
-  .pulse { animation: pulse 2.2s ease-in-out infinite; }
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.55; }
-  }
+.glow-text {
+  text-shadow: none;
 }
-
-/* news ticker marquee */
-@media (prefers-reduced-motion: no-preference) {
-  .ticker-track { animation: ticker 60s linear infinite; }
-  .ticker-track:hover { animation-play-state: paused; }
-  @keyframes ticker {
-    from { transform: translateX(0); }
-    to   { transform: translateX(-50%); }
-  }
-}
-
-/* recessive scrollbars */
-* { scrollbar-width: thin; scrollbar-color: var(--stroke) transparent; }
-
-/* ── Knowledge book prose (react-markdown output) ─────────────────────── */
-.prose-knowledge { max-width: 46rem; margin: 0 auto; line-height: 1.75; font-size: 0.95rem; }
-.prose-knowledge h1 { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.02em;
-  margin: 0 0 1rem; color: var(--text); }
-.prose-knowledge h2 { font-size: 1.2rem; font-weight: 700; margin: 2rem 0 0.6rem;
-  color: var(--arc); text-shadow: 0 0 14px var(--accent-glow); }
-.prose-knowledge h3 { font-size: 1.02rem; font-weight: 700; margin: 1.4rem 0 0.4rem; }
-.prose-knowledge p { margin: 0.7rem 0; }
-.prose-knowledge a { color: var(--arc); text-decoration: none; }
-.prose-knowledge a:hover { text-decoration: underline; }
-.prose-knowledge strong { color: var(--text); font-weight: 700; }
-.prose-knowledge ul, .prose-knowledge ol { margin: 0.7rem 0; padding-left: 1.4rem; }
-.prose-knowledge li { margin: 0.25rem 0; }
-.prose-knowledge li::marker { color: var(--arc); }
-.prose-knowledge blockquote { border-left: 3px solid var(--arc); margin: 1rem 0;
-  padding: 0.2rem 0 0.2rem 1rem; color: var(--muted); font-style: italic; }
-.prose-knowledge table { width: 100%; border-collapse: collapse; margin: 1rem 0;
-  font-size: 0.85rem; }
-.prose-knowledge th { text-align: left; color: var(--muted); font-weight: 600;
-  padding: 0.4rem 0.75rem 0.4rem 0; border-bottom: 1px solid var(--stroke); }
-.prose-knowledge td { padding: 0.4rem 0.75rem 0.4rem 0;
-  border-bottom: 1px solid var(--stroke); font-variant-numeric: tabular-nums; }
-.prose-knowledge img { max-width: 100%; margin: 1.25rem auto; display: block;
-  filter: drop-shadow(0 0 10px rgba(34, 211, 238, 0.12)); }
-.prose-knowledge code { background: rgba(148, 197, 255, 0.08); border-radius: 4px;
-  padding: 0.1rem 0.35rem; font-size: 0.85em; }
-.prose-knowledge hr { border: none; border-top: 1px solid var(--stroke); margin: 2rem 0; }
-
-/* horizontal scroll container for wide tables (Leaders) */
-.scroll-x {
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--stroke) transparent;
-}
-.scroll-x::-webkit-scrollbar { height: 8px; }
-.scroll-x::-webkit-scrollbar-track { background: transparent; }
-.scroll-x::-webkit-scrollbar-thumb {
-  background: var(--stroke); border-radius: 4px;
-}
-.scroll-x::-webkit-scrollbar-thumb:hover { background: var(--muted); }
-
-/* brief highlight when a knowledge anchor is deep-linked */
-.anchor-flash {
-  animation: anchorflash 2s ease-out;
-}
-@keyframes anchorflash {
-  0%, 40% { color: var(--arc); text-shadow: 0 0 18px var(--accent-glow); }
-  100% { }
+.logo-glow {
+  filter: none;
 }

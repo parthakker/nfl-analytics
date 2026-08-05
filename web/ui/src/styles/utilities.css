@@ -1,0 +1,47 @@
+/* Runtime-overridable tokens.
+ *
+ * These CANNOT live in @theme: Tailwind emits @theme vars at :root and they
+ * resolve once, so a page-root override (--team-ink on a team page) would
+ * never reach a utility that referenced them. @utility re-evaluates at the
+ * use site, which is what makes per-page team colour work.
+ */
+
+/* ── team identity ────────────────────────────────────────────────────────
+ * Set by useTeamTokens(code) on a page root. Identity ONLY — never the page
+ * background, never a CTA, never semantics (W/L stays positive/negative).
+ * Budget: team colour covers <= 5% of the viewport.
+ */
+@utility text-team {
+  color: var(--team-ink, var(--color-muted));
+}
+@utility border-team {
+  border-color: var(--team-ink, var(--color-border));
+}
+@utility bg-team-wash {
+  background-color: var(--team-wash, transparent);
+}
+@utility bg-team {
+  background-color: var(--team-solid, var(--color-surface-2));
+}
+@utility rail-team {
+  box-shadow: inset 3px 0 0 0 var(--team-ink, var(--color-border-strong));
+}
+
+/* ── display type ─────────────────────────────────────────────────────────
+ * Inter's optical-size axis, already available via opsz.css — no new font.
+ */
+@utility font-display {
+  font-variation-settings: "opsz" 28;
+  letter-spacing: -0.02em;
+}
+
+/* ── density ──────────────────────────────────────────────────────────────
+ * Set on <html> by lib/useDensity.ts. Row height drives DataTable; 28px is
+ * the floor because in-row interactive targets must clear 24px (WCAG 2.2).
+ */
+@utility row-h {
+  height: var(--row-h, 32px);
+}
+@utility cell-px {
+  padding-inline: var(--cell-px, 10px);
+}

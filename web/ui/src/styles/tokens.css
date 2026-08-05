@@ -1,0 +1,85 @@
+/* Design tokens — the single source of colour, type and shape.
+ *
+ * Values are VALIDATED, not chosen by eye:
+ *  - every text token's WCAG ratio was computed against --color-canvas and
+ *    --color-surface (see the plan file for the table)
+ *  - the 8 chart series passed the dataviz validator on our surface
+ *    (adjacent CVD dE 8.4, normal-vision 19.3, all >= 3:1). The first THREE
+ *    also pass all-pairs, which is why scatter caps at 3 series.
+ *
+ * Do not add a colour here without re-running:
+ *   node <dataviz-skill>/scripts/validate_palette.js "<hexes>" --mode dark \
+ *        --surface "#161B22"
+ *
+ * NOTE: @theme resolves once at :root. Anything a page needs to OVERRIDE at
+ * runtime (team colours, density) lives in utilities.css as @utility instead.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/inter/opsz.css";
+
+@theme {
+  /* ── surfaces: a 4-step elevation ladder, lightness not shadow ────────── */
+  --color-canvas: #0e1116;
+  --color-surface: #161b22;
+  --color-surface-2: #1c222b;
+  --color-surface-3: #232a35;
+  --color-border: #2a313c;
+  --color-border-strong: #333b47;
+
+  /* ── ink ──────────────────────────────────────────────────────────────── */
+  --color-ink: #e6edf3; /* 14.6:1 on surface */
+  --color-muted: #98a2b0; /*  6.7:1 */
+  --color-faint: #6e7784; /*  3.8:1 — disabled/placeholder only */
+
+  /* ── interaction: FIXED FOREVER. never reassigned per team ────────────── */
+  --color-accent: #4c8dff;
+  --color-accent-hover: #6fa5ff;
+  --color-accent-bg: #12233f;
+
+  /* ── semantic: meaning only, never used as a series colour ────────────── */
+  --color-positive: #3fd08b;
+  --color-negative: #ff7a7a;
+  --color-warning: #f5b544;
+  --color-info: #7cc4ff;
+
+  /* ── chart categorical: fixed slot order, NEVER cycled past 8 ─────────── */
+  --color-chart-1: #3987e5;
+  --color-chart-2: #d95926;
+  --color-chart-3: #199e70;
+  --color-chart-4: #c98500;
+  --color-chart-5: #d55181;
+  --color-chart-6: #008300;
+  --color-chart-7: #9085e9;
+  --color-chart-8: #e66767;
+  --color-chart-ref: #9aa7b8; /* reference lines / league average — never data */
+  --color-chart-grid: #1f262f;
+
+  /* diverging poles for cell tints (dark centre, bright extremes) */
+  --color-tint-hi: #4c8dff;
+  --color-tint-lo: #d95926;
+
+  /* ── type ─────────────────────────────────────────────────────────────── */
+  --font-sans: "Inter Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.25rem;
+  --text-h1: 1.5rem;
+  --text-h1--line-height: 1.9rem;
+  --text-h2: 1.125rem;
+  --text-h2--line-height: 1.5rem;
+  --text-h3: 0.9375rem;
+  --text-h3--line-height: 1.35rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.45rem;
+  --text-table: 0.8125rem; /* the workhorse */
+  --text-table--line-height: 1.15rem;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1rem;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 0.95rem;
+
+  /* ── shape: 16px reads soft for a data product; 10 is the data-tool norm ── */
+  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-chip: 6px;
+}

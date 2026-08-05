@@ -1,0 +1,98 @@
+/* Knowledge-book article styling (react-markdown output). */
+
+.prose-knowledge {
+  max-width: 46rem;
+  margin: 0 auto;
+  line-height: 1.75;
+  font-size: 0.95rem;
+}
+.prose-knowledge h1 {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  color: var(--color-ink);
+}
+.prose-knowledge h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 2rem 0 0.6rem;
+  color: var(--color-ink);
+  /* was: cyan + an 18px text-shadow glow */
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.6rem;
+  margin-left: -0.9rem;
+}
+.prose-knowledge h3 {
+  font-size: 1.02rem;
+  font-weight: 700;
+  margin: 1.4rem 0 0.4rem;
+  color: var(--color-ink);
+}
+.prose-knowledge p {
+  margin: 0.7rem 0;
+}
+.prose-knowledge a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+.prose-knowledge a:hover {
+  text-decoration: underline;
+}
+.prose-knowledge strong {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+.prose-knowledge ul,
+.prose-knowledge ol {
+  margin: 0.7rem 0;
+  padding-left: 1.4rem;
+}
+.prose-knowledge li {
+  margin: 0.25rem 0;
+}
+.prose-knowledge li::marker {
+  color: var(--color-accent);
+}
+.prose-knowledge blockquote {
+  border-left: 3px solid var(--color-border-strong);
+  margin: 1rem 0;
+  padding: 0.2rem 0 0.2rem 1rem;
+  color: var(--color-muted);
+  font-style: italic;
+}
+.prose-knowledge table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.85rem;
+}
+.prose-knowledge th {
+  text-align: left;
+  color: var(--color-muted);
+  font-weight: 600;
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.prose-knowledge td {
+  padding: 0.4rem 0.75rem 0.4rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-variant-numeric: tabular-nums;
+}
+.prose-knowledge img {
+  max-width: 100%;
+  margin: 1.25rem auto;
+  display: block;
+  /* was: a cyan drop-shadow glow */
+}
+.prose-knowledge code {
+  background: var(--color-surface-2);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+}
+.prose-knowledge hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 2rem 0;
+}

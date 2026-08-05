@@ -47,6 +47,12 @@ const SCATTER: Record<string, { x: string; y: string }> = {
 const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
+// Literal copies of tokens, needed where a hex (not a CSS var) is required:
+// hexToRgba() maths and recharts fill props. TODO(wave 5): read these from
+// the chart theme when this page migrates to <DataTable>/<ScatterPlot>.
+const ACCENT_HEX = "#4c8dff"; // --color-accent
+const CHART_1_HEX = "#3987e5"; // --color-chart-1
+
 export default function Leaders() {
   const meta = useMeta();
   const nav = useNavigate();
@@ -126,7 +132,7 @@ export default function Leaders() {
     const hi = num(d.p90[key]);
     if (lo == null || hi == null) return {};
     if (v >= hi) return { color: "var(--arc)", fontWeight: 600,
-                          background: "rgba(34,211,238,0.07)" };
+                          background: hexToRgba(ACCENT_HEX, 0.1) };
     if (v <= lo) return { color: "#fb923c", background: "rgba(251,146,60,0.07)" };
     return {};
   };
@@ -150,7 +156,7 @@ export default function Leaders() {
         <h1 className="text-2xl font-bold tracking-tight">Stat leaders</h1>
         <p className="text-sm" style={{ color: "var(--muted)" }}>
           Click a column to sort it, a name to open the player. Rate columns are
-          tinted vs the qualified field (cyan = top 10%, orange = bottom 10%).
+          tinted vs the qualified field (blue = top 10%, orange = bottom 10%).
         </p>
       </div>
 
@@ -283,9 +289,9 @@ export default function Leaders() {
                        onClick={(p) => p && nav(`/player/${(p as unknown as LeaderRow).player_id}`)}
                        shape={(props: { cx?: number; cy?: number; payload?: LeaderRow }) => {
                   const team = props.payload?.team ?? "";
-                  const color = meta?.teams[team]?.glow ?? "#22d3ee";
+                  const color = meta?.teams[team]?.glow ?? CHART_1_HEX;
                   return <circle cx={props.cx} cy={props.cy} r={5}
-                                 fill={hexToRgba(color.startsWith("#") ? color : "#22d3ee", 0.8)}
+                                 fill={hexToRgba(color.startsWith("#") ? color : CHART_1_HEX, 0.8)}
                                  style={{ cursor: "pointer" }} />;
                 }} />
             </ScatterChart>
@@ -380,7 +386,7 @@ export default function Leaders() {
                             className={`py-2 pr-4 tabular-nums ${leader ? "font-bold" : ""}`}
                             style={{
                               ...(isSort ? {
-                                background: `linear-gradient(90deg, ${hexToRgba("#22d3ee", 0.13)} ${barPct}%, transparent ${barPct}%)`,
+                                background: `linear-gradient(90deg, ${hexToRgba(ACCENT_HEX, 0.16)} ${barPct}%, transparent ${barPct}%)`,
                                 color: "var(--arc)",
                               } : tint(c.key, c.kind, v)),
                             }}>
