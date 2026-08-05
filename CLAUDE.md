@@ -36,11 +36,19 @@ the build scripts (enforced by permissions.deny).
 ## Front end
 
 `web/` — FastAPI routers (`web/api/`) + React/Vite/Tailwind SPA (`web/ui/`).
-Pages: Command, TeamHUD, Leaders, Players, Coaches, Refs, Schedule, H2H,
-Betting, Markets, News, Knowledge, plus `/matchup/:gameId` detail. Conventions
-in `.claude/rules/{frontend,api}.md` (auto-load when touching those dirs).
-Chat = SSE over `claude -p` (chat.py). The prediction model is built but
-PAUSED per Parth — don't surface it proactively.
+Nav is 6 sections + More: Today `/` · Scores `/scores` · Teams `/teams` ·
+Players `/players` · Betting `/betting` · Learn `/knowledge`; under More sit
+Leaders, Coaches, Refs, H2H, Markets, News. Details are singular
+(`/team/:code`, `/player/:gsis`, `/coach/:name`, `/matchup/:gameId`). Old
+paths redirect, unknown paths go to `/`. Ctrl-K is a moded command palette
+(jump / `>` commands / `?` analyst) in `components/CommandPalette.tsx`.
+
+Design system: tokens in `src/styles/tokens.css`, primitives in
+`components/ui/`, charts in `components/charts/`. **Never type a hex or
+rgba() in a component** — `npm run lint` runs `scripts/check_tokens.mjs` and
+fails on it. Conventions in `.claude/rules/{frontend,api}.md` (auto-load when
+touching those dirs). Chat = SSE over `claude -p` (chat.py). The prediction
+model is built but PAUSED per Parth — don't surface it proactively.
 
 ## Data & automation
 

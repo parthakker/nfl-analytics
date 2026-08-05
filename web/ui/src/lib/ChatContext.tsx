@@ -22,8 +22,8 @@ function ThinkingHUD({ hint, startedAt }: { hint: string; startedAt: number }) {
   }, []);
   const secs = Math.floor((Date.now() - startedAt) / 1000);
   return (
-    <div className="flex items-center gap-3 text-sm" style={{ color: "var(--color-muted)" }}>
-      <span className="pulse text-base" style={{ color: "var(--color-accent)" }}>◉</span>
+    <div className="flex items-center gap-3 text-body text-muted">
+      <span className="pulse text-accent">◉</span>
       <span>{hint}</span>
       <span className="ml-auto tabular-nums">{secs}s</span>
     </div>
@@ -39,14 +39,10 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [startedAt, setStartedAt] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Ctrl-K now belongs to the command palette, which can hand off to chat.
+  // Chat keeps Escape so it can be dismissed on its own.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
-      if (e.key === "Escape") setOpen(false);
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -113,24 +109,20 @@ export function ChatProvider({ children }: { children: ReactNode }) {
           <div className="rounded-[var(--radius-panel)] border border-border bg-surface flex max-h-[80vh] w-full max-w-3xl flex-col p-5"
                onClick={(e) => e.stopPropagation()}>
             <div className="mb-3 flex items-center gap-3">
-              <span className="font-bold" style={{ color: "var(--color-accent)" }}>
-                ◉ ANALYST LINK
-              </span>
+              <span className="font-bold text-accent">◉ ANALYST LINK</span>
               <button onClick={newConversation}
-                className="ml-auto rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-surface-2"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+                className="ml-auto rounded-[var(--radius-chip)] border border-border px-2.5 py-1 text-micro text-muted transition-colors hover:bg-surface-2 hover:text-ink">
                 new conversation
               </button>
               <button onClick={() => setOpen(false)}
-                className="rounded-lg border px-2.5 py-1 text-xs transition-colors hover:bg-surface-2"
-                style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+                className="rounded-[var(--radius-chip)] border border-border px-2.5 py-1 text-micro text-muted transition-colors hover:bg-surface-2 hover:text-ink">
                 esc
               </button>
             </div>
 
             <div ref={listRef} className="min-h-40 flex-1 space-y-4 overflow-y-auto pr-2">
               {msgs.length === 0 && (
-                <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+                <p className="text-body text-muted">
                   Direct line to your NFL analyst — full access to the warehouse,
                   news, and market tracker. Answers take 20–60 seconds because it
                   runs real queries. Try: <em>"Who led the league in rushing in 2025?"</em>

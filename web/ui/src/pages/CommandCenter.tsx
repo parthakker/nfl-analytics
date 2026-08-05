@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api, type DivisionStanding, type NewsItem, type ScheduleGame } from "../lib/api";
 import { useMeta } from "../lib/MetaContext";
-import { useChat } from "../lib/ChatContext";
 import { PageHeader, Panel } from "../components/ui";
 import Countdown from "../components/Countdown";
 import Ticker from "../components/Ticker";
@@ -25,7 +24,6 @@ function TeamNode({ code, w, l }: { code: string; w: number; l: number }) {
 
 export default function CommandCenter() {
   const meta = useMeta();
-  const { open } = useChat();
   const [divs, setDivs] = useState<DivisionStanding[]>([]);
   const [games, setGames] = useState<ScheduleGame[]>([]);
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -52,7 +50,7 @@ export default function CommandCenter() {
           </div>
         ) : undefined} />
 
-      <Omnibox onOpen={() => open()} />
+      <Omnibox />
       <Ticker items={news} />
 
       <div className="grid gap-6 lg:grid-cols-2">
