@@ -42,9 +42,11 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/ui/package-lock.json
-      # the lockfile is authored by npm 11 (dev machine); node 22 bundles npm 10,
-      # which mis-reads npm 11's nested platform-optional entries — pin npm itself
-      - run: npm install -g npm@11
+      # No npm pin. The lockfile is complete and validates under both npm 10
+      # and npm 11 — the earlier pin was chasing the wrong cause. The real bug
+      # was that `npm install` on Windows writes an incomplete wasm32-wasi
+      # subtree; `npm run lint` now runs scripts/check_lock.mjs, which catches
+      # that on the dev machine instead of here.
       - run: npm ci
       - run: npm run lint
       - run: npm run build   # runs tsc -b first

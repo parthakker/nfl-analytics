@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint && node scripts/check_tokens.mjs",
+    "lint": "oxlint && node scripts/check_tokens.mjs && node scripts/check_lock.mjs",
     "preview": "vite preview",
     "e2e": "playwright test"
   },

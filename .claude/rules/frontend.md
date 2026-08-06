@@ -3,7 +3,28 @@
 - **Rebuild after every edit session:** `cd web/ui && npm run build`
   (runs `tsc -b` first — the Stop hook also runs tsc when ui files changed).
   Dev mode: `npm run dev` (:5173 proxies /api).
-  `npm run lint` = oxlint + `scripts/check_tokens.mjs` (see Tokens below).
+  `npm run lint` = oxlint + `scripts/check_tokens.mjs` + `scripts/check_lock.mjs`.
+
+## The lockfile trap (this broke CI five times)
+
+`npm install` on Windows writes an **incomplete** `package-lock.json`:
+@tailwindcss/oxide ships a wasm32-wasi fallback as an optional dependency,
+Windows never downloads it, and `--package-lock-only` does *not* ignore the
+installed tree the way the docs claim — so npm reuses node_modules and omits
+that package's own deps (`@emnapi/core`, `@emnapi/runtime`). Everything looks
+fine locally; `npm ci` on Linux validates the whole graph and exits EUSAGE.
+
+**Regenerate with node_modules ABSENT — that is the whole trick:**
+
+```
+cd web/ui && rm -rf node_modules
+npm install --package-lock-only
+npm ci                       # reinstall
+```
+
+**Reproduce CI's check on any machine:** `npm ci --os=linux --cpu=x64 --dry-run`.
+`scripts/check_lock.mjs` (in `npm run lint`) walks the graph the same way and
+fails locally instead of in CI. If it trips, run the block above.
 - Routing: hub + detail pairs (`/coaches` + `/coach/:name`, `/h2h` +
   `/h2h/:a/:b`, `/matchup/:gameId`). Add routes in `App.tsx`; nav is the
   `LINKS` tuple in `components/Shell.tsx` (top-level tabs only — detail routes
