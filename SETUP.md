@@ -1,7 +1,8 @@
 # Setup Guide
 
-Get the whole thing running from scratch in ~15 minutes. No accounts or API
-keys needed for the core experience.
+Get the whole thing running from scratch — budget 30–60 minutes, most of it
+the ~2 GB data download and warehouse build (both resumable). No accounts or
+API keys needed for the core experience.
 
 ## 1. Prerequisites
 
@@ -100,3 +101,8 @@ surfaces the tails.
   asset; check their releases page and update `scripts/refresh_data.py`.
 - **`nfl` not found** — use `python -m nfl_analytics.cli` (PATH-independent).
 - **UI shows stale pages after edits** — rebuild: `cd web/ui && npm run build`.
+- **Linux/Mac: `python` not found** — some distros only ship `python3`; use
+  that (and edit the `command` in `.mcp.json` to match if you use the MCP
+  server).
+- **`nfl smoke` with no server running** — fine: it starts a temporary
+  server on :8000 for the duration of the check.

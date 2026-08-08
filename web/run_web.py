@@ -20,7 +20,7 @@ DIST = Path(__file__).resolve().parent / "ui" / "dist"
 def main() -> None:
     if not (DIST / "index.html").exists():
         print("UI not built yet. Run:")
-        print("  cd web/ui && npm install && npm run build")
+        print("  cd web/ui && npm ci && npm run build")
         raise SystemExit(1)
 
     # everything the server does lands in logs/jarvis.log for post-mortems

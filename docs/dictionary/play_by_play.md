@@ -5,9 +5,7 @@ DuckDB warehouse: `nfl.duckdb` (nflverse data). Query read-only:
 ```python
 import duckdb
 
-con = duckdb.connect(
-    r"C:\Users\parth\OneDrive\Desktop\Personal_work\NFL_model_rag\nfl.duckdb", read_only=True
-)
+con = duckdb.connect("nfl.duckdb", read_only=True)  # from the repo root
 ```
 
 All facts below were verified with queries against this database (2026-08).
