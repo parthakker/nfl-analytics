@@ -737,7 +737,7 @@ requires-dist = [
     { name = "sse-starlette", specifier = ">=2.1" },
     { name = "streamlit", marker = "extra == 'legacy'", specifier = ">=1.38" },
     { name = "tabulate", specifier = ">=0.9" },
-    { name = "uvicorn", extras = ["standard"], specifier = ">=0.30" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
 ]
 provides-extras = ["legacy", "dev"]
 
