@@ -1,10 +1,15 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import JSONResponse
 
 # import once at module load — the old per-request sys.path.insert grew
 # sys.path with a duplicate entry on every search call
 from nfl_analytics.news import search as fts_search
 
 from ..deps import read_conn, rows_to_dicts  # deps puts src/ on sys.path
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -35,14 +40,20 @@ def news(source: str = "all", category: str = "", limit: int = 50) -> dict:
         if category not in CATEGORIES:
             raise HTTPException(400, f"category must be one of {CATEGORIES}")
         cat_clause = f"AND category = '{category}'"
-    with read_conn(attach_news=True) as con:
-        items = rows_to_dicts(
-            con,
-            f"""
-            SELECT published_ts AS ts, source, category, teams, headline, url
-            FROM newsdb.news WHERE {SOURCES[source]} {cat_clause}
-            ORDER BY published_ts DESC NULLS LAST LIMIT ?
-        """,
-            [min(limit, 200)],
-        )
+    try:
+        with read_conn(attach_news=True) as con:
+            items = rows_to_dicts(
+                con,
+                f"""
+                SELECT published_ts AS ts, source, category, teams, headline, url
+                FROM newsdb.news WHERE {SOURCES[source]} {cat_clause}
+                ORDER BY published_ts DESC NULLS LAST LIMIT ?
+            """,
+                [min(limit, 200)],
+            )
+    except Exception:
+        # missing/locked news.duckdb: a clean 503 the UI can message, not a
+        # raw traceback — this is the news page itself, so don't fake success
+        log.warning("news: newsdb query failed", exc_info=True)
+        return JSONResponse({"items": [], "error": "news store unavailable"}, status_code=503)
     return {"items": items}

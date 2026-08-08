@@ -69,7 +69,7 @@ Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
 
 - **Player:** `gsis_id` (`00-0033873`; named `player_id` in player_stats,
   `player_gsis_id` in NGS). Advanced stats key on `pfr_id` ONLY — bridge via
-  `players`. ESPN QBR keys on `espn_id`.
+  `players`. ESPN QBR: join `players.espn_id = espn_qbr_*.player_id`.
 - **Game:** `game_id` = `2024_01_ARI_BUF` everywhere EXCEPT
   `officials.game_id` (numeric = `games.old_game_id`). participation/ftn join
   pbp on `nflverse_game_id` (+ play_id).
@@ -85,7 +85,7 @@ Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
 5. advstats_week_def/_rush numerics are VARCHAR with 'NA' — `TRY_CAST` mandatory.
 6. POST week numbering shifted in 2021; `success` = `epa > 0`; `spread_line`
    positive = home favored (team-perspective in v_team_games/v_matchup_games).
-7. players has ~6.4k ESB-format ids that never join; rosters_weekly has
+7. players has 6,093 ESB-format ids that never join; rosters_weekly has
    pre-2017 dup rows.
 8. Coverage floors: advstats 2018+, NGS 2016+, officials 2015+ (head refs
    1999+ via schedules.referee on `ref_key`), injuries 2009+, snap_counts

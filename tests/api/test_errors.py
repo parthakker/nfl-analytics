@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 pytestmark = pytest.mark.api
@@ -27,3 +29,14 @@ def test_h2h_rejects_bad_params(client):
 def test_leaders_rejects_unknown_family(client):
     r = client.get("/api/leaders?family=definitely_not_a_family")
     assert r.status_code == 400
+
+
+def test_news_missing_store_is_clean_503(client, monkeypatch):
+    # db.read_conn skips the ATTACH when the file is absent, so the newsdb
+    # query fails — that must be a clean 503, never a raw traceback
+    import nfl_analytics.db as db
+
+    monkeypatch.setattr(db, "NEWS_DB", Path("definitely_missing.duckdb"))
+    r = client.get("/api/news")
+    assert r.status_code == 503
+    assert r.json() == {"items": [], "error": "news store unavailable"}

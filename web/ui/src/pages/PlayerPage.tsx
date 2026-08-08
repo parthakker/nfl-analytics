@@ -4,7 +4,6 @@ import { api, type NewsItem } from "../lib/api";
 import { LineChart } from "../components/charts";
 import { DataTable, PageHeader, Panel, Select } from "../components/ui";
 import type { Column } from "../components/ui";
-import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
 import { useTeamTokens } from "../lib/useTeamTokens";
 
@@ -68,10 +67,11 @@ export default function PlayerPage() {
 
   return (
     <div className="space-y-4" style={teamStyle}>
-      <div className="rail-team relative overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface p-6"
-           style={t ? { background: `linear-gradient(120deg, ${hexToRgba(t.color, 0.3)}, var(--color-surface) 60%)` } : undefined}>
+      <div className="rail-team relative overflow-hidden rounded-[var(--radius-panel)] border border-border bg-surface p-6">
+        {t && <div aria-hidden className="bg-team-wash absolute inset-0" />}
         {t && <img src={t.logo} alt="" aria-hidden
                    className="pointer-events-none absolute -right-6 -top-8 h-40 w-40 opacity-10" />}
+        <div className="relative">
         <PageHeader
           title={info.name}
           media={info.headshot ? (
@@ -90,6 +90,7 @@ export default function PlayerPage() {
             </>
           }
         />
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

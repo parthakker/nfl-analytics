@@ -33,7 +33,9 @@
       "mcp__nfl__describe_warehouse",
       "mcp__nfl__data_status",
       "mcp__nfl__team_form",
-      "mcp__nfl__player_lookup"
+      "mcp__nfl__player_lookup",
+      "mcp__nfl__news_search",
+      "mcp__nfl__league_news"
     ],
     "deny": [
       "Write(**/*.duckdb)",

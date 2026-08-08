@@ -5,5 +5,7 @@ rem + logs/health.log; raw runner output accumulates in logs/health_runner.log.
 cd /d "%~dp0.."
 if not exist logs mkdir logs
 echo ===== %date% %time% nightly health starting ===== >> logs\health_runner.log
-claude -p "/health-check" --output-format json --no-session-persistence >> logs\health_runner.log 2>&1
+rem --model haiku: the check is mechanical (run commands, compare numbers,
+rem write the report) - no need to pay frontier-model rates nightly
+claude -p "/health-check" --model haiku --output-format json --no-session-persistence >> logs\health_runner.log 2>&1
 echo ===== exit %errorlevel% ===== >> logs\health_runner.log
