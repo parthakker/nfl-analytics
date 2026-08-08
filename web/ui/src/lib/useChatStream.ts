@@ -48,7 +48,10 @@ export async function streamChat(
   for (;;) {
     const { value, done } = await reader.read();
     if (done) break;
-    buf += decoder.decode(value, { stream: true });
+    // SSE line endings are \r\n or \n depending on the server library
+    // (sse-starlette 3.x switched to \r\n) — normalize before splitting,
+    // safe because data payloads are JSON and never carry a raw CR
+    buf += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
     let idx;
     while ((idx = buf.indexOf("\n\n")) >= 0) {
       handle(buf.slice(0, idx));

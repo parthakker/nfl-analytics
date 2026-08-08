@@ -8,10 +8,15 @@ interface Msg { role: "user" | "assistant"; text: string }
 interface ChatCtl {
   open: () => void;
   close: () => void;
+  /** Open the chat and submit `question` through the normal send path.
+   *  If a reply is already streaming, the question lands in the draft box. */
+  ask: (question: string) => void;
   isOpen: boolean;
 }
 
-const Ctx = createContext<ChatCtl>({ open: () => {}, close: () => {}, isOpen: false });
+const Ctx = createContext<ChatCtl>({
+  open: () => {}, close: () => {}, ask: () => {}, isOpen: false,
+});
 export function useChat(): ChatCtl { return useContext(Ctx); }
 
 function ThinkingHUD({ hint, startedAt }: { hint: string; startedAt: number }) {
@@ -38,23 +43,38 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [hint, setHint] = useState("connecting to the analyst…");
   const [startedAt, setStartedAt] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  // The overlay is modal, so Tab must cycle inside it rather than reach the
+  // page underneath.
+  const trapTab = (e: React.KeyboardEvent) => {
+    if (e.key !== "Tab" || !boxRef.current) return;
+    const focusables = Array.from(boxRef.current.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'));
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  };
 
   // Ctrl-K now belongs to the command palette, which can hand off to chat.
-  // Chat keeps Escape so it can be dismissed on its own.
+  // Chat keeps Escape so it can be dismissed on its own — listener mounted
+  // only while the overlay is open, so it never swallows Escape elsewhere.
   useEffect(() => {
+    if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
   }, [msgs, busy]);
 
-  const send = async () => {
-    const q = draft.trim();
+  /** The one submission path — send() and ask() both land here. */
+  const submit = async (q: string) => {
     if (!q || busy) return;
-    setDraft("");
     setBusy(true);
     setHint("connecting to the analyst…");
     setStartedAt(Date.now());
@@ -80,8 +100,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         onToken: (t) => appendToLast(t),
         onTool: (h) => setHint(`${h}…`),
         onDone: (full, id) => {
-          if (full) setLast(full);
-          if (id) sessionStorage.setItem("chat_session", id);
+          if (full) {
+            setLast(full);
+            if (id) sessionStorage.setItem("chat_session", id);
+          } else {
+            // resuming a session the CLI no longer knows returns an instant
+            // empty result — drop the dud id so the next ask starts fresh
+            sessionStorage.removeItem("chat_session");
+            setLast("⚠ that conversation has expired — ask again to start a new one");
+          }
         },
         onError: (e) => setLast(`⚠ ${e}`),
       });
@@ -92,13 +119,28 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const send = () => {
+    const q = draft.trim();
+    if (!q || busy) return;
+    setDraft("");
+    void submit(q);
+  };
+
+  const ask = (question: string) => {
+    const q = question.trim();
+    setOpen(true);
+    if (!q) return;
+    if (busy) { setDraft(q); return; } // a reply is streaming — park it in the box
+    void submit(q);
+  };
+
   const newConversation = () => {
     sessionStorage.removeItem("chat_session");
     setMsgs([]);
   };
 
   return (
-    <Ctx.Provider value={{ open: () => setOpen(true), close: () => setOpen(false), isOpen }}>
+    <Ctx.Provider value={{ open: () => setOpen(true), close: () => setOpen(false), ask, isOpen }}>
       {children}
       {isOpen && (
         // token-ok: a modal scrim is the one place blur is still a material.
@@ -106,8 +148,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         // read through it — unlike the stat tables blur used to sit behind.
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-canvas/70 p-4 pt-16 backdrop-blur-sm"
              onClick={() => setOpen(false)}>
-          <div className="rounded-[var(--radius-panel)] border border-border bg-surface flex max-h-[80vh] w-full max-w-3xl flex-col p-5"
-               onClick={(e) => e.stopPropagation()}>
+          <div ref={boxRef} role="dialog" aria-modal="true" aria-label="Analyst chat"
+               className="rounded-[var(--radius-panel)] border border-border bg-surface flex max-h-[80vh] w-full max-w-3xl flex-col p-5"
+               onClick={(e) => e.stopPropagation()} onKeyDown={trapTab}>
             <div className="mb-3 flex items-center gap-3">
               <span className="font-bold text-accent">◉ ANALYST LINK</span>
               <button onClick={newConversation}
