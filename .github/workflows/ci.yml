@@ -51,19 +51,22 @@ jobs:
       - run: npm run lint
       - run: npm run build   # runs tsc -b first
 
-  # playwright-smoke (deferred): enable once wanted — builds the UI, serves it
-  # from uvicorn against the fixture DBs, and runs the e2e suite.
-  # playwright:
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     NFL_TEST_USE_FIXTURE: "1"
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: astral-sh/setup-uv@v5
-  #       with: { python-version: "3.12" }
-  #     - uses: actions/setup-node@v4
-  #       with: { node-version: 20, cache: npm, cache-dependency-path: web/ui/package-lock.json }
-  #     - run: uv sync
-  #     - run: cd web/ui && npm ci && npm run build
-  #     - run: cd web/ui && npx playwright install --with-deps chromium
-  #     - run: cd web/ui && npm run e2e
+  # Builds the UI, serves it from uvicorn against the fixture DBs, runs the
+  # full e2e suite. Playwright's webServer spawns `python -m uvicorn`, so the
+  # uv venv must be first on PATH.
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NFL_TEST_USE_FIXTURE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { python-version: "3.12" }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/ui/package-lock.json }
+      - run: uv sync
+      - run: echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: cd web/ui && npm ci && npm run build
+      - run: cd web/ui && npx playwright install --with-deps chromium
+      - run: cd web/ui && npm run e2e
