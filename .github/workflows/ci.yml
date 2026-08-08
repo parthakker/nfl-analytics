@@ -58,7 +58,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
+      # NFL_TEST_USE_FIXTURE only redirects pytest (via conftest); the uvicorn
+      # webServer reads the DB paths from env directly, so set those too —
+      # without them the server opens the nonexistent real nfl.duckdb
       NFL_TEST_USE_FIXTURE: "1"
+      NFL_DB: ${{ github.workspace }}/tests/fixtures/nfl_fixture.duckdb
+      KALSHI_DB: ${{ github.workspace }}/tests/fixtures/kalshi_fixture.duckdb
+      NEWS_DB: ${{ github.workspace }}/tests/fixtures/news_fixture.duckdb
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5

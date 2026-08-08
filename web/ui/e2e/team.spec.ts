@@ -27,6 +27,8 @@ test("results tab: season log with click-through to matchup", async ({ page }) =
 });
 
 test("historical roster: 2016 Steelers has clickable Antonio Brown", async ({ page }) => {
+  // the CI fixture only carries current+upcoming rosters by design
+  test.skip(!!process.env.NFL_TEST_USE_FIXTURE, "historical rosters aren't in the fixture");
   await page.goto("/team/PIT?tab=roster");
   await page.locator("tbody tr").first().waitFor();
   await page.locator("select").first().selectOption("2016");

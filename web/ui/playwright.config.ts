@@ -8,6 +8,9 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
   retries: 1,
+  // cap parallelism when a single uvicorn+duckdb serves the suite — 10
+  // workers of burst traffic can OOM duckdb on a loaded machine
+  workers: process.env.CI ? 2 : 4,
   use: { baseURL: "http://127.0.0.1:8123" },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],
   webServer: {

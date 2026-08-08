@@ -106,7 +106,7 @@ export default function TeamHUD() {
   const [rosterSeason, setRosterSeason] = useState<number>(2026);
   const [rosterSeasons, setRosterSeasons] = useState<number[]>([]);
   const [posFilter, setPosFilter] = useState("");
-  const [epaSeason, setEpaSeason] = useState(2025);
+  const [epaSeason, setEpaSeason] = useState<number | null>(null);
 
   const { data: ov, error: ovErr } = useApi<Overview>(c ? `/api/teams/${c}/overview` : null);
   const { data: detail, error: detailErr } =
@@ -123,7 +123,7 @@ export default function TeamHUD() {
   }>(c && tab === "roster" ? `/api/teams/${c}/roster?season=${rosterSeason}` : null);
   const { data: epaData, error: epaErr } = useApi<{
     season: number; weeks: { week: number; off: number | null; def: number | null }[];
-  }>(c && tab === "stats" ? `/api/teams/${c}/epa?season=${epaSeason}` : null);
+  }>(c && tab === "stats" ? `/api/teams/${c}/epa${epaSeason ? `?season=${epaSeason}` : ""}` : null);
 
   // keep the season picker populated while a roster refetch is in flight
   useEffect(() => {
@@ -646,10 +646,10 @@ export default function TeamHUD() {
                 Offense: higher is better · Defense: lower is better (what they allowed)
               </span>
               <Select
-                size="sm" ariaLabel="EPA season" value={epaSeason}
+                size="sm" ariaLabel="EPA season" value={epaSeason ?? epaData?.season ?? ""}
                 onChange={(v) => setEpaSeason(+v)}
-                options={Array.from({ length: 2025 - 2007 + 1 }, (_, i) => 2025 - i)
-                  .map((sn) => ({ value: sn, label: String(sn) }))} />
+                options={[...ov.franchise].reverse()
+                  .map((f) => ({ value: f.season, label: String(f.season) }))} />
             </div>
             {epaErr && <p className="text-micro text-muted">Couldn't load EPA: {epaErr}</p>}
             <LineChart data={epaWeeks} xKey="week" xLabel="Week"

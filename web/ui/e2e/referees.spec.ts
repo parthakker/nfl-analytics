@@ -1,5 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+// the refs list requires 50+ career games; the CI fixture carries one pbp
+// season (18 games max), so every ref falls under the floor and the list is
+// legitimately empty. Real-DB runs (local `npm run e2e`) still cover these.
+test.skip(!!process.env.NFL_TEST_USE_FIXTURE, "refs need multi-season pbp the fixture can't carry");
+
 test("referee careers are one row per person, not one per id", async ({ page }) => {
   await page.goto("/refs");
   await page.locator("tbody tr").first().waitFor();
