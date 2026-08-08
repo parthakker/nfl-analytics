@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { PageHeader, Panel } from "../components/ui";
+import { useApi } from "../lib/useApi";
 
 /** Must match slugify in tests/unit/test_coaches_meta.py. */
 const slugify = (t: string) => t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -21,8 +22,14 @@ export default function Knowledge() {
   const { slug } = useParams();
   const nav = useNavigate();
   const location = useLocation();
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [doc, setDoc] = useState<Full | null>(null);
+  const { data: index, error: indexError } =
+    useApi<{ chapters: Chapter[] }>("/api/knowledge");
+  const chapters = index?.chapters ?? [];
+  const { data: doc, error: docError } =
+    useApi<Full>(slug ? `/api/knowledge/${slug}` : null);
+
+  // fresh chapter starts at the top
+  useEffect(() => { if (doc) window.scrollTo(0, 0); }, [doc]);
 
   // scroll to #anchor once the chapter markdown is rendered
   useEffect(() => {
@@ -39,19 +46,6 @@ export default function Knowledge() {
     return () => clearTimeout(t);
   }, [doc, location.hash]);
 
-  useEffect(() => {
-    fetch("/api/knowledge").then((r) => r.json())
-      .then((r) => setChapters(r.chapters)).catch(console.error);
-  }, []);
-  useEffect(() => {
-    if (!slug) { setDoc(null); return; }
-    setDoc(null);
-    fetch(`/api/knowledge/${slug}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then((d) => { setDoc(d); window.scrollTo(0, 0); })
-      .catch(console.error);
-  }, [slug]);
-
   const parts = [...new Set(chapters.map((c) => c.part))];
 
   if (!slug) {
@@ -60,6 +54,9 @@ export default function Knowledge() {
         <PageHeader
           title="The NFL Knowledge Book"
           subtitle="Football from first principles — the game, the schemes, the rulebook and the numbers." />
+        {indexError && (
+          <p className="text-body text-muted">Couldn't load the contents — {indexError}</p>
+        )}
         {parts.map((p) => (
           <div key={p}>
             <h2 className="mb-3 text-label font-bold uppercase tracking-[0.14em] text-muted">
@@ -143,6 +140,8 @@ export default function Knowledge() {
               )}
             </div>
           </Panel>
+        ) : docError ? (
+          <p className="text-body text-muted">Couldn't load this chapter — {docError}</p>
         ) : <p className="text-muted">Loading…</p>}
       </div>
     </div>

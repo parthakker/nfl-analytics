@@ -34,6 +34,8 @@ export interface DataTableProps<R> {
   defaultSort?: { key: string; dir: "asc" | "desc" };
   rowHref?: (row: R) => string;
   onRowClick?: (row: R) => void;
+  /** extra classes for a row — e.g. highlight the page's own team */
+  rowClass?: (row: R) => string;
   stickyHeader?: boolean;
   /** number of leading columns to freeze; offsets are measured, not guessed */
   stickyCols?: number;
@@ -52,7 +54,7 @@ const raw = <R,>(c: Column<R>, r: R): number | string | null =>
   c.value ? c.value(r) : ((r as Record<string, unknown>)[c.key] as number | string | null);
 
 export default function DataTable<R>({
-  columns, rows, rowKey, sort, onSort, defaultSort, rowHref, onRowClick,
+  columns, rows, rowKey, sort, onSort, defaultSort, rowHref, onRowClick, rowClass,
   stickyHeader = true, stickyCols = 0, maxHeight, footRow, footNote, empty,
   caption, className = "",
 }: DataTableProps<R>) {
@@ -182,7 +184,7 @@ export default function DataTable<R>({
             cells.push(<td key="__spacer" aria-hidden className="border-t border-border" />);
 
             // row-h reads --row-h, which useDensity flips on <html>
-            const cls = "row-h transition-colors hover:bg-surface-2";
+            const cls = `row-h transition-colors hover:bg-surface-2 ${rowClass?.(r) ?? ""}`;
             if (rowHref) {
               return (
                 <tr key={rowKey(r)} className={`${cls} cursor-pointer`}

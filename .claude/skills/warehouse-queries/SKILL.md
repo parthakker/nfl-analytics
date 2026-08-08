@@ -47,7 +47,9 @@ additions).
   current_streak (+N = team won last N).
 - `v_coach_matchups` (h2h + ATS + last_meeting_game_id), `v_coach_seasons`
   (records/ATS/playoffs), `v_coach_tendencies` (PROE, 4th-down go rate,
-  shotgun/no-huddle/deep-shot, tempo), `v_coach_def_tendencies`.
+  shotgun/no-huddle/deep-shot, tempo), `v_coach_def_tendencies` (coach ×
+  season allowed pass/rush EPA, sack/takeaway/run-stuff rates; no attempt
+  minimums — interim coaches appear on tiny samples).
 - `v_referee_games` / `v_referee_seasons` (head refs 1999+; officials 2015+
   coalesced with schedules.referee; aggregate on **ref_key**),
   `v_referee_team_splits` (ref × team W%/ATS/pen diff).
@@ -57,7 +59,9 @@ additions).
   names, incl. fantasy_points_half_ppr). `v_player_stats_def_week_all` /
   `v_player_stats_kicking_week_all` — same seam pattern for defense/kicking
   (v2 arm activity-filtered; def_tackles recomputed solo+assists).
-  `v_redzone_usage_week`.
+  `v_redzone_usage_week` — per player-week RZ carries/targets/TDs from pbp
+  (yardline_100 ≤ 20; player = coalesce(rusher, receiver); counts, not
+  shares — divide by team-week sums yourself).
 - `v_team_epa_season` / `v_team_def_epa_season`, `v_strength_of_schedule`,
   `v_team_travel_season` (season travel totals).
 

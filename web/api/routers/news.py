@@ -1,6 +1,10 @@
 from fastapi import APIRouter, HTTPException
 
-from ..deps import read_conn, rows_to_dicts
+# import once at module load — the old per-request sys.path.insert grew
+# sys.path with a duplicate entry on every search call
+from nfl_analytics.news import search as fts_search
+
+from ..deps import read_conn, rows_to_dicts  # deps puts src/ on sys.path
 
 router = APIRouter()
 
@@ -16,13 +20,6 @@ CATEGORIES = ("injury", "trade-signing", "depth-chart", "legal", "general")
 
 @router.get("/api/news/search")
 def news_search(q: str, limit: int = 25) -> dict:
-    import sys
-
-    from ..deps import ROOT
-
-    sys.path.insert(0, str(ROOT / "src"))
-    from nfl_analytics.news import search as fts_search
-
     try:
         return {"query": q, "items": fts_search(q, min(limit, 50))}
     except Exception as e:

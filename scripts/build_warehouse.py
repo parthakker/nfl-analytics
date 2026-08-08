@@ -12,6 +12,7 @@ Deliberately skipped:
 Run:  python scripts/build_warehouse.py
 """
 
+import os
 import sys
 import time
 from pathlib import Path
@@ -21,6 +22,10 @@ import duckdb
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
 DB = ROOT / "nfl.duckdb"
+
+# Model artifacts written by scripts/train_model.py, not rebuildable from data/
+# — carried over from the previous warehouse so a rebuild never wipes them.
+MODEL_TABLES = ("model_params", "model_ratings", "model_predictions")
 
 # table name -> csv glob (relative to data/)
 TABLES = {
@@ -86,21 +91,13 @@ OPTIONAL_TABLES = {
     "weather_openmeteo",
 }
 
-# Team relocations/renames. Raw tables keep original abbreviations; join this
-# to get one canonical abbreviation per franchise across eras.
-TEAM_ALIASES = [
-    ("SD", "LAC"),
-    ("OAK", "LV"),
-    ("STL", "LA"),
-    ("JAC", "JAX"),
-    ("LAR", "LA"),
-]
-
 
 def build() -> int:
-    if DB.exists():
-        DB.unlink()
-    con = duckdb.connect(str(DB))
+    # Build into a sibling temp file and os.replace() at the end: a crash
+    # mid-build must leave the live warehouse untouched.
+    tmp = DB.parent / (DB.name + ".building")
+    tmp.unlink(missing_ok=True)
+    con = duckdb.connect(str(tmp))
     failures = []
 
     for table, glob in TABLES.items():
@@ -125,31 +122,36 @@ def build() -> int:
         except Exception as e:
             failures.append(f"{table}: {e}")
 
-    con.execute("CREATE TABLE team_aliases (alias VARCHAR, canonical VARCHAR)")
-    con.executemany("INSERT INTO team_aliases VALUES (?, ?)", TEAM_ALIASES)
+    # team_aliases is created by build_views.py (the 16-pair TEAM_ALIASES dict
+    # there is the only definition; nothing below needs it).
 
     # games dimension distilled from play_by_play: one row per game with
     # context that situational queries need (coaches, rest, stadium, weather).
-    con.execute("""
-        CREATE TABLE games AS
-        SELECT game_id, any_value(old_game_id) AS old_game_id,
-               any_value(season) AS season, any_value(week) AS week,
-               any_value(season_type) AS season_type,
-               any_value(game_date) AS game_date,
-               any_value(start_time) AS start_time,
-               any_value(home_team) AS home_team, any_value(away_team) AS away_team,
-               any_value(home_coach) AS home_coach, any_value(away_coach) AS away_coach,
-               any_value(home_score) AS home_score, any_value(away_score) AS away_score,
-               any_value(spread_line) AS spread_line, any_value(total_line) AS total_line,
-               any_value(roof) AS roof, any_value(surface) AS surface,
-               any_value(temp) AS temp, any_value(wind) AS wind,
-               any_value(stadium) AS stadium, any_value(stadium_id) AS stadium_id,
-               any_value(div_game) AS div_game
-        FROM play_by_play
-        GROUP BY game_id
-    """)
-    n = con.execute("SELECT count(*) FROM games").fetchone()[0]
-    print(f"  {'games (derived)':28s} {n:>9,} rows")
+    # Guarded: if the pbp load failed above, this must land in failures, not
+    # abort the run before the failure report prints.
+    try:
+        con.execute("""
+            CREATE TABLE games AS
+            SELECT game_id, any_value(old_game_id) AS old_game_id,
+                   any_value(season) AS season, any_value(week) AS week,
+                   any_value(season_type) AS season_type,
+                   any_value(game_date) AS game_date,
+                   any_value(start_time) AS start_time,
+                   any_value(home_team) AS home_team, any_value(away_team) AS away_team,
+                   any_value(home_coach) AS home_coach, any_value(away_coach) AS away_coach,
+                   any_value(home_score) AS home_score, any_value(away_score) AS away_score,
+                   any_value(spread_line) AS spread_line, any_value(total_line) AS total_line,
+                   any_value(roof) AS roof, any_value(surface) AS surface,
+                   any_value(temp) AS temp, any_value(wind) AS wind,
+                   any_value(stadium) AS stadium, any_value(stadium_id) AS stadium_id,
+                   any_value(div_game) AS div_game
+            FROM play_by_play
+            GROUP BY game_id
+        """)
+        n = con.execute("SELECT count(*) FROM games").fetchone()[0]
+        print(f"  {'games (derived)':28s} {n:>9,} rows")
+    except Exception as e:
+        failures.append(f"games (derived): {e}")
 
     # validation: seasons present per yearly-file table
     print("\nSeason coverage:")
@@ -170,20 +172,48 @@ def build() -> int:
         except Exception as e:
             failures.append(f"coverage {table}: {e}")
 
-    bad = con.execute("""
-        SELECT season, count(*) FROM play_by_play
-        GROUP BY season HAVING count(*) < 40000 ORDER BY season
-    """).fetchall()
-    if bad:
-        failures.append(f"play_by_play seasons with suspiciously few rows: {bad}")
+    try:
+        bad = con.execute("""
+            SELECT season, count(*) FROM play_by_play
+            GROUP BY season HAVING count(*) < 40000 ORDER BY season
+        """).fetchall()
+        if bad:
+            failures.append(f"play_by_play seasons with suspiciously few rows: {bad}")
+    except Exception as e:
+        failures.append(f"row-floor check: {e}")
+
+    # carry model artifacts over from the previous warehouse — train_model.py
+    # writes them into nfl.duckdb, so a plain rebuild would otherwise wipe them
+    if not failures and DB.exists():
+        try:
+            con.execute(f"ATTACH '{DB.as_posix()}' AS old (READ_ONLY)")
+            have = {
+                r[0]
+                for r in con.execute(
+                    "SELECT table_name FROM duckdb_tables() WHERE database_name = 'old'"
+                ).fetchall()
+            }
+            for t in MODEL_TABLES:
+                if t in have:
+                    con.execute(f"CREATE TABLE {t} AS SELECT * FROM old.{t}")
+            con.execute("DETACH old")
+            kept = [t for t in MODEL_TABLES if t in have]
+            if kept:
+                print(f"  model artifacts carried over: {', '.join(kept)}")
+        except Exception as e:
+            # a missing/corrupt old DB must not block the rebuild; the model
+            # can be retrained, the warehouse cannot wait
+            print(f"  WARNING: model artifacts not carried over: {e}")
 
     con.close()
-    print(f"\nWarehouse: {DB}  ({DB.stat().st_size / 1e9:.2f} GB)")
     if failures:
-        print("\nFAILURES:")
+        tmp.unlink(missing_ok=True)
+        print("\nFAILURES (existing warehouse left untouched):")
         for f in failures:
             print(f"  - {f}")
         return 1
+    os.replace(tmp, DB)
+    print(f"\nWarehouse: {DB}  ({DB.stat().st_size / 1e9:.2f} GB)")
     print("All tables loaded, validation passed.")
     return 0
 

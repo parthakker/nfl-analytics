@@ -1,9 +1,9 @@
 # 🏈 NFL Analytics
 
 A personal NFL analytics platform that runs entirely on your machine: a DuckDB
-warehouse of every NFL play since 1999, a dark-glass web app ("Jarvis"), auto-
-updating data and news, a prediction-market tracker, and an AI analyst wired in
-through MCP. Questions get answered by running SQL against real data —
+warehouse of every NFL play since 1999, a dark token-themed web app ("Jarvis"),
+auto-updating data and news, a prediction-market tracker, and an AI analyst
+wired in through MCP. Questions get answered by running SQL against real data —
 computed answers, not vibes.
 
 **No API keys. No subscriptions for the core experience. One ~2 GB download.**
@@ -16,11 +16,11 @@ computed answers, not vibes.
 |---|---|
 | **Warehouse** (`nfl.duckdb`) | 1.28M plays 1999–2025, schedules with odds through 2026, player/team stats across the v1/v2 nflverse eras, advanced stats, NGS, snap counts, depth charts, personnel/participation, FTN charting, combine, ESPN QBR — plus curated venue coordinates powering true travel distances |
 | **Jarvis web app** (`web/`) | FastAPI + React SPA: team HUDs, matchup cards (travel/rest/refs/coach-H2H/weather/market for any game 1999→upcoming), all-time H2H explorer, coaches with scheme fingerprints, referee intel, betting board (Vegas-vs-Kalshi dislocations), news, and a 15-chapter football Knowledge book |
-| **Derived views** | 20+ SQL views: team-game workhorse with haversine travel miles, H2H series with relocations merged, referee tendencies 1999+, coach PROE/4th-down aggression, one unified weather answer per game |
+| **Derived views** | SQL views for the common questions: team-game workhorse with haversine travel miles, H2H series with relocations merged, referee tendencies 1999+, coach PROE/4th-down aggression, one unified weather answer per game |
 | **News engine** (`news.duckdb`) | ESPN + team feeds polled 6-hourly, categorized, player-tagged by gsis_id, full-text searchable |
 | **Kalshi tracker** (`kalshi.duckdb`) | Market snapshots 6-hourly + Vegas line history per game |
 | **Prediction model** | Trained and validated, deliberately paused — betting surfaces are market-vs-market only |
-| **MCP server** | 20 tools (`query_warehouse`, `betting_board`, `coach_profile`, `referee_stats`, `news_search`…) exposing all of it to Claude |
+| **MCP server** | Tools (`query_warehouse`, `betting_board`, `coach_profile`, `referee_stats`, `news_search`…) exposing all of it to Claude |
 | **Legacy dashboard** (`legacy/`) | The original Streamlit UI, kept for friends — frozen |
 
 ## Architecture
@@ -34,7 +34,7 @@ nflverse releases ──► scripts/refresh_data.py ──► data/*.csv
                                  │
      ┌───────────────────────────┼──────────────────────────┐
      │                           │                          │
- MCP server (20 tools)   FastAPI (web/api)        pytest invariants (tests/)
+ MCP server              FastAPI (web/api)        pytest invariants (tests/)
      │                           │
   Claude Code            React SPA (web/ui) ── Playwright e2e
                                  │

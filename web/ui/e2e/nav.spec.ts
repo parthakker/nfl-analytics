@@ -18,10 +18,11 @@ test("six top-level sections route correctly", async ({ page }) => {
 
 test("secondary sections live under More", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "More ▾" }).click();
-  const menu = page.getByRole("menu");
-  await expect(menu).toBeVisible();
-  await menu.getByRole("menuitem", { name: "Refs" }).click();
+  // "More" is a disclosure of plain nav links, not an ARIA menu
+  const more = page.getByRole("button", { name: "More ▾" });
+  await more.click();
+  await expect(more).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("navigation").getByRole("link", { name: "Refs" }).click();
   await expect(page.locator("h1")).toContainText(/referee/i);
 });
 

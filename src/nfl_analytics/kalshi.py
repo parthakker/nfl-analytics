@@ -114,7 +114,11 @@ def fetch_markets(kind: str = "game", status: str = "open", max_markets: int = 5
             params = {"series_ticker": series, "status": status, "limit": 200}
             if cursor:
                 params["cursor"] = cursor
-            js = c.get("/markets", params=params).json()
+            # an error body parses as JSON with no 'markets' key — without this
+            # a Kalshi outage would record a "successful" snapshot of 0 markets
+            r = c.get("/markets", params=params)
+            r.raise_for_status()
+            js = r.json()
             batch = js.get("markets", [])
             out.extend(batch)
             cursor = js.get("cursor")
@@ -148,7 +152,9 @@ def market_row(m: dict) -> dict:
 
 def orderbook_top(ticker: str) -> dict:
     with client() as c:
-        js = c.get(f"/markets/{ticker}/orderbook").json()
+        r = c.get(f"/markets/{ticker}/orderbook")
+        r.raise_for_status()
+        js = r.json()
     ob = js.get("orderbook_fp", {})
 
     def best(side):

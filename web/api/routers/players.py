@@ -1,6 +1,10 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 
 from ..deps import read_conn, rows_to_dicts
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -62,12 +66,17 @@ def detail(gsis_id: str) -> dict:
         """,
             [gsis_id],
         )
-        news = rows_to_dicts(
-            con,
-            """
-            SELECT published_ts AS ts, headline, url FROM newsdb.news
-            WHERE list_contains(players, ?) ORDER BY published_ts DESC LIMIT 8
-        """,
-            [gsis_id],
-        )
+        news = []
+        try:
+            news = rows_to_dicts(
+                con,
+                """
+                SELECT published_ts AS ts, headline, url FROM newsdb.news
+                WHERE list_contains(players, ?) ORDER BY published_ts DESC LIMIT 8
+            """,
+                [gsis_id],
+            )
+        except Exception as e:
+            # news sidecar absent/locked — the player page still serves
+            log.warning("players/%s: news sidecar query failed: %s", gsis_id, e)
     return {"info": info[0], "seasons": seasons, "weekly": weekly, "news": news}

@@ -1,26 +1,58 @@
+import time
+from functools import lru_cache
+
 from fastapi import APIRouter
 
-from ..deps import read_conn, team_tokens, teams_meta
+from ..deps import current_schedule_season, read_conn, team_tokens, teams_meta
 
 router = APIRouter()
 
 
-@router.get("/api/meta")
-def meta() -> dict:
-    with read_conn() as con:
-        row = con.execute(
-            "SELECT min(gameday) FROM schedules WHERE season = 2026 AND week = 1"
-        ).fetchone()
-    kickoff = row[0].isoformat() if row and row[0] else None
+@lru_cache(maxsize=1)
+def _teams_payload() -> dict:
+    """Static per-team block (names, divisions, Oklab tokens, logos).
+
+    32 Oklab conversions per request added up to nothing but heat — the
+    inputs are constants, so compute once per process.
+    """
     teams = {}
     for code, t in teams_meta.TEAMS.items():
-        tok = team_tokens(t[5])
         teams[code] = {
             "name": t[0],
             "conf": t[1],
             "div": t[2],
             "color": t[5],
-            "tokens": tok,
+            "tokens": team_tokens(t[5]),
             "logo": teams_meta.logo_url(code),
         }
-    return {"teams": teams, "divisions": teams_meta.DIVISIONS, "kickoff_2026": kickoff}
+    return teams
+
+
+# kickoff moves once a year; cache the lookup with the same coarse TTL the
+# season helpers use instead of hitting the DB per request
+_KICKOFF_TTL_S = 3600.0
+_kickoff_cache: tuple[float, str | None] | None = None
+
+
+def _kickoff_iso() -> str | None:
+    global _kickoff_cache
+    now = time.monotonic()
+    if _kickoff_cache is not None and now - _kickoff_cache[0] < _KICKOFF_TTL_S:
+        return _kickoff_cache[1]
+    season = current_schedule_season()
+    with read_conn() as con:
+        row = con.execute(
+            "SELECT min(gameday) FROM schedules WHERE season = ? AND week = 1", [season]
+        ).fetchone()
+    kickoff = row[0].isoformat() if row and row[0] else None
+    _kickoff_cache = (now, kickoff)
+    return kickoff
+
+
+@router.get("/api/meta")
+def meta() -> dict:
+    return {
+        "teams": _teams_payload(),
+        "divisions": teams_meta.DIVISIONS,
+        "kickoff": _kickoff_iso(),
+    }

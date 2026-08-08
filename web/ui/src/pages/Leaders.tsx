@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ScatterPlot, type ScatterPoint } from "../components/charts";
-import { Field, PageHeader, Panel, PillGroup, Select, Tip, Toolbar } from "../components/ui";
+import { DataTable, Field, PageHeader, Panel, PillGroup, Select, Toolbar } from "../components/ui";
+import type { Column } from "../components/ui";
 import { api, type LeaderRow, type LeadersResponse } from "../lib/api";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
@@ -43,9 +44,6 @@ const SCATTER: Record<string, { x: string; y: string }> = {
 const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
-// Literal copies of tokens, needed where a hex (not a CSS var) is required:
-// hexToRgba() maths and recharts fill props. TODO(wave 5): read these from
-// the chart theme when this page migrates to <DataTable>/<ScatterPlot>.
 /** Reads a token's computed value. recharts and hexToRgba need a real colour
  *  string, not a var() reference — this keeps the value single-sourced in
  *  tokens.css instead of duplicating the hex here, where it would drift. */
@@ -125,21 +123,71 @@ export default function Leaders() {
     return v.toLocaleString();
   };
 
-  const tint = (key: string, kind: string, v: number | null): React.CSSProperties => {
-    if (v == null || !d || (kind !== "rate" && kind !== "pct")) return {};
-    const lo = num(d.p10[key]);
-    const hi = num(d.p90[key]);
-    if (lo == null || hi == null) return {};
-    // diverging pair from the token layer: dark at the centre, bright at the
-    // extremes, so a league-average row recedes into the surface
-    if (v >= hi) return {
-      color: "var(--color-tint-hi)", fontWeight: 600,
-      background: "color-mix(in oklab, var(--color-tint-hi) 14%, transparent)" };
-    if (v <= lo) return {
-      color: "var(--color-tint-lo)",
-      background: "color-mix(in oklab, var(--color-tint-lo) 12%, transparent)" };
-    return {};
-  };
+  // DataTable's native `tint` slot wants -1..1; the board tints only the
+  // top/bottom decile of the qualified field, so it's a step, not a gradient.
+  const columns = useMemo<Column<LeaderRow>[]>(() => {
+    if (!d) return [];
+    const rank: Column<LeaderRow> = {
+      key: "rank", label: "#", width: "2.5rem", sortable: false,
+      help: "Rank in the current sort order",
+      render: (_r, i) => <span className="text-micro tabular-nums text-muted">{i + 1}</span>,
+    };
+    const player: Column<LeaderRow> = {
+      key: "player", label: "Player", sortable: false,
+      help: "Click a name to open the player page",
+      render: (r) => (
+        <span className="flex min-w-56 items-center gap-2">
+          {r.headshot && (
+            <img src={r.headshot} alt="" className="h-7 w-7 rounded-full object-cover"
+                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          )}
+          <span className="min-w-0">
+            <Link to={`/player/${r.player_id}`} className="font-medium hover:underline">
+              {r.player}
+            </Link>
+            <span className="ml-1.5 text-micro text-muted">{r.pos} · {r.team}</span>
+          </span>
+        </span>
+      ),
+    };
+    const stats = d.columns.map((col): Column<LeaderRow> => {
+      const isSort = col.key === activeSort;
+      const rateLike = col.kind === "rate" || col.kind === "pct";
+      return {
+        key: col.key, label: col.label, help: col.help, numeric: true,
+        value: (r) => num(r[col.key]),
+        // sorted column gets the in-cell leader bar…
+        bar: isSort
+          ? (r) => {
+              const v = num(r[col.key]);
+              return v != null && colMax[col.key] > 0 ? Math.max(0, v / colMax[col.key]) : null;
+            }
+          : undefined,
+        // …every other rate column gets the decile tint
+        tint: !isSort && rateLike
+          ? (r) => {
+              const v = num(r[col.key]);
+              const lo = num(d.p10[col.key]);
+              const hi = num(d.p90[col.key]);
+              if (v == null || lo == null || hi == null) return null;
+              return v >= hi ? 0.25 : v <= lo ? -0.25 : null;
+            }
+          : undefined,
+        render: (r) => {
+          const v = num(r[col.key]);
+          const leader = v != null && v === colMax[col.key];
+          return (
+            <span className={`${isSort ? "text-accent" : ""}${leader ? " font-bold" : ""}`}>
+              {display(r, col.key, col.kind === "count_g" ? "rate" : col.kind)}
+            </span>
+          );
+        },
+      };
+    });
+    return [rank, player, ...stats];
+    // display closes over perGame; colMax over the filtered rows
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [d, activeSort, colMax, perGame]);
 
   const scatterCfg = SCATTER[family];
   const scatterData = useMemo(() => {
@@ -270,119 +318,65 @@ export default function Leaders() {
             note="Dashed lines are the qualified-field average. Click a dot to open that player." />
         </Panel>
       ) : (
-        <Panel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`}>
-          <div className="relative mb-2 flex items-center gap-2 text-xs" style={{ color: "var(--color-muted)" }}>
+        <Panel title={`Top ${d.limit} — ${d.label}, ${d.season} ${seasonType === "ALL" ? "REG+POST" : seasonType}`} flush>
+          <div className="relative mb-2 flex items-center gap-2 px-4 text-xs text-muted">
             <span>
               {d.qualified.toLocaleString()} of {d.total_players.toLocaleString()} players qualify
               {qual > 0 ? ` (min ${qual} ${qcfg.label.replace("min ", "")})` : ""}
             </span>
-            <button onClick={() => setQualOpen(!qualOpen)} className="hover:underline"
-                    style={{ color: "var(--color-accent)" }}>
+            <button onClick={() => setQualOpen(!qualOpen)} className="text-accent hover:underline">
               adjust
             </button>
             {qualOpen && (
-              <div className="absolute left-0 top-5 z-40 rounded-xl border p-3"
-                   style={{ background: "var(--color-surface)", borderColor: "var(--color-border)" }}>
+              <div className="absolute left-4 top-5 z-40 rounded-xl border border-border bg-surface p-3">
                 <label className="flex items-center gap-2">
                   {qcfg.label}
                   <input type="range" min={0} max={qcfg.max} step={qcfg.step} value={qual}
                          onChange={(e) => setQual(+e.target.value)} className="w-40" />
-                  <span className="tabular-nums font-semibold" style={{ color: "var(--color-ink)" }}>{qual}</span>
+                  <span className="tabular-nums font-semibold text-ink">{qual}</span>
                 </label>
                 <div className="mt-1.5 flex gap-3">
-                  <button onClick={() => setQual(QUAL[family].auto)} className="hover:underline"
-                          style={{ color: "var(--color-accent)" }}>auto ({QUAL[family].auto})</button>
-                  <button onClick={() => setQual(0)} className="hover:underline"
-                          style={{ color: "var(--color-muted)" }}>everyone</button>
-                  <button onClick={() => setQualOpen(false)} className="ml-auto hover:underline"
-                          style={{ color: "var(--color-muted)" }}>done</button>
+                  <button onClick={() => setQual(QUAL[family].auto)}
+                          className="text-accent hover:underline">auto ({QUAL[family].auto})</button>
+                  <button onClick={() => setQual(0)}
+                          className="text-muted hover:underline">everyone</button>
+                  <button onClick={() => setQualOpen(false)}
+                          className="ml-auto text-muted hover:underline">done</button>
                 </div>
               </div>
             )}
           </div>
-          <div className="scroll-x">
-            <table className="w-max min-w-full whitespace-nowrap text-left text-[15px]">
-              <thead>
-                <tr style={{ color: "var(--color-muted)" }}>
-                  <th className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 font-medium" style={{ background: "var(--color-surface)" }}>#</th>
-                  <th className="sticky z-10 min-w-56 py-2 pr-4 font-medium"
-                      style={{ left: "2.5rem", background: "var(--color-surface)",
-                               boxShadow: "8px 0 12px -8px color-mix(in oklab, var(--color-canvas) 80%, transparent)" }}>Player</th>
-                  {d.columns.map((c) => (
-                    <th key={c.key} className="py-1.5 pr-3 font-medium">
-                      <Tip text={c.help}>
-                        <button onClick={() => pickSort(c.key)} className="hover:underline"
-                          style={{ color: activeSort === c.key ? "var(--color-accent)" : undefined }}>
-                          {c.label}{activeSort === c.key ? (d.dir === "desc" ? " ↓" : " ↑") : ""}
-                        </button>
-                      </Tip>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={r.player_id} className="border-t transition-colors hover:bg-surface-2"
-                      style={{ borderColor: "var(--color-border)" }}>
-                    <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2 text-xs tabular-nums"
-                        style={{ color: "var(--color-muted)", background: "var(--color-surface)" }}>{i + 1}</td>
-                    <td className="sticky z-10 min-w-56 py-2 pr-4"
-                        style={{ left: "2.5rem", background: "var(--color-surface)",
-                                 boxShadow: "8px 0 12px -8px color-mix(in oklab, var(--color-canvas) 80%, transparent)" }}>
-                      <span className="flex items-center gap-2">
-                        {r.headshot && (
-                          <img src={r.headshot} alt="" className="h-7 w-7 rounded-full object-cover"
-                               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        )}
-                        <span className="min-w-0">
-                          <Link to={`/player/${r.player_id}`} className="font-medium hover:underline">
-                            {r.player}
-                          </Link>
-                          <span className="ml-1.5 text-xs" style={{ color: "var(--color-muted)" }}>
-                            {r.pos} · {r.team}
-                          </span>
-                        </span>
-                      </span>
+          <DataTable
+            columns={columns}
+            rows={rows}
+            rowKey={(r) => r.player_id}
+            sort={{ key: activeSort, dir: d.dir === "asc" ? "asc" : "desc" }}
+            onSort={pickSort}
+            stickyCols={2}
+            caption={`${d.label} leaders, ${d.season}`}
+            empty="No players qualify — lower the minimum."
+            footRow={
+              <tr className="row-h italic text-muted">
+                <td className="sticky left-0 z-10 border-t border-border bg-surface pl-3 pr-4" />
+                <td className="sticky z-10 border-t border-border bg-surface pr-4 text-micro"
+                    style={{ left: "2.5rem" }}>
+                  Lg avg (qualified)
+                </td>
+                {d.columns.map((c) => {
+                  const v = num(d.league_avg[c.key]);
+                  const shown = v == null ? "—"
+                    : perGame && c.kind === "count" && num(d.league_avg.games)
+                      ? (v / d.league_avg.games!).toFixed(1)
+                      : v.toLocaleString();
+                  return (
+                    <td key={c.key} className="border-t border-border pr-4 text-right text-micro tabular-nums">
+                      {shown}
                     </td>
-                    {d.columns.map((c) => {
-                      const v = num(r[c.key]);
-                      const isSort = c.key === activeSort;
-                      const leader = v != null && v === colMax[c.key];
-                      const barPct = isSort && v != null && colMax[c.key] > 0
-                        ? Math.max(0, (v / colMax[c.key]) * 100) : 0;
-                      return (
-                        <td key={c.key}
-                            className={`py-2 pr-4 tabular-nums ${leader ? "font-bold" : ""}`}
-                            style={{
-                              ...(isSort ? {
-                                background: `linear-gradient(90deg, color-mix(in oklab, var(--color-accent) 16%, transparent) ${barPct}%, transparent ${barPct}%)`,
-                                color: "var(--color-accent)",
-                              } : tint(c.key, c.kind, v)),
-                            }}>
-                          {display(r, c.key, c.kind === "count_g" ? "rate" : c.kind)}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                <tr className="border-t italic" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
-                  <td className="sticky left-0 z-10 w-10 min-w-10 py-2 pr-2" style={{ background: "var(--color-surface)" }} />
-                  <td className="sticky z-10 min-w-56 py-2 pr-4 text-xs"
-                      style={{ left: "2.5rem", background: "var(--color-surface)" }}>
-                    Lg avg (qualified)
-                  </td>
-                  {d.columns.map((c) => {
-                    const v = num(d.league_avg[c.key]);
-                    const shown = v == null ? "—"
-                      : perGame && c.kind === "count" && num(d.league_avg.games)
-                        ? (v / d.league_avg.games!).toFixed(1)
-                        : v.toLocaleString();
-                    return <td key={c.key} className="py-1.5 pr-3 text-xs tabular-nums">{shown}</td>;
-                  })}
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                  );
+                })}
+                <td aria-hidden className="border-t border-border" />
+              </tr>
+            } />
         </Panel>
       )}
     </div>

@@ -1,6 +1,16 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 
-from ..deps import read_conn, rows_to_dicts, teams_meta
+from ..deps import (
+    current_schedule_season,
+    latest_stats_season,
+    read_conn,
+    rows_to_dicts,
+    teams_meta,
+)
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -13,8 +23,11 @@ def _canon(code: str) -> str:
 
 
 @router.get("/api/teams/{code}")
-def team(code: str, season: int = 2025) -> dict:
+def team(code: str, season: int | None = None) -> dict:
     code = _canon(code)
+    if season is None:
+        season = latest_stats_season()
+    coach_season = current_schedule_season()
     with read_conn() as con:
         rec = rows_to_dicts(
             con,
@@ -38,9 +51,9 @@ def team(code: str, season: int = 2025) -> dict:
         cur = con.execute(
             """
             SELECT any_value(home_coach) FROM schedules
-            WHERE season=2026 AND home_team=?
+            WHERE season=? AND home_team=?
         """,
-            [code],
+            [coach_season, code],
         ).fetchone()
         hist = rows_to_dicts(
             con,
@@ -68,8 +81,10 @@ def team(code: str, season: int = 2025) -> dict:
 
 
 @router.get("/api/teams/{code}/epa")
-def team_epa(code: str, season: int = 2025) -> dict:
+def team_epa(code: str, season: int | None = None) -> dict:
     code = _canon(code)
+    if season is None:
+        season = latest_stats_season()
     with read_conn() as con:
         weeks = rows_to_dicts(
             con,
@@ -88,11 +103,13 @@ def team_epa(code: str, season: int = 2025) -> dict:
 
 
 @router.get("/api/teams/{code}/roster")
-def roster(code: str, season: int = 2026) -> dict:
+def roster(code: str, season: int | None = None) -> dict:
     """Season-aware roster (rosters_weekly covers 2002-2026; GROUP BY gsis_id
     also dedupes the known pre-2017 same-team dup rows). Historical rosters
     make every era's player reachable from the team page."""
     code = _canon(code)
+    if season is None:
+        season = current_schedule_season()
     with read_conn() as con:
         seasons = [
             r[0]
@@ -124,8 +141,10 @@ def roster(code: str, season: int = 2026) -> dict:
 
 
 @router.get("/api/teams/{code}/schedule")
-def schedule(code: str, season: int = 2026) -> dict:
+def schedule(code: str, season: int | None = None) -> dict:
     code = _canon(code)
+    if season is None:
+        season = current_schedule_season()
     with read_conn() as con:
         games = rows_to_dicts(
             con,
@@ -151,17 +170,22 @@ def schedule(code: str, season: int = 2026) -> dict:
 def team_news(code: str, limit: int = 30) -> dict:
     code = _canon(code)
     nickname = teams_meta.TEAMS[code][0].split()[-1]
+    items = []
     with read_conn(attach_news=True) as con:
-        items = rows_to_dicts(
-            con,
-            """
-            SELECT published_ts AS ts, source, headline, url
-            FROM newsdb.news
-            WHERE list_contains(teams, ?) OR headline ILIKE '%' || ? || '%'
-            ORDER BY published_ts DESC NULLS LAST LIMIT ?
-        """,
-            [code, nickname, min(limit, 100)],
-        )
+        try:
+            items = rows_to_dicts(
+                con,
+                """
+                SELECT published_ts AS ts, source, headline, url
+                FROM newsdb.news
+                WHERE list_contains(teams, ?) OR headline ILIKE '%' || ? || '%'
+                ORDER BY published_ts DESC NULLS LAST LIMIT ?
+            """,
+                [code, nickname, min(limit, 100)],
+            )
+        except Exception as e:
+            # news sidecar absent/locked — the team page still serves
+            log.warning("teams/%s/news: news sidecar query failed: %s", code, e)
     return {"items": items}
 
 
@@ -373,8 +397,9 @@ def overview(code: str, season: int | None = None) -> dict:
                 """,
                     [season, wk, code],
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            # injuries block is optional context — degrade, but visibly
+            log.warning("teams/%s/overview: injuries block failed: %s", code, e)
 
     return {
         "code": code,
@@ -415,7 +440,7 @@ def results(code: str, season: int | None = None) -> dict:
             ).fetchall()
         ]
         if season is None:
-            season = seasons[0] if seasons else 2025
+            season = seasons[0] if seasons else latest_stats_season()
         rows = rows_to_dicts(
             con,
             """

@@ -29,8 +29,15 @@ LOGS = ROOT / "logs"
 RELEASE = "https://github.com/nflverse/nflverse-data/releases/download"
 GAMES_URL = "https://github.com/nflverse/nfldata/raw/master/data/games.csv"
 
-CURRENT_SEASON = 2026
-LAST_SEASON = 2025
+sys.path.insert(0, str(ROOT / "src"))
+
+from nfl_analytics.db import _retry  # noqa: E402
+
+# League year rolls at the new league year in March: Jan/Feb runs still belong
+# to the season that started the previous fall.
+_today = datetime.now()
+CURRENT_SEASON = _today.year - (1 if _today.month < 3 else 0)
+LAST_SEASON = CURRENT_SEASON - 1
 
 
 # (release tag, [candidate asset names], dest relative to data/)
@@ -207,36 +214,45 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     rc = 1 if failures else 0
 
     # append current Vegas lines to kalshi.duckdb so line MOVEMENT accumulates
-    # (schedules only ever holds the latest numbers)
+    # (schedules only ever holds the latest numbers). A miss here is a silent
+    # gap in line-movement history, so it is logged, never swallowed bare.
+    line_snap = "skip"
     if rc == 0:
         try:
             import duckdb
 
-            kdb = duckdb.connect(str(ROOT / "kalshi.duckdb"))
-            kdb.execute("""
-                CREATE TABLE IF NOT EXISTS line_snapshots (
-                    snapshot_ts TIMESTAMP, game_id VARCHAR, season INT, week INT,
-                    spread_line DOUBLE, total_line DOUBLE,
-                    home_moneyline INT, away_moneyline INT)
-            """)
-            kdb.execute(f"""
-                INSERT INTO line_snapshots
-                SELECT now(), game_id, season, week, spread_line, total_line,
-                       home_moneyline, away_moneyline
-                FROM read_csv('{(DATA / "schedules" / "games.csv").as_posix()}')
-                WHERE result IS NULL AND spread_line IS NOT NULL
-            """)
-            kdb.close()
+            # the 6-hourly Kalshi snapshot job may hold the write lock — retry
+            kdb = _retry(
+                lambda: duckdb.connect(str(ROOT / "kalshi.duckdb")), "market history store"
+            )
+            try:
+                kdb.execute("""
+                    CREATE TABLE IF NOT EXISTS line_snapshots (
+                        snapshot_ts TIMESTAMP, game_id VARCHAR, season INT, week INT,
+                        spread_line DOUBLE, total_line DOUBLE,
+                        home_moneyline INT, away_moneyline INT)
+                """)
+                kdb.execute(f"""
+                    INSERT INTO line_snapshots
+                    SELECT now(), game_id, season, week, spread_line, total_line,
+                           home_moneyline, away_moneyline
+                    FROM read_csv('{(DATA / "schedules" / "games.csv").as_posix()}')
+                    WHERE result IS NULL AND spread_line IS NOT NULL
+                """)
+            finally:
+                kdb.close()
             print("line_snapshots: appended current Vegas lines for upcoming games")
+            line_snap = "ok"
         except Exception as e:
-            print(f"line snapshot skipped: {e}")
+            line_snap = "fail"
+            print(f"line snapshot FAILED: {e}")
 
     LOGS.mkdir(exist_ok=True)
     with open(LOGS / "refresh.log", "a", encoding="utf-8") as f:
         mode = "bootstrap" if bootstrap else ("full" if full else "weekly")
         f.write(
             f"{datetime.now().isoformat()} mode={mode} "
-            f"fetched={len(fetched)} failures={len(failures)} rc={rc}\n"
+            f"fetched={len(fetched)} failures={len(failures)} line_snap={line_snap} rc={rc}\n"
         )
     return rc
 

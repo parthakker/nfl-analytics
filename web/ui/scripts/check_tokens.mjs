@@ -25,7 +25,7 @@ const RULES = [
     // a hex literal anywhere but the token file
     test: /#[0-9a-fA-F]{3,8}\b/,
     msg: "hard-coded hex — use a --color-* token",
-    skip: (f) => ALLOW_FILES.includes(f) || f.endsWith(".css") === false && false,
+    skip: (f) => ALLOW_FILES.includes(f),
   },
   {
     test: /\brgba?\(\s*\d/,

@@ -72,7 +72,7 @@ export default function CommandPalette({ open, onClose }: {
         id: "ask", group: "Analyst", icon: "◉",
         label: term ? `Ask the analyst: “${term}”` : "Ask the analyst…",
         hint: "runs real warehouse queries — 20–60s",
-        run: () => { onClose(); chat.open(); },
+        run: () => { onClose(); if (term) chat.ask(term); else chat.open(); },
       }];
     }
 
@@ -115,13 +115,19 @@ export default function CommandPalette({ open, onClose }: {
         id: "ask-fallback", group: "Analyst", icon: "◉",
         label: `Ask the analyst: “${term}”`,
         hint: "when the answer needs a real query",
-        run: () => { onClose(); chat.open(); },
+        run: () => { onClose(); chat.ask(term); },
       });
     }
     return out.slice(0, 24);
   }, [mode, term, meta, players, nav, onClose, chat, setDensity]);
 
   useEffect(() => { setCursor((c) => Math.min(c, Math.max(0, items.length - 1))); }, [items.length]);
+
+  // keep the selection visible when ArrowDown/ArrowUp moves it past the fold
+  useEffect(() => {
+    listRef.current?.querySelector(`#palette-opt-${cursor}`)
+      ?.scrollIntoView({ block: "nearest" });
+  }, [cursor, items]);
 
   if (!open) return null;
 
@@ -130,6 +136,9 @@ export default function CommandPalette({ open, onClose }: {
     else if (e.key === "ArrowUp") { e.preventDefault(); setCursor((c) => Math.max(c - 1, 0)); }
     else if (e.key === "Enter") { e.preventDefault(); items[cursor]?.run(); }
     else if (e.key === "Escape") { e.preventDefault(); onClose(); }
+    // the palette is arrow-driven with a single text field: keeping focus in
+    // the input IS the focus trap — Tab has nowhere meaningful to go.
+    else if (e.key === "Tab") e.preventDefault();
   };
 
   let lastGroup = "";
@@ -150,13 +159,19 @@ export default function CommandPalette({ open, onClose }: {
             value={q}
             onChange={(e) => { setQ(e.target.value); setCursor(0); }}
             onKeyDown={onKey}
+            role="combobox"
             aria-label="Search pages, teams and players"
+            aria-expanded={items.length > 0}
+            aria-controls="palette-listbox"
+            aria-activedescendant={items.length > 0 ? `palette-opt-${cursor}` : undefined}
+            aria-autocomplete="list"
             placeholder="Jump to a page, team or player…   › for commands   ? to ask"
             className="flex-1 bg-transparent py-3 text-body text-ink outline-none placeholder:text-faint" />
           <kbd className="rounded-[var(--radius-chip)] border border-border px-1.5 py-0.5 text-micro text-muted">esc</kbd>
         </div>
 
-        <div ref={listRef} className="max-h-80 overflow-y-auto py-1">
+        <div ref={listRef} id="palette-listbox" role="listbox" aria-label="Results"
+             className="max-h-80 overflow-y-auto py-1">
           {items.length === 0 && (
             <p className="px-4 py-6 text-center text-body text-muted">
               Nothing matches. Press <kbd className="text-ink">?</kbd> to ask the analyst instead.
@@ -166,14 +181,20 @@ export default function CommandPalette({ open, onClose }: {
             const header = it.group !== lastGroup ? it.group : null;
             lastGroup = it.group;
             return (
-              <div key={it.id}>
+              <div key={it.id} role="presentation">
                 {header && (
-                  <div className="px-3 pb-1 pt-2 text-micro font-semibold uppercase tracking-[0.12em] text-faint">
+                  <div role="presentation"
+                       className="px-3 pb-1 pt-2 text-micro font-semibold uppercase tracking-[0.12em] text-faint">
                     {header}
                   </div>
                 )}
+                {/* role=option + aria-activedescendant on the input is the
+                    combobox pattern; a bare button may not carry aria-selected */}
                 <button
                   type="button"
+                  role="option"
+                  id={`palette-opt-${i}`}
+                  tabIndex={-1}
                   onMouseEnter={() => setCursor(i)}
                   onClick={it.run}
                   aria-selected={i === cursor}

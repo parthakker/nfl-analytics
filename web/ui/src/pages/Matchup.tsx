@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import Chip from "../components/Chip";
-import { Panel } from "../components/ui";
+import { Chip, Panel } from "../components/ui";
 import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useApi } from "../lib/useApi";
 import { useTeamPairTokens } from "../lib/useTeamTokens";
 
 interface Side {
@@ -64,13 +63,13 @@ function SideCol({ s, accent, meetsLeft }: { s: Side; accent: string; meetsLeft?
     <div className={`flex-1 space-y-1.5 ${meetsLeft ? "text-right" : ""}`}>
       <div className="flex flex-wrap items-center gap-1.5"
            style={{ justifyContent: meetsLeft ? "flex-end" : "flex-start" }}>
-        <Chip tone="arc">{s.travel_miles != null ? `${s.travel_miles.toLocaleString()} mi` : "— mi"}</Chip>
+        <Chip tone="accent">{s.travel_miles != null ? `${s.travel_miles.toLocaleString()} mi` : "— mi"}</Chip>
         {s.tz_shift_hours != null && s.tz_shift_hours !== 0 && (
           <Chip>{s.tz_shift_hours > 0 ? `${s.tz_shift_hours}h east` : `${-s.tz_shift_hours}h west`}</Chip>
         )}
         <Chip>{s.rest_days != null ? `${s.rest_days}d rest` : "rest —"}</Chip>
-        {s.is_off_bye && <Chip tone="hot">off bye</Chip>}
-        {s.short_week && <Chip tone="hot">short week</Chip>}
+        {s.is_off_bye && <Chip tone="warning">off bye</Chip>}
+        {s.short_week && <Chip tone="warning">short week</Chip>}
       </div>
       <p className="text-xs" style={{ color: "var(--color-muted)" }}>
         {s.coach ?? "—"}{s.qb ? ` · ${s.qb}` : ""}
@@ -100,15 +99,7 @@ function SideCol({ s, accent, meetsLeft }: { s: Side; accent: string; meetsLeft?
 export default function Matchup() {
   const { gameId = "" } = useParams();
   const meta = useMeta();
-  const [d, setD] = useState<Data | null>(null);
-  const [err, setErr] = useState("");
-
-  useEffect(() => {
-    setD(null); setErr("");
-    fetch(`/api/matchup/${encodeURIComponent(gameId)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setD).catch((e) => setErr(String(e)));
-  }, [gameId]);
+  const { data: d, error: err } = useApi<Data>(`/api/matchup/${encodeURIComponent(gameId)}`);
 
   // hooks before early returns; the pair hook demotes the away side to
   // neutral when the two hues collide (DEN and CIN share a source colour)
@@ -327,13 +318,13 @@ export default function Matchup() {
         <Panel title="Market">
           <div className="space-y-2 text-sm">
             <div className="flex flex-wrap gap-2">
-              <Chip tone="arc">{d.market.spread_line != null
+              <Chip tone="accent">{d.market.spread_line != null
                 ? `${d.game.home_team} ${d.market.spread_line > 0 ? "-" : "+"}${Math.abs(d.market.spread_line)}`
                 : "no line"}</Chip>
               <Chip>O/U {d.market.total_line ?? "—"}</Chip>
               <Chip>ML {d.market.home_moneyline ?? "—"} / {d.market.away_moneyline ?? "—"}</Chip>
               {d.market.kalshi?.prob_home != null && (
-                <Chip tone="hot">Kalshi {pct(d.market.kalshi.prob_home)} home</Chip>
+                <Chip tone="warning">Kalshi {pct(d.market.kalshi.prob_home)} home</Chip>
               )}
             </div>
             {d.market.line_history.length > 1 && (

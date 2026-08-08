@@ -84,11 +84,14 @@ export default function Shell() {
               </NavLink>
             ))}
 
-            <div className="relative" ref={moreRef}>
+            {/* A disclosure of plain nav links, not an ARIA menu: menu/menuitem
+                would demand full arrow-key handling, and links that Tab and
+                Escape already serve don't need it. */}
+            <div className="relative" ref={moreRef}
+                 onKeyDown={(e) => { if (e.key === "Escape") setMoreOpen(false); }}>
               <button
                 type="button"
                 aria-expanded={moreOpen}
-                aria-haspopup="menu"
                 onClick={() => setMoreOpen((v) => !v)}
                 className={`rounded-[var(--radius-control)] px-3 py-1.5 transition-colors ${
                   moreActive ? "bg-accent-bg font-semibold text-accent" : "text-muted hover:bg-surface-2 hover:text-ink"
@@ -97,10 +100,9 @@ export default function Shell() {
                 More ▾
               </button>
               {moreOpen && (
-                <div role="menu"
-                     className="absolute right-0 z-50 mt-1 w-44 overflow-hidden rounded-[var(--radius-control)] border border-border-strong bg-surface-2 py-1 shadow-lg">
+                <div className="absolute right-0 z-50 mt-1 w-44 overflow-hidden rounded-[var(--radius-control)] border border-border-strong bg-surface-2 py-1 shadow-lg">
                   {MORE.map((m) => (
-                    <NavLink key={m.to} to={m.to} role="menuitem"
+                    <NavLink key={m.to} to={m.to}
                              className={({ isActive }) =>
                                `block px-3 py-1.5 text-body transition-colors ${
                                  isActive ? "bg-accent-bg text-accent" : "text-ink hover:bg-surface-3"}`}>

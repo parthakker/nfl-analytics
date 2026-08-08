@@ -26,7 +26,12 @@ export const MAX_SCATTER_SERIES = 3;
 export const REFERENCE = "var(--color-chart-ref)";
 export const GRID = "var(--color-chart-grid)";
 
-export const seriesColor = (i: number) => SERIES[i % SERIES.length];
+/** Slot i's hue. Out-of-range clamps to the last slot instead of cycling —
+ *  wrapping around would silently hand slot 9 the colour of slot 1 and break
+ *  the fixed-slot rule above. Callers cap series counts (MAX_SERIES /
+ *  MAX_SCATTER_SERIES) before ever indexing past the end. */
+export const seriesColor = (i: number) =>
+  SERIES[Math.min(Math.max(i, 0), SERIES.length - 1)];
 
 export const axis = {
   tick: { fill: "var(--color-muted)", fontSize: 11 },

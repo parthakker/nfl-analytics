@@ -41,12 +41,12 @@ export default function CommandCenter() {
       <PageHeader
         title="The League"
         subtitle="2025 final records — click a team to open its page."
-        actions={meta?.kickoff_2026 ? (
+        actions={meta?.kickoff ? (
           <div className="flex items-center gap-4 rounded-[var(--radius-panel)] border border-border bg-surface px-4 py-2">
             <span className="text-micro font-bold uppercase tracking-[0.12em] text-muted">
-              2026 kickoff
+              {new Date(meta.kickoff).getFullYear()} kickoff
             </span>
-            <Countdown iso={meta.kickoff_2026} />
+            <Countdown iso={meta.kickoff} />
           </div>
         ) : undefined} />
 

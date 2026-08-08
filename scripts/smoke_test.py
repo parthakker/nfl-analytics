@@ -44,6 +44,13 @@ CHECKS = {
     "/api/teams/DET/schedule": lambda js: len(js.get("games", [])) >= 17,
     "/api/teams/DET/news": lambda js: len(js.get("items", [])) > 0,
     "/api/players/search?q=mahomes": lambda js: len(js.get("hits", [])) > 0,
+    # Mahomes' gsis_id — present in the full warehouse and the CI fixture slice
+    "/api/players/00-0033873": lambda js: (
+        js.get("info", {}).get("name") == "Patrick Mahomes"
+        and len(js.get("seasons", [])) > 0
+        and len(js.get("weekly", [])) > 0
+        and js["seasons"][0].get("ppr") is not None
+    ),
     "/api/leaders?family=rushing&sort=rush_yds": lambda js: (
         len(js.get("rows", [])) == 25
         and js["rows"][0].get("player_id")
@@ -54,6 +61,13 @@ CHECKS = {
     ),
     "/api/news?limit=5": lambda js: len(js.get("items", [])) > 0,
     "/api/markets?kind=game": lambda js: len(js.get("markets", [])) > 0,
+    # current-season Super Bowl market: lives all season in kalshi.duckdb and
+    # the committed fixture. Bump the ticker year when the season rolls over.
+    "/api/markets/KXSB-27-KC/history": lambda js: (
+        js.get("title")
+        and len(js.get("points", [])) > 0
+        and any(p.get("prob") is not None for p in js["points"])
+    ),
     "/api/leaders?family=fantasy&sort=ppr_pg&position=RB&qual=8": lambda js: (
         len(js.get("rows", [])) > 0
         and all(r["pos"] == "RB" for r in js["rows"])
@@ -65,6 +79,14 @@ CHECKS = {
         len(js.get("rows", [])) >= 20 and js["rows"][0].get("points") is not None
     ),
     "/api/referees?min_games=100": lambda js: len(js.get("referees", [])) >= 5,
+    # detail keys on ref_key (canonical NAME, url-encoded) — active crew chief
+    # since 2014, so he exists in both the full DB and the one-season fixture
+    "/api/referees/CRAIG%20WROLSTAD": lambda js: (
+        js.get("name")
+        and len(js.get("seasons", [])) >= 1
+        and js["seasons"][-1].get("games", 0) > 0
+        and js["seasons"][-1].get("pen_per_game") is not None
+    ),
     "/api/coaches": lambda js: len(js.get("coaches", [])) >= 50 and len(js.get("staff", [])) == 63,
     "/api/coaches/Steve%20Spagnuolo?role=DC": lambda js: (
         js.get("role") == "DC" and len(js.get("unit_seasons", [])) > 0

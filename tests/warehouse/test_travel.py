@@ -58,6 +58,55 @@ def test_home_games_near_zero_travel(warehouse_conn):
     assert p95 is not None and p95 <= 30
 
 
+def test_travel_season_non_negative_and_bounded(warehouse_conn):
+    """v_team_travel_season: miles are never negative, no trip beats the
+    12000-mile absurdity bound used for v_team_games, and per-season game
+    counts stay in the 1999+ range (16-17 REG + playoffs)."""
+    bad = _one(
+        warehouse_conn,
+        """
+        SELECT count(*) FROM v_team_travel_season
+        WHERE total_travel_miles < 0 OR max_trip_miles < 0
+           OR max_trip_miles > 12000 OR avg_road_trip_miles < 0
+           OR total_tz_hours < 0 OR road_games > games
+           OR games NOT BETWEEN 14 AND 24""",
+    )
+    assert bad == 0
+
+
+def test_travel_season_totals_match_team_games(warehouse_conn):
+    """The season view must be exactly v_team_games rolled up — every
+    team-season, both the game count and the summed miles."""
+    bad = _one(
+        warehouse_conn,
+        """
+        SELECT count(*) FROM v_team_travel_season t
+        JOIN (SELECT season, team, count(*) AS g, sum(travel_miles) AS s
+              FROM v_team_games GROUP BY season, team) x USING (season, team)
+        WHERE t.games <> x.g
+           OR abs(coalesce(t.total_travel_miles, 0) - coalesce(x.s, 0)) > 0.5""",
+    )
+    assert bad == 0
+
+
+def test_travel_season_spot_check_buf(warehouse_conn, max_season):
+    """Readable pin: BUF's latest-season total equals summing its
+    v_team_games rows by hand."""
+    row = warehouse_conn.execute(
+        """
+        SELECT t.total_travel_miles,
+               (SELECT sum(travel_miles) FROM v_team_games
+                WHERE team = 'BUF' AND season = ?) AS by_hand
+        FROM v_team_travel_season t
+        WHERE t.team = 'BUF' AND t.season = ?""",
+        [max_season, max_season],
+    ).fetchone()
+    if row is None:
+        pytest.skip("no BUF season in this DB slice")
+    total, by_hand = row
+    assert total == pytest.approx(by_hand, abs=0.5)
+
+
 def test_stadium_coords_plausible(warehouse_conn):
     bad = _one(
         warehouse_conn,

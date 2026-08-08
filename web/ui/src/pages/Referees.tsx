@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { LineChart } from "../components/charts";
 import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
 import type { Column } from "../components/ui";
+import { useApi } from "../lib/useApi";
 
 interface Ref {
   official_id: string; name: string; games: number;
@@ -12,22 +13,15 @@ interface Ref {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-async function j<T>(p: string): Promise<T> {
-  const r = await fetch(p);
-  if (!r.ok) throw new Error(`${p}: ${r.status}`);
-  return r.json();
-}
-
 export default function Referees() {
-  const [refs, setRefs] = useState<Ref[]>([]);
-  const [leagueAvg, setLeagueAvg] = useState<number | null>(null);
-  const [detail, setDetail] = useState<{ name: string; seasons: Record<string, number>[] } | null>(null);
-
-  useEffect(() => {
-    j<{ league_avg_pen_per_game: number; referees: Ref[] }>("/api/referees")
-      .then((r) => { setRefs(r.referees); setLeagueAvg(r.league_avg_pen_per_game); })
-      .catch(console.error);
-  }, []);
+  const { data, error } =
+    useApi<{ league_avg_pen_per_game: number; referees: Ref[] }>("/api/referees");
+  const refs = data?.referees ?? [];
+  const leagueAvg = data?.league_avg_pen_per_game ?? null;
+  /* official_id is the canonical NAME key, so it must be encoded */
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const { data: detail } = useApi<{ name: string; seasons: Record<string, number>[] }>(
+    detailId ? `/api/referees/${encodeURIComponent(detailId)}` : null);
 
   const columns = useMemo<Column<Ref>[]>(() => [
     {
@@ -89,7 +83,7 @@ export default function Referees() {
         <Panel
           title={`${detail.name} — season trends`}
           actions={
-            <button type="button" onClick={() => setDetail(null)}
+            <button type="button" onClick={() => setDetailId(null)}
                     className="text-label text-muted hover:text-ink">
               close
             </button>
@@ -105,20 +99,22 @@ export default function Referees() {
       )}
 
       <Panel flush>
-        <DataTable
-          columns={columns}
-          rows={refs}
-          rowKey={(r) => r.official_id}
-          defaultSort={{ key: "games", dir: "desc" }}
-          stickyCols={1}
-          caption="Head referee tendencies, 1999–2025"
-          empty="No referee data loaded."
-          /* official_id is the canonical NAME key, so it must be encoded */
-          onRowClick={(r) =>
-            j<{ name: string; seasons: Record<string, number>[] }>(
-              `/api/referees/${encodeURIComponent(r.official_id)}`)
-              .then(setDetail).catch(console.error)}
-        />
+        {error ? (
+          <p className="px-4 py-6 text-center text-body text-muted">
+            Couldn't load referees — {error}
+          </p>
+        ) : (
+          <DataTable
+            columns={columns}
+            rows={refs}
+            rowKey={(r) => r.official_id}
+            defaultSort={{ key: "games", dir: "desc" }}
+            stickyCols={1}
+            caption="Head referee tendencies, 1999–2025"
+            empty="No referee data loaded."
+            onRowClick={(r) => setDetailId(r.official_id)}
+          />
+        )}
       </Panel>
     </div>
   );

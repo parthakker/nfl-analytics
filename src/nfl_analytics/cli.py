@@ -48,7 +48,13 @@ def main() -> int:
     try:
         runpy.run_path(str(script), run_name="__main__")
     except SystemExit as e:
-        return int(e.code or 0)
+        if e.code is None:
+            return 0
+        if isinstance(e.code, int):
+            return e.code
+        # sys.exit("message") convention: print the message, fail with 1
+        print(e.code, file=sys.stderr)
+        return 1
     return 0
 
 

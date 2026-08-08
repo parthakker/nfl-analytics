@@ -20,7 +20,7 @@ log = logging.getLogger("nfl-mcp")
 server = MCPServer(
     name="nfl-analytics",
     instructions=(
-        "Local NFL analytics warehouse (2007-2025 pbp, stats, schedules with "
+        "Local NFL analytics warehouse (1999-2025 pbp, stats, schedules with "
         "odds through 2026), a baseline prediction model, and live market/"
         "fantasy tools. Start with describe_warehouse() for schema+gotchas. "
         "Cite seasons/filters when reporting results."
@@ -416,7 +416,7 @@ def coach_profile(name: str) -> dict:
             WHERE s.coach ILIKE '%' || ? || '%' ORDER BY s.season
         """,
             [name],
-            filters_applied=f"coach~{name}, 2007+",
+            filters_applied=f"coach~{name}, 1999+",
         )
         rivals = table_result(
             con,

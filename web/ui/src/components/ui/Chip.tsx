@@ -1,10 +1,7 @@
 import type { ReactNode } from "react";
 
-/** "hot" | "arc" | "muted" are the legacy tones, accepted so existing call
- *  sites keep working during the migration. TODO(wave 8): drop them. */
 export type ChipTone =
-  | "neutral" | "accent" | "positive" | "negative" | "warning" | "team"
-  | "hot" | "arc" | "muted";
+  | "neutral" | "accent" | "positive" | "negative" | "warning" | "team";
 
 const TONE: Record<ChipTone, string> = {
   neutral: "text-muted border-border",
@@ -13,10 +10,6 @@ const TONE: Record<ChipTone, string> = {
   negative: "text-negative border-negative/40",
   warning: "text-warning border-warning/40",
   team: "text-team border-team",
-  // legacy aliases
-  hot: "text-warning border-warning/40",
-  arc: "text-accent border-accent/40 bg-accent-bg",
-  muted: "text-muted border-border",
 };
 
 export default function Chip({

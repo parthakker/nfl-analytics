@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Chip, Field, PageHeader, Panel, PillGroup, Select, Toolbar } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
+import { useApi } from "../lib/useApi";
 
 interface BoardGame {
   game_id: string; date: string; away_team: string; home_team: string;
@@ -24,20 +25,19 @@ const pct = (v: number | null | undefined) =>
 export default function Betting() {
   const meta = useMeta();
   const [week, setWeek] = useState<number | undefined>();
-  const [games, setGames] = useState<BoardGame[]>([]);
   const [tab, setTab] = useState<"board" | "situations">("board");
-  const [sit, setSit] = useState<Record<string, Record<string, string | number | null>[]> | null>(null);
 
+  const { data: board, error: boardError } = useApi<{ week: number; games: BoardGame[] }>(
+    `/api/betting/board${week ? `?week=${week}` : ""}`);
+  const games = board?.games ?? [];
+  // the first response tells us which week is current; lock the picker to it
   useEffect(() => {
-    fetch(`/api/betting/board${week ? `?week=${week}` : ""}`)
-      .then((r) => r.json())
-      .then((r) => { setGames(r.games); if (!week) setWeek(r.week); })
-      .catch(console.error);
-  }, [week]);
-  useEffect(() => {
-    if (tab === "situations" && !sit)
-      fetch("/api/betting/situations").then((r) => r.json()).then(setSit).catch(console.error);
-  }, [tab, sit]);
+    if (board && !week) setWeek(board.week);
+  }, [board, week]);
+
+  const { data: sit, error: sitError } =
+    useApi<Record<string, Record<string, string | number | null>[]>>(
+      tab === "situations" ? "/api/betting/situations" : null);
 
   return (
     <div className="space-y-5">
@@ -63,6 +63,21 @@ export default function Betting() {
           </Field>
         )}
       </Toolbar>
+
+      {tab === "board" && boardError && (
+        <Panel>
+          <p className="py-4 text-center text-body text-muted">
+            Couldn't load the board — {boardError}
+          </p>
+        </Panel>
+      )}
+      {tab === "situations" && sitError && (
+        <Panel>
+          <p className="py-4 text-center text-body text-muted">
+            Couldn't load situations — {sitError}
+          </p>
+        </Panel>
+      )}
 
       {tab === "board" && (
         <div className="grid gap-4 lg:grid-cols-2">

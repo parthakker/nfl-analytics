@@ -28,7 +28,8 @@ test("scatter view renders team-colored dots", async ({ page }) => {
 test("stat headers explain themselves on hover", async ({ page }) => {
   await page.goto("/leaders");
   await page.locator("tbody tr").first().waitFor();
-  await page.getByRole("button", { name: "PPR/G", exact: true }).hover();
+  // DataTable header buttons carry a sort glyph (↕/↓) in the accessible name
+  await page.getByRole("button", { name: /^PPR\/G/ }).hover();
   await expect(page.getByText(/^PPR points per game/)).toBeVisible();
 });
 

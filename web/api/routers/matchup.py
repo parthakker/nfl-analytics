@@ -11,9 +11,13 @@ v_team_matchups, game_venues) so upcoming games — which never appear in the
 pbp-derived `games` table — get the full card too.
 """
 
+import logging
+
 from fastapi import APIRouter, HTTPException
 
 from ..deps import read_conn, rows_to_dicts, teams_meta
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -370,8 +374,9 @@ def matchup(game_id: str) -> dict:
                     "ticker": m["ticker"],
                     "volume": m["volume"],
                 }
-        except Exception:
-            pass  # kalshi store busy — card still serves
+        except Exception as e:
+            # kalshi store busy/absent — card still serves
+            log.warning("matchup/%s: market block failed: %s", game_id, e)
 
         injuries = {"away": [], "home": []}
         try:
@@ -388,8 +393,9 @@ def matchup(game_id: str) -> dict:
                 [season, g["week"], away, home],
             ):
                 injuries["away" if r["team"] == away else "home"].append(r)
-        except Exception:
-            pass
+        except Exception as e:
+            # injuries are optional context — degrade, but visibly
+            log.warning("matchup/%s: injuries block failed: %s", game_id, e)
 
         series = None
         srows = rows_to_dicts(

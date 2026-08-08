@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Chip, DataTable, LinkCell, PageHeader, Panel, PillGroup } from "../components/ui";
 import type { Column } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
+import { useApi } from "../lib/useApi";
 
 interface CoachRow {
   coach: string; first_season: number; last_season: number;
@@ -31,14 +32,9 @@ const pct = (v: number | null) => (v != null ? `${Math.round(v * 100)}%` : "—"
 export default function Coaches() {
   const meta = useMeta();
   const [tab, setTab] = useState<"HC" | "OC" | "DC">("HC");
-  const [rows, setRows] = useState<CoachRow[]>([]);
-  const [staff, setStaff] = useState<StaffRow[]>([]);
-
-  useEffect(() => {
-    fetch("/api/coaches").then((r) => r.json())
-      .then((r) => { setRows(r.coaches); setStaff(r.staff ?? []); })
-      .catch(console.error);
-  }, []);
+  const { data, error } = useApi<{ coaches: CoachRow[]; staff?: StaffRow[] }>("/api/coaches");
+  const rows = data?.coaches ?? [];
+  const staff = data?.staff ?? [];
 
   const logo = useCallback(
     (team: string | null) =>
@@ -140,7 +136,11 @@ export default function Coaches() {
       />
 
       <Panel flush>
-        {tab === "HC" ? (
+        {error ? (
+          <p className="px-4 py-6 text-center text-body text-muted">
+            Couldn't load coaches — {error}
+          </p>
+        ) : tab === "HC" ? (
           <DataTable
             columns={hcColumns}
             rows={rows}

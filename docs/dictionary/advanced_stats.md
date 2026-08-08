@@ -1,38 +1,38 @@
 # PFR Advanced Stats Tables
 
-Source: Pro-Football-Reference advanced stats via nflverse. Seasons **2018–2024 only**. Eight tables — four season-level, four weekly (game-level):
+Source: Pro-Football-Reference advanced stats via nflverse. Seasons **2018+** (nothing earlier exists; the max season tracks the current year and grows with each refresh — verify with `SELECT MAX(season)` rather than trusting a doc). Eight tables — four season-level, four weekly (game-level). Row counts below are a snapshot **as of 2026-08-06** (coverage 2018–2025) and drift upward with refreshes:
 
-| Table | Rows | Grain |
+| Table | Rows (2026-08-06) | Grain |
 |---|---|---|
-| `advstats_season_pass` | 732 | QB (passer) x season |
-| `advstats_season_rush` | 2,420 | rusher x season |
-| `advstats_season_rec` | 3,525 | receiver x season |
-| `advstats_season_def` | 6,380 | defender x season |
-| `advstats_week_pass` | 4,740 | passer x game |
-| `advstats_week_rush` | 16,106 | rusher x game |
-| `advstats_week_rec` | 31,191 | receiver x game |
-| `advstats_week_def` | 54,419 | defender x game |
+| `advstats_season_pass` | 848 | QB (passer) x season |
+| `advstats_season_rush` | 2,820 | rusher x season |
+| `advstats_season_rec` | 4,130 | receiver x season |
+| `advstats_season_def` | 7,537 | defender x season |
+| `advstats_week_pass` | 5,424 | passer x game |
+| `advstats_week_rush` | 18,461 | rusher x game |
+| `advstats_week_rec` | 35,724 | receiver x game |
+| `advstats_week_def` | 62,345 | defender x game |
 
 Verified grain: `(pfr_id, season)` is unique in all season tables; `(pfr_player_id, game_id)` unique in all weekly tables (0 duplicate groups). Weekly tables include playoffs (`game_type` in `REG`, `WC`, `DIV`, `CON`, `SB`; `week` 1–22). Season tables are **regular-season totals** with playoff stats excluded.
 
 ## CRITICAL: player key is `pfr_id`, not `gsis_id`
 
-These tables have **no** `gsis_id`. Season tables key on `pfr_id`, weekly tables on `pfr_player_id` (same id space, e.g. `MahoPa00`). Bridge to the rest of the warehouse through `players` (which has both `pfr_id` and `gsis_id`; `pfr_id` is unique there — 21,981 distinct over 24,509 rows, 0 duplicates, so the join is safe 1:1).
+These tables have **no** `gsis_id`. Season tables key on `pfr_id`, weekly tables on `pfr_player_id` (same id space, e.g. `MahoPa00`). Bridge to the rest of the warehouse through `players` (which has both `pfr_id` and `gsis_id`; `pfr_id` is unique among non-null values — 0 duplicates as of 2026-08-06 — so the join is safe 1:1).
 
-Verified match rates (rows whose pfr id resolves to a non-null `players.gsis_id`):
+Verified match rates (rows whose pfr id resolves to a non-null `players.gsis_id`), re-verified 2026-08-06:
 
 | Table | Matched / total | Rate |
 |---|---|---|
-| `advstats_season_pass` | 728 / 732 | 99.45% |
-| `advstats_season_rush` | 2,416 / 2,420 | 99.83% |
-| `advstats_season_rec` | 3,512 / 3,525 | 99.63% |
-| `advstats_season_def` | 6,363 / 6,380 | 99.73% |
-| `advstats_week_pass` | 4,728 / 4,740 | 99.75% |
-| `advstats_week_rush` | 16,094 / 16,106 | 99.93% |
-| `advstats_week_rec` | 31,118 / 31,191 | 99.77% |
-| `advstats_week_def` | 54,300 / 54,419 | 99.78% |
+| `advstats_season_pass` | 848 / 848 | 100% |
+| `advstats_season_rush` | 2,817 / 2,820 | 99.89% |
+| `advstats_season_rec` | 4,122 / 4,130 | 99.81% |
+| `advstats_season_def` | 7,519 / 7,537 | 99.76% |
+| `advstats_week_pass` | 5,424 / 5,424 | 100% |
+| `advstats_week_rush` | 18,457 / 18,461 | 99.98% |
+| `advstats_week_rec` | 35,711 / 35,724 | 99.96% |
+| `advstats_week_def` | 62,331 / 62,345 | 99.98% |
 
-The pfr id itself is **never null** in any table; the ~0.2–0.5% misses are fringe players absent from `players` (e.g. `BrowZa00` Zach Brown, `HodgTr00` Tre'Vius Tomlinson).
+The pfr id itself is **never null** in any table; the remaining sub-0.25% misses are fringe players absent from `players`.
 
 Canonical bridge pattern (tested):
 
@@ -48,14 +48,14 @@ ORDER BY a.pressure_pct DESC;
 
 - Season tables `advstats_season_rush/rec/def` use **`tm`**; `advstats_season_pass` uses **`team`**; all weekly tables use **`team`** (+ `opponent`).
 - Codes are mostly nflverse-style (`GB`, `KC`, `SF`, `JAX` — **not** PFR's `GNB`/`KAN`/`SFO`), but the tables disagree with each other on LA/LV:
-  - `advstats_season_pass`: `LAR` (all years), `OAK` (2018–19), **`LVR`** (2020–24). `LVR` is a PFR-ism that appears **nowhere else in the warehouse** and is **not covered by `team_aliases`** (which only has SD→LAC, OAK→LV, STL→LA, JAC→JAX, LAR→LA). Map it yourself.
-  - `advstats_season_rush/rec/def`: fully backdated `LA` and `LV` for all seasons 2018–2024 (Oakland-era rows already say `LV`; no `OAK`/`LAR` ever).
-  - Weekly tables: `LA` (all years), `OAK` (2018–19), `LV` (2020–24) — matches `play_by_play`/`games` usage except the historical `OAK`, which `team_aliases` does map (OAK→LV).
+  - `advstats_season_pass`: `LAR` (2018–24), `OAK` (2018–19), **`LVR`** (2020–24); from 2025 the feed uses standard `LA`/`LV`. `LVR` is a PFR-ism that appears **nowhere else in the warehouse** and is **not covered by `team_aliases`** (which only has SD→LAC, OAK→LV, STL→LA, JAC→JAX, LAR→LA). Map it yourself.
+  - `advstats_season_rush/rec/def`: fully backdated `LA` and `LV` for all seasons (Oakland-era rows already say `LV`; no `OAK`/`LAR` ever).
+  - Weekly tables: `LA` (all years), `OAK` (2018–19), `LV` (2020+) — matches `play_by_play`/`games` usage except the historical `OAK`, which `team_aliases` does map (OAK→LV).
 - Multi-team season rows use **`2TM`** / **`3TM`** as the team code (e.g. 2022 Christian McCaffrey is one `2TM` row). There are **no per-team split rows** for traded players — the combined row is all you get. Filter or map `%TM` before any team join.
 
 ## game_id (weekly tables)
 
-`game_id` uses the warehouse-standard `2024_01_ARI_BUF` format (`{season}_{week:02d}_{away}_{home}`). Tested: all **1,942 / 1,942** distinct weekly `game_id`s join to `play_by_play.game_id`; joins to `games.game_id` also verified. `pfr_game_id` is PFR's key, format `YYYYMMDD0{home}` lowercase (e.g. `201809060phi`) — only needed for PFR cross-reference.
+`game_id` uses the warehouse-standard `2024_01_ARI_BUF` format (`{season}_{week:02d}_{away}_{home}`). Tested (re-verified 2026-08-06): **every** distinct weekly `game_id` (2,227 at that date) joins to `play_by_play.game_id`; joins to `games.game_id` also verified. `pfr_game_id` is PFR's key, format `YYYYMMDD0{home}` lowercase (e.g. `201809060phi`) — only needed for PFR cross-reference.
 
 ## Percentage scales (verified, inconsistent)
 
@@ -69,7 +69,7 @@ ORDER BY a.pressure_pct DESC;
 
 ---
 
-## `advstats_season_pass` (732 rows)
+## `advstats_season_pass`
 
 No `pos`/`g`/`gs`/`age`/`loaded` columns (unlike the other season tables). Observed ranges from `SUMMARIZE`.
 
@@ -77,7 +77,7 @@ No `pos`/`g`/`gs`/`age`/`loaded` columns (unlike the other season tables). Obser
 |---|---|---|
 | `player` | VARCHAR | Display name. Never null. |
 | `team` | VARCHAR | See team-codes section. Includes `2TM`, `LVR`, `OAK`, `LAR`. |
-| `season` | BIGINT | 2018–2024. |
+| `season` | BIGINT | 2018+. |
 | `pfr_id` | VARCHAR | PFR player id (`MahoPa00`). Never null. |
 | `pass_attempts` | BIGINT | 1–733. Table includes anyone with 1+ attempt (WRs on trick plays). |
 | `throwaways` | BIGINT | 0–48. |
@@ -100,7 +100,7 @@ No `pos`/`g`/`gs`/`age`/`loaded` columns (unlike the other season tables). Obser
 | `rpo_rush_att`, `rpo_rush_yards` | BIGINT | 0–92 / −8–671. **All null in 2018.** |
 | `pa_pass_att`, `pa_pass_yards` | BIGINT | Play-action attempts/yards. 0–191 / −2–1,643. **All null in 2018.** |
 
-## `advstats_season_rush` (2,420 rows)
+## `advstats_season_rush`
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -121,7 +121,7 @@ No `pos`/`g`/`gs`/`age`/`loaded` columns (unlike the other season tables). Obser
 | `att_br` | DOUBLE | Attempts per broken tackle. 1.0–96.0. **57% null — null whenever `brk_tkl = 0`** (undefined ratio). Compute `brk_tkl/att` yourself instead. |
 | `loaded` | DATE | Load timestamp, 2023-08-21–2024-12-05. Metadata only. |
 
-## `advstats_season_rec` (3,525 rows)
+## `advstats_season_rec`
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -143,7 +143,7 @@ No `pos`/`g`/`gs`/`age`/`loaded` columns (unlike the other season tables). Obser
 | `int` | BIGINT | INTs thrown when targeted. 0–11. |
 | `rat` | DOUBLE | Passer rating when targeted. 0.0–158.3. |
 
-## `advstats_season_def` (6,380 rows)
+## `advstats_season_def`
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -175,9 +175,9 @@ All four share these (never null unless noted):
 
 | Column | Type | Notes |
 |---|---|---|
-| `game_id` | VARCHAR | `2018_01_ATL_PHI` … `2024_22_KC_PHI`. 100% joins to `play_by_play` / `games`. |
+| `game_id` | VARCHAR | `2018_01_ATL_PHI` onward. 100% joins to `play_by_play` / `games`. |
 | `pfr_game_id` | VARCHAR | `YYYYMMDD0{home}` (e.g. `201809060phi`). |
-| `season` | BIGINT | 2018–2024. |
+| `season` | BIGINT | 2018+. |
 | `week` | BIGINT | 1–22 (playoffs use continuing week numbers: SB = 21 through 2020, 22 from 2021). |
 | `game_type` | VARCHAR | `REG`, `WC`, `DIV`, `CON`, `SB`. |
 | `team`, `opponent` | VARCHAR | nflverse-style; `OAK` in 2018–19, `LV` after; `LA` for Rams throughout. |
@@ -190,7 +190,7 @@ All four share these (never null unless noted):
 `advstats_week_rec`: `rushing_broken_tackles`, `passing_drops`, `passing_drop_pct`. 
 Ignore all of these.
 
-## `advstats_week_pass` (4,740 rows) — live columns
+## `advstats_week_pass` — live columns
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -205,7 +205,7 @@ Ignore all of these.
 | `times_pressured` | BIGINT | 0–28. |
 | `times_pressured_pct` | DOUBLE | 0–1 scale; max 1.5 (small-sample artifact). |
 
-## `advstats_week_rush` (16,106 rows) — live columns
+## `advstats_week_rush` — live columns
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -216,7 +216,7 @@ Ignore all of these.
 | `rushing_yards_after_contact_avg` | **VARCHAR** | Same string issue; `TRY_CAST`. |
 | `rushing_broken_tackles` | BIGINT | 0–12. |
 
-## `advstats_week_rec` (31,191 rows) — live columns
+## `advstats_week_rec` — live columns
 
 | Column | Type | Meaning / observed range |
 |---|---|---|
@@ -226,9 +226,9 @@ Ignore all of these.
 | `receiving_int` | BIGINT | INTs on targets to this player. 0–4. |
 | `receiving_rat` | DOUBLE | Passer rating when targeted. 0.0–158.3. |
 
-## `advstats_week_def` (54,419 rows) — live columns
+## `advstats_week_def` — live columns
 
-Coverage-stat columns are **VARCHAR** here. Missing values are the string `'NA'` in 2018–2021 and true NULL in 2022–2024 (verified: e.g. `def_completion_pct` has 2,341–2,849 `'NA'`/season in 2018–21 and 2,475–2,645 NULLs/season in 2022–24, never both). `TRY_CAST(col AS DOUBLE)` handles both. Missing = player had 0 targets (or 0 tackle chances for `def_missed_tackle_pct`).
+Coverage-stat columns are **VARCHAR** here. Missing values are the string `'NA'` in 2018–2021 and true NULL from 2022 on (verified: e.g. `def_completion_pct` has 2,341–2,849 `'NA'`/season in 2018–21 and ~2,500–2,650 NULLs/season from 2022, never both). `TRY_CAST(col AS DOUBLE)` handles both. Missing = player had 0 targets (or 0 tackle chances for `def_missed_tackle_pct`).
 
 | Column | Type | Meaning / observed range (after cast) |
 |---|---|---|
@@ -253,7 +253,7 @@ Coverage-stat columns are **VARCHAR** here. Missing values are the string `'NA'`
 
 ## Gotchas (all verified by query)
 
-1. **No gsis_id** — always bridge via `players.pfr_id` (99.4–99.9% match; see rates above).
+1. **No gsis_id** — always bridge via `players.pfr_id` (99.7%+ match; see rates above).
 2. **Percent-scale trap**: `advstats_season_pass` percentages are 0–100; every other table (incl. all weekly) is 0–1. Mixing them silently 100x's your numbers.
 3. **`LVR`** in `advstats_season_pass` (2020–24 Raiders) exists nowhere else and is missing from `team_aliases`; season pass also keeps `OAK`/`LAR` while season rush/rec/def backdate to `LV`/`LA`. Weekly matches pbp except historical `OAK`.
 4. **`2TM`/`3TM` rows**: season tables collapse traded players into one non-team row; no per-team splits exist.
@@ -305,5 +305,5 @@ SELECT pfr_player_name, def_targets, def_completions_allowed,
        TRY_CAST(def_completion_pct AS DOUBLE) AS cmp_pct
 FROM advstats_week_def
 WHERE season = 2020 AND def_targets >= 8
-ORDER BY cmp_pct ASC LIMIT 4;   -- TRY_CAST handles both 'NA' (2018-21) and NULL (2022-24)
+ORDER BY cmp_pct ASC LIMIT 4;   -- TRY_CAST handles both 'NA' (2018-21) and NULL (2022+)
 ```

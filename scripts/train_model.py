@@ -43,20 +43,12 @@ def causality_check(con, half_life, carryover) -> None:
     not later data exists. Recompute on truncated history and compare."""
     full, _ = compute_ratings(con, half_life, carryover)
     cutoff = 2015
-    con.execute(f"""
-        CREATE OR REPLACE TEMP VIEW _trunc AS
-        SELECT * FROM play_by_play WHERE season < {cutoff}
-    """)
-    # swap table reference by recomputing against a truncated copy
-    con.execute("CREATE OR REPLACE TEMP VIEW _pbp_backup AS SELECT 1")
     truncated_rows = con.execute(
         "SELECT count(*) FROM play_by_play WHERE season < " + str(cutoff)
     ).fetchone()[0]
     assert truncated_rows > 0
-    # cheap approach: recompute full but only compare pre-cutoff games —
-    # compute_ratings is chronological, so post-cutoff data cannot affect
-    # earlier entering ratings unless the implementation is broken. To make
-    # this a real test, recompute from a truncated frame:
+    # recompute from a truncated frame by narrowing the SQL compute_ratings
+    # runs — post-cutoff data must not affect earlier entering ratings
     import nfl_analytics.model.ratings as R
 
     orig_sql = R.GAME_EPA_SQL

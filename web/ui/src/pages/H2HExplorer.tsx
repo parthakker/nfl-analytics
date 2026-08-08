@@ -4,6 +4,7 @@ import { DataTable, Field, PageHeader, Panel, Select, Toolbar } from "../compone
 import type { Column } from "../components/ui";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
+import { useApi } from "../lib/useApi";
 import { useTeamPairTokens } from "../lib/useTeamTokens";
 
 interface Summary {
@@ -51,18 +52,14 @@ export default function H2HExplorer() {
   const [pb, setPb] = useState(b.toUpperCase());
   const [stype, setStype] = useState("");
   const [site, setSite] = useState("");
-  const [d, setD] = useState<Data | null>(null);
 
   useEffect(() => { setPa(a.toUpperCase()); setPb(b.toUpperCase()); }, [a, b]);
-  useEffect(() => {
-    if (!a || !b) { setD(null); return; }
-    const q = new URLSearchParams();
-    if (stype) q.set("season_type", stype);
-    if (site) q.set("site", site);
-    fetch(`/api/matchup/h2h/${a}/${b}?${q}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setD).catch(console.error);
-  }, [a, b, stype, site]);
+
+  const query = new URLSearchParams();
+  if (stype) query.set("season_type", stype);
+  if (site) query.set("site", site);
+  const { data: d, error, loading } =
+    useApi<Data>(a && b ? `/api/matchup/h2h/${a}/${b}?${query}` : null);
 
   const pair = useTeamPairTokens(d?.teams[0] ?? null, d?.teams[1] ?? null);
 
@@ -164,7 +161,7 @@ export default function H2HExplorer() {
                 className="rounded-full border border-accent/50 bg-accent-bg px-4 py-1 text-body font-semibold text-accent disabled:opacity-40">
           Compare
         </button>
-        {d && (
+        {a && b && (
           <>
             <Field label="Type">
               <Select size="sm" ariaLabel="Season type" value={stype}
@@ -263,7 +260,10 @@ export default function H2HExplorer() {
           </Panel>
         </>
       )}
-      {!d && a && b && <p className="text-muted">Loading…</p>}
+      {error && a && b && (
+        <p className="text-body text-muted">Couldn't load this series — {error}</p>
+      )}
+      {loading && !d && a && b && <p className="text-muted">Loading…</p>}
     </div>
   );
 }

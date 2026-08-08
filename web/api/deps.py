@@ -1,6 +1,7 @@
 """Shared helpers for the Jarvis API: package bootstrap, row shaping, colors."""
 
 import sys
+import time
 from pathlib import Path
 
 WEB_DIR = Path(__file__).resolve().parent.parent
@@ -9,6 +10,48 @@ sys.path.insert(0, str(ROOT / "src"))
 
 from nfl_analytics import teams_meta  # noqa: E402,F401
 from nfl_analytics.db import read_conn  # noqa: E402,F401  (re-exported)
+
+# ── current-season helpers ───────────────────────────────────────────────────
+#
+# Endpoints must never hardcode a season (warehouse rule: derive it from the
+# DB — the fixture DB is a different season than live). Two notions exist:
+#   latest_stats_season()     newest season with COMPLETED games (stats pages)
+#   current_schedule_season() the season on the schedule to play/bet (rosters,
+#                             betting board, kickoff countdown)
+# Values change ~yearly (and on weekly refresh), so a coarse TTL cache is
+# plenty and keeps this to ~2 queries per hour per process.
+
+_SEASON_TTL_S = 3600.0
+_season_cache: dict[str, tuple[float, int]] = {}
+
+
+def _cached_season(key: str, sql: str) -> int:
+    hit = _season_cache.get(key)
+    now = time.monotonic()
+    if hit and now - hit[0] < _SEASON_TTL_S:
+        return hit[1]
+    with read_conn() as con:
+        val = con.execute(sql).fetchone()[0]
+    season = int(val)
+    _season_cache[key] = (now, season)
+    return season
+
+
+def latest_stats_season() -> int:
+    """Most recent season with completed-game data (the pbp-derived `games`)."""
+    return _cached_season("stats", "SELECT max(season) FROM games")
+
+
+def current_schedule_season() -> int:
+    """Season with games still to be played; falls back to the newest season
+    on the books (offseason gap between SB and next schedule release)."""
+    return _cached_season(
+        "schedule",
+        """
+        SELECT coalesce(max(season) FILTER (WHERE result IS NULL), max(season))
+        FROM schedules
+        """,
+    )
 
 
 def rows_to_dicts(con, sql: str, params=None) -> list[dict]:

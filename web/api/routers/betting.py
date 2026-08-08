@@ -5,9 +5,13 @@ flagged when the gap survives Kalshi's fee. The prediction model is not
 involved (paused by design).
 """
 
+import logging
+
 from fastapi import APIRouter
 
-from ..deps import read_conn, rows_to_dicts
+from ..deps import current_schedule_season, read_conn, rows_to_dicts
+
+log = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -22,7 +26,9 @@ def _ml_prob(ml) -> float | None:
 
 
 @router.get("/api/betting/board")
-def board(season: int = 2026, week: int | None = None) -> dict:
+def board(season: int | None = None, week: int | None = None) -> dict:
+    if season is None:
+        season = current_schedule_season()
     with read_conn(attach_kalshi=True) as con:
         if week is None:
             row = con.execute(
@@ -62,8 +68,9 @@ def board(season: int = 2026, week: int | None = None) -> dict:
             """,
             ):
                 kalshi[(r["away_team"], r["home_team"], r["yes_team"])] = r
-        except Exception:
-            pass  # kalshi store may be briefly busy — board still serves
+        except Exception as e:
+            # kalshi store may be briefly busy/absent — board still serves
+            log.warning("betting/board s%s w%s: kalshi block failed: %s", season, week, e)
 
         # referee over-rate and coach ATS context
         refs = {
@@ -162,8 +169,10 @@ def board(season: int = 2026, week: int | None = None) -> dict:
 
 
 @router.get("/api/betting/situations")
-def situations(season: int = 2026) -> dict:
+def situations(season: int | None = None) -> dict:
     """Canned situational screens over upcoming games."""
+    if season is None:
+        season = current_schedule_season()
     with read_conn() as con:
         rest = rows_to_dicts(
             con,

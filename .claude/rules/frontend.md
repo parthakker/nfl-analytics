@@ -1,3 +1,7 @@
+---
+paths:
+  - "web/ui/**"
+---
 # Jarvis SPA rules (web/ui)
 
 - **Rebuild after every edit session:** `cd web/ui && npm run build`

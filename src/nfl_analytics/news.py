@@ -200,60 +200,66 @@ def poll(client: httpx.Client | None = None) -> dict:
     """Fetch both feeds, insert new rows, return counts."""
     client = client or httpx.Client(follow_redirects=True, timeout=30)
     now = datetime.now(UTC)
-    team_map = _espn_team_map(client)
     rows = []
 
-    # --- news articles ---
-    for a in client.get(NEWS_URL).json().get("articles", []):
-        espn_ids, teams = [], []
-        for cat in a.get("categories", []):
-            if cat.get("type") == "athlete" and cat.get("athleteId"):
-                espn_ids.append(str(cat["athleteId"]))
-            elif cat.get("type") == "team" and cat.get("teamId"):
-                ab = team_map.get(str(cat["teamId"]))
-                if ab:
-                    teams.append(ab)
-        rows.append(
-            {
-                "source": "espn_news",
-                "article_id": str(a["id"]),
-                "published_ts": _ts(a.get("published")),
-                "fetched_ts": now,
-                "headline": a.get("headline", ""),
-                "body": a.get("description", ""),
-                "url": (a.get("links", {}).get("web", {}) or {}).get("href", ""),
-                "espn_ids": espn_ids,
-                "teams": teams,
-            }
-        )
+    # --- ESPN news + injury report (isolated: an ESPN outage or shape change
+    # must not abort the independent RSS sections below) ---
+    try:
+        team_map = _espn_team_map(client)
 
-    # --- injury report ---
-    for team in client.get(INJURIES_URL).json().get("injuries", []):
-        for inj in team.get("injuries", []):
-            ath = inj.get("athlete", {})
-            eid = _athlete_espn_id(ath)
-            status = inj.get("status", "")
-            date = (inj.get("date") or "")[:10]
+        for a in client.get(NEWS_URL).json().get("articles", []):
+            espn_ids, teams = [], []
+            for cat in a.get("categories", []):
+                if cat.get("type") == "athlete" and cat.get("athleteId"):
+                    espn_ids.append(str(cat["athleteId"]))
+                elif cat.get("type") == "team" and cat.get("teamId"):
+                    ab = team_map.get(str(cat["teamId"]))
+                    if ab:
+                        teams.append(ab)
             rows.append(
                 {
-                    "source": "espn_injuries",
-                    "article_id": f"{eid}-{date}-{status}",
-                    "published_ts": _ts(inj.get("date")),
+                    "source": "espn_news",
+                    "article_id": str(a["id"]),
+                    "published_ts": _ts(a.get("published")),
                     "fetched_ts": now,
-                    "headline": f"{ath.get('displayName', '?')} ({team.get('displayName', '')}): {status}",
-                    "body": inj.get("longComment") or inj.get("shortComment") or "",
-                    "url": next(
-                        (
-                            lnk["href"]
-                            for lnk in ath.get("links", [])
-                            if "playercard" in lnk.get("rel", [])
-                        ),
-                        "",
-                    ),
-                    "espn_ids": [eid] if eid else [],
-                    "teams": [],
+                    "headline": a.get("headline", ""),
+                    "body": a.get("description", ""),
+                    "url": (a.get("links", {}).get("web", {}) or {}).get("href", ""),
+                    "espn_ids": espn_ids,
+                    "teams": teams,
                 }
             )
+
+        for team in client.get(INJURIES_URL).json().get("injuries", []):
+            for inj in team.get("injuries", []):
+                ath = inj.get("athlete", {})
+                eid = _athlete_espn_id(ath)
+                status = inj.get("status", "")
+                date = (inj.get("date") or "")[:10]
+                rows.append(
+                    {
+                        "source": "espn_injuries",
+                        "article_id": f"{eid}-{date}-{status}",
+                        "published_ts": _ts(inj.get("date")),
+                        "fetched_ts": now,
+                        "headline": f"{ath.get('displayName', '?')} ({team.get('displayName', '')}): {status}",
+                        "body": inj.get("longComment") or inj.get("shortComment") or "",
+                        "url": next(
+                            (
+                                lnk["href"]
+                                for lnk in ath.get("links", [])
+                                if "playercard" in lnk.get("rel", [])
+                            ),
+                            "",
+                        ),
+                        "espn_ids": [eid] if eid else [],
+                        "teams": [],
+                    }
+                )
+    except Exception as e:
+        # broad on purpose: a shape change raises KeyError/TypeError, not
+        # just httpx errors, and either way RSS should still run
+        log.warning("espn section failed, continuing with RSS: %s", e)
 
     # --- league-wide RSS feeds (PFT, Yahoo, ...) ---
     for src_name, feed_url in EXTRA_FEEDS.items():

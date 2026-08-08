@@ -20,7 +20,7 @@ export interface TeamMeta {
 export interface Meta {
   teams: Record<string, TeamMeta>;
   divisions: Record<string, string[]>;
-  kickoff_2026: string | null;
+  kickoff: string | null;
 }
 
 export interface DivisionStanding {
@@ -98,16 +98,19 @@ export interface MarketRow {
   delta_24h: number | null; as_of: string; spark: (number | null)[];
 }
 
-async function get<T>(path: string, retried = false): Promise<T> {
-  const r = await fetch(path);
+async function get<T>(path: string, signal?: AbortSignal, retried = false): Promise<T> {
+  const r = await fetch(path, { signal });
   if (r.status === 503 && !retried) {
     // a scheduled data collector briefly holds the store — wait it out once
     await new Promise((res) => setTimeout(res, 3000));
-    return get<T>(path, true);
+    return get<T>(path, signal, true);
   }
   if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
   return r.json() as Promise<T>;
 }
+
+/** The one JSON getter — 503-retry included. Pages consume it via useApi. */
+export { get as apiGet };
 
 export const api = {
   meta: () => get<Meta>("/api/meta"),

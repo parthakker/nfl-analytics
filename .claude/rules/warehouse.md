@@ -5,11 +5,12 @@ paths:
 ---
 # Warehouse & pipeline rules
 
-- **Build order matters:** `build_warehouse.py` (deletes + reloads nfl.duckdb
-  from data/ CSVs) then `build_views.py` (venue/weather tables, macros, views).
-  `refresh_data.py` orchestrates: download → fetch_weather → both builds →
-  line snapshot. `TEAM_ALIASES` in build_views OVERWRITES the table
-  build_warehouse creates — keep them in sync.
+- **Build order matters:** `build_warehouse.py` (rebuilds nfl.duckdb into a
+  `.building` temp, carries over model_* tables, then atomically swaps) then
+  `build_views.py` (venue/weather tables, macros, views). `refresh_data.py`
+  orchestrates: download → fetch_weather → both builds → line snapshot.
+  `TEAM_ALIASES` is defined ONLY in build_views (the `team_aliases` table
+  is created there, nowhere else).
 - Validation lives in three places: row floors + coverage in build_warehouse,
   travel-sanity + per-view counts in build_views, invariants in
   tests/warehouse/. When you add a view: add it to the VIEWS dict WITH a grain

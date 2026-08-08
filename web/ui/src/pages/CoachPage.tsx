@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { LineChart, Radar } from "../components/charts";
 import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
 import type { Column } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
+import { useApi } from "../lib/useApi";
 import { useTeamTokens } from "../lib/useTeamTokens";
 
 interface Scheme {
@@ -86,16 +87,9 @@ export default function CoachPage() {
   const { name = "" } = useParams();
   const [params] = useSearchParams();
   const meta = useMeta();
-  const [d, setD] = useState<Detail | null>(null);
-  const [err, setErr] = useState("");
-
-  useEffect(() => {
-    setD(null); setErr("");
-    const role = params.get("role");
-    fetch(`/api/coaches/${encodeURIComponent(name)}${role ? `?role=${role}` : ""}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(setD).catch((e) => setErr(String(e)));
-  }, [name, params]);
+  const role = params.get("role");
+  const { data: d, error: err } = useApi<Detail>(
+    `/api/coaches/${encodeURIComponent(name)}${role ? `?role=${role}` : ""}`);
 
   // hooks must run before any early return
   const { style: teamStyle } = useTeamTokens(d?.current_team ?? null);
