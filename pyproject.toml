@@ -13,12 +13,12 @@ dependencies = [
     "mcp[cli]>=1.2",
     "fastapi>=0.115",
     "uvicorn[standard]>=0.30",
-    "sse-starlette>=2.1",
+    "sse-starlette>=3.4.8",
 ]
 
 [project.optional-dependencies]
-legacy = ["streamlit>=1.38", "altair>=5"]
-dev = ["pytest>=8", "pytest-xdist>=3", "ruff>=0.8"]
+legacy = ["streamlit>=1.61.1", "altair>=5"]
+dev = ["pytest>=8", "pytest-xdist>=3", "ruff>=0.16.2"]
 
 [project.scripts]
 nfl-mcp = "nfl_analytics.mcp_server:main"
