@@ -1,6 +1,6 @@
 # Model Report (v2)
 
-Fitted 2026-08-09 01:34. Shipped configuration: **ewma ratings + QB flag** —
+Fitted 2026-08-23 22:36. Shipped configuration: **ewma ratings + QB flag** —
 opponent-adjusted EPA ratings via EWMA (half-life **8** games, season carryover **0.6**) -> logistic win prob + ridge margin + causal QB-availability flag (expected starter Out/Doubtful/reserve).
 Walk-forward by season; hyperparams tuned on 2012-2018 only; **2019-2024 is
 the untouched holdout**; 2025 reported as bonus. Causality asserts cover every
@@ -9,11 +9,12 @@ history and diffed.
 
 ## Configuration comparison (one holdout evaluation each)
 
-| config                     |   tune_logloss |   holdout_brier |   holdout_margin_mae |   vs_market_gap | ship   |
-|:---------------------------|---------------:|----------------:|---------------------:|----------------:|:-------|
-| EWMA baseline (h=8, c=0.6) |         0.6302 |          0.2239 |              10.2552 |          0.0134 | no     |
-| Ridge (h=9, a=3, c=0.5)    |         0.6303 |          0.2237 |              10.2441 |          0.0133 | no     |
-| ewma + QB flag             |         0.6304 |          0.2226 |              10.2401 |          0.0121 | SHIP   |
+| config                                  |   tune_logloss |   holdout_brier |   holdout_margin_mae |   vs_market_gap | ship   |
+|:----------------------------------------|---------------:|----------------:|---------------------:|----------------:|:-------|
+| EWMA baseline (h=8, c=0.6)              |         0.6302 |          0.2239 |              10.2552 |          0.0134 | no     |
+| Ridge (h=9, a=3, c=0.5)                 |         0.6303 |          0.2237 |              10.2441 |          0.0133 | no     |
+| ewma + QB flag                          |         0.6304 |          0.2226 |              10.2401 |          0.0121 | SHIP   |
+| ewma ratings + QB flag + drift controls |         0.6292 |          0.2223 |              10.2189 |          0.0118 | no     |
 
 Gates: step 1 ships ridge only if holdout Brier <= 0.2224 AND margin MAE
 is not worse than the EWMA baseline (failed). Step 2 ships the
@@ -47,6 +48,49 @@ the flag vs 0.2219 without.
 | 7.000 | 248.000 |       0.743 |    0.738 | -0.005 |
 | 8.000 | 109.000 |       0.837 |    0.853 |  0.016 |
 | 9.000 |   6.000 |       0.921 |    1.000 |  0.079 |
+
+Sample-weighted |gap| across the crowded middle of the range (0.35-0.70):
+**0.0513**. Mean predicted home win probability
+0.5718 against an actual home win rate of
+0.5371.
+
+## Drift controls (step 3): diagnosed, NOT shipped
+
+The win model is refit on every season back to 1999 before each target
+season, so its intercept carries a home-field advantage the league has partly
+lost: home teams won ~57% of games through 2018, then 50-52% across 2019-2021
+before recovering. That lag is the home-lean visible in the table above.
+
+Two controls were tried against it — exponential recency weights on the
+training rows, and a Platt layer fit on the previous N seasons of
+walk-forward predictions (those predictions are already out-of-sample, so the
+layer adds no leakage). Tuned on 2012-2018, best setting
+recency_half_life=6.0, calibration_window=6:
+
+| config                        |   holdout_brier |   calibration_gap |   mean_predicted |   2025_brier |
+|:------------------------------|----------------:|------------------:|-----------------:|-------------:|
+| ewma ratings + QB flag        |          0.2226 |            0.0513 |           0.5718 |       0.2295 |
+| + recency=6.0, platt_window=6 |          0.2223 |            0.0150 |           0.5469 |       0.2301 |
+
+The controls do what they were built to do — the mid-range calibration gap
+falls from 0.0513 to 0.0150, and mean predicted home probability moves from
+0.5718 to 0.5469 against 0.5371 actual — but they did NOT clear the step-3
+Brier gate of 0.0010. A monotone recalibration cannot change which side the
+model picks, so the ATS records are identical and Brier, dominated by
+discrimination, barely moves.
+
+Two caveats worth keeping in view. The tune window (2012-2018) is a stable-
+home-field regime, so it cannot see the benefit of adapting — the whole grid
+lands within 0.001 log loss there, which makes the tuned setting close to
+arbitrary. And on 2025, the cleanest untouched season, the calibration gap
+went 0.0546 -> 0.0889 and Brier 0.2295 -> 0.2301: the correction helps where
+it was fitted and hurts where it was not, which is what lagging a regime
+change looks like.
+
+The code stays reachable via `recency_half_life` / `calibration_window` on
+`backtest.walk_forward`. Shipping it would also need the Platt coefficients
+persisted to `model_params` and applied in `predict.py`; train_model.py
+refuses to ship without that plumbing.
 
 ## ATS vs closing spread (holdout, by disagreement threshold)
 

@@ -42,6 +42,13 @@ from nfl_analytics.model.ratings import compute_ratings  # noqa: E402
 DB = ROOT / "nfl.duckdb"
 REPORT = ROOT / "docs" / "model_report.md"
 
+def _wrap(text: str, width: int = 78) -> str:
+    """The report is read as a diff, so generated prose is hard-wrapped."""
+    import textwrap
+
+    return textwrap.fill(text, width=width)
+
+
 TUNE_SEASONS = (2012, 2018)
 HOLDOUT_SEASONS = (2019, 2024)
 EWMA_GRID = [(h, c) for h in (6.0, 8.0, 10.0, 12.0) for c in (0.4, 0.5, 0.6)]
@@ -50,6 +57,10 @@ RIDGE_GRID = [
 ]
 GATE1_BRIER = 0.2224  # step-1 absolute holdout gate
 GATE2_IMPROVE = 0.0010  # step-2 required Brier improvement
+GATE3_IMPROVE = 0.0010  # step-3 required Brier improvement (same bar as step 2)
+# Step-3 candidates: exponential recency weights on the training rows, and a
+# Platt layer fit on the previous N seasons of walk-forward predictions.
+CAL_GRID = [(hl, w) for hl in (None, 8.0, 6.0, 4.0) for w in (None, 3, 4, 6)]
 CUTOFF = 2015  # causality-check truncation season
 QB_COLS = BASE_FEATURE_COLS + ["d_qb_out"]
 
@@ -214,7 +225,52 @@ def main() -> int:
         ship_cols, pred_final, s_final = QB_COLS, pred_qb, s_qb
     else:
         ship_cols, pred_final, s_final = list(BASE_FEATURE_COLS), pred_ship, s_ship
+
+    # ---- step 3: drift controls (recency weighting + Platt recalibration) ----
+    # The intercept is fitted on every season back to 1999, so it carries a
+    # home-field advantage the league no longer has: on the holdout the model
+    # predicts ~57% home when ~54% wins. Tune the two controls on the tune
+    # window, then spend ONE holdout evaluation on the winner.
+    print("Tuning drift controls on walk-forward 2012-2018 log loss:")
+    cal_results = []
+    for hl, win in CAL_GRID:
+        pc = bt.walk_forward(
+            df_ship, *TUNE_SEASONS, feature_cols=ship_cols,
+            recency_half_life=hl, calibration_window=win,
+        )
+        ll = bt.log_loss_(pc["home_win"].astype(float), pc["p_home_win"])
+        cal_results.append({"half_life": hl, "window": win, "logloss": ll})
+        print(f"  recency={str(hl):>5} platt_window={str(win):>4}  logloss={ll:.5f}")
+    best_c = min(cal_results, key=lambda r: r["logloss"])
+    chl, cwin = best_c["half_life"], best_c["window"]
+    print(f"Best drift controls: recency_half_life={chl}, calibration_window={cwin}")
+
+    pred_cal = bt.walk_forward(
+        df_ship, TUNE_SEASONS[0], 2025, feature_cols=ship_cols,
+        recency_half_life=chl, calibration_window=cwin,
+    )
+    s_cal = bt.summarize(pred_cal, *HOLDOUT_SEASONS)
+    gate3 = (s_final["brier_model"] - s_cal["brier_model"]) >= GATE3_IMPROVE
+    print(
+        f"Step 3 gate (holdout Brier -{GATE3_IMPROVE:.4f}): calibrated "
+        f"{s_cal['brier_model']:.4f} vs {s_final['brier_model']:.4f} -> "
+        f"{'SHIP drift controls' if gate3 else 'no-ship'}; calibration gap "
+        f"{s_cal['calibration_gap']:.4f} vs {s_final['calibration_gap']:.4f}, "
+        f"mean predicted {s_cal['mean_predicted']:.4f} vs "
+        f"{s_final['mean_predicted']:.4f} (actual {s_final['actual_rate']:.4f})"
+    )
+    if gate3:
+        # The serve path (model_params + predict.py) has no Platt coefficients,
+        # so shipping the walk-forward numbers here would report a calibrated
+        # model while serving an uncalibrated one. Fail loudly instead of
+        # silently diverging.
+        raise SystemExit(
+            "step 3 passed its gate but serve-time plumbing is missing: persist "
+            "the Platt (a, b) to model_params and apply them in predict.py, then "
+            "re-run. See the drift-control section of docs/model_report.md."
+        )
     s25 = bt.summarize(pred_final, 2025, 2025)
+    s25_cal = bt.summarize(pred_cal, 2025, 2025)
 
     # ---- production fit of the gated-in configuration only ----
     done = df_ship.dropna(subset=["home_win"])
@@ -296,9 +352,61 @@ def main() -> int:
                 "vs_market_gap": s_qb["brier_model_on_market_games"] - s_qb["brier_market"],
                 "ship": "SHIP" if gate2 else "no",
             },
+            {
+                "config": f"{ship_desc} + drift controls",
+                "tune_logloss": tune_ll(pred_cal),
+                "holdout_brier": s_cal["brier_model"],
+                "holdout_margin_mae": s_cal["margin_mae_model"],
+                "vs_market_gap": s_cal["brier_model_on_market_games"] - s_cal["brier_market"],
+                "ship": "SHIP" if gate3 else "no",
+            },
         ]
     )
     cal = s["calibration"].to_markdown(index=False, floatfmt=".3f")
+    s_final_gap, s_final_mean = s_final["calibration_gap"], s_final["mean_predicted"]
+    cal_cmp = pd.DataFrame(
+        [
+            {
+                "config": ship_desc,
+                "holdout_brier": s_final["brier_model"],
+                "calibration_gap": s_final_gap,
+                "mean_predicted": s_final_mean,
+                "2025_brier": s25["brier_model"],
+            },
+            {
+                "config": f"+ recency={chl}, platt_window={cwin}",
+                "holdout_brier": s_cal["brier_model"],
+                "calibration_gap": s_cal["calibration_gap"],
+                "mean_predicted": s_cal["mean_predicted"],
+                "2025_brier": s25_cal["brier_model"],
+            },
+        ]
+    ).to_markdown(index=False, floatfmt=".4f")
+    drift_effect = _wrap(
+        "The controls do what they were built to do — the mid-range calibration "
+        f"gap falls from {s_final_gap:.4f} to {s_cal['calibration_gap']:.4f}, and "
+        f"mean predicted home probability moves from {s_final_mean:.4f} to "
+        f"{s_cal['mean_predicted']:.4f} against {s['actual_rate']:.4f} actual — but "
+        f"they {'cleared' if gate3 else 'did NOT clear'} the step-3 Brier gate of "
+        f"{GATE3_IMPROVE:.4f}. A monotone recalibration cannot change which side "
+        "the model picks, so the ATS records are identical and Brier, dominated by "
+        "discrimination, barely moves."
+    )
+    drift_caveats = _wrap(
+        "Two caveats worth keeping in view. The tune window "
+        f"({TUNE_SEASONS[0]}-{TUNE_SEASONS[1]}) is a stable-home-field regime, so "
+        "it cannot see the benefit of adapting — the whole grid lands within 0.001 "
+        "log loss there, which makes the tuned setting close to arbitrary. And on "
+        "2025, the cleanest untouched season, the calibration gap went "
+        f"{s25['calibration_gap']:.4f} -> {s25_cal['calibration_gap']:.4f} and Brier "
+        f"{s25['brier_model']:.4f} -> {s25_cal['brier_model']:.4f}"
+        + (
+            ": the correction helps where it was fitted and hurts where it was not, "
+            "which is what lagging a regime change looks like."
+            if s25_cal["calibration_gap"] > s25["calibration_gap"]
+            else ", holding up on the one season it was never tuned against."
+        )
+    )
     ats = s["ats"].to_markdown(index=False)
     ats4 = s["ats_late_season"].to_markdown(index=False)
     verdict = (
@@ -359,6 +467,35 @@ the flag vs {qb_sub_without:.4f} without.
 ## Calibration (holdout)
 
 {cal}
+
+Sample-weighted |gap| across the crowded middle of the range (0.35-0.70):
+**{s["calibration_gap"]:.4f}**. Mean predicted home win probability
+{s["mean_predicted"]:.4f} against an actual home win rate of
+{s["actual_rate"]:.4f}.
+
+## Drift controls (step 3): diagnosed, {"SHIPPED" if gate3 else "NOT shipped"}
+
+The win model is refit on every season back to 1999 before each target
+season, so its intercept carries a home-field advantage the league has partly
+lost: home teams won ~57% of games through 2018, then 50-52% across 2019-2021
+before recovering. That lag is the home-lean visible in the table above.
+
+Two controls were tried against it — exponential recency weights on the
+training rows, and a Platt layer fit on the previous N seasons of
+walk-forward predictions (those predictions are already out-of-sample, so the
+layer adds no leakage). Tuned on 2012-2018, best setting
+recency_half_life={chl}, calibration_window={cwin}:
+
+{cal_cmp}
+
+{drift_effect}
+
+{drift_caveats}
+
+The code stays reachable via `recency_half_life` / `calibration_window` on
+`backtest.walk_forward`. Shipping it would also need the Platt coefficients
+persisted to `model_params` and applied in `predict.py`; train_model.py
+refuses to ship without that plumbing.
 
 ## ATS vs closing spread (holdout, by disagreement threshold)
 
