@@ -72,6 +72,29 @@ def test_rule_backtest_detail(client):
     assert {"game_id", "side", "outcome"} <= set(js["hits"][0])
 
 
+def test_backtested_rules_report_significance(rules_payload):
+    """A backtest without its sample size invites reading noise as an edge."""
+    graded = [
+        r for r in rules_payload["rules"]
+        if not r["backtest_summary"].get("insufficient_history")
+    ]
+    assert graded
+    for r in graded:
+        bt = r["backtest_summary"]
+        assert bt["signal"] in ("noise", "weak", "strong", "unknown")
+        assert bt["decided"] == bt["wins"] + bt["losses"]
+        if r["market"] != "moneyline":
+            assert isinstance(bt["z_score"], float)
+
+
+def test_disabled_rules_stay_in_the_catalog(rules_payload):
+    """Rules a backtest killed are kept, disabled, so they aren't re-seeded."""
+    by_id = {r["id"]: r for r in rules_payload["rules"]}
+    dead = by_id["short-week-road-fav-fade"]
+    assert dead["enabled"] is False
+    assert not dead["week_hits"]
+
+
 def test_unknown_rule_404(client):
     assert client.get("/api/rules/not-a-rule/backtest").status_code == 404
 

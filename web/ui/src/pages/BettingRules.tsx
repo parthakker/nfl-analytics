@@ -25,6 +25,7 @@ interface BacktestSummary {
   bets?: number; wins?: number; losses?: number; pushes?: number;
   win_pct?: number | null; profit_units?: number; roi?: number | null;
   breakeven?: number; profitable?: boolean; market?: string;
+  decided?: number; z_score?: number | null; signal?: "noise" | "weak" | "strong" | "unknown";
   coverage_start?: number; coverage_end?: number;
 }
 
@@ -258,10 +259,20 @@ function BacktestLine({ bt }: { bt: BacktestSummary }) {
     );
   }
   const breakeven = bt.breakeven ?? 0.524;
+  // A win rate inside the noise band gets no colour: green on a 118-bet
+  // sample reads as an edge the sample cannot support.
+  const graded = bt.signal === "weak" || bt.signal === "strong";
   const winCls =
-    bt.win_pct == null ? "text-muted"
+    bt.win_pct == null || !graded ? "text-muted"
       : bt.win_pct > breakeven ? "text-positive"
       : bt.win_pct < breakeven ? "text-negative" : "text-muted";
+  const signalCls =
+    bt.signal === "strong" ? "text-positive"
+      : bt.signal === "weak" ? "text-warning" : "text-muted";
+  const signalHint =
+    bt.signal === "strong" ? "clears the multiple-comparison bar (|z| ≥ 2.6) across the catalog"
+      : bt.signal === "weak" ? "above noise (|z| ≥ 1.6) but not past the multiple-comparison bar of 2.6"
+      : "within one-and-a-half standard errors of breakeven — indistinguishable from chance";
   return (
     <p data-testid="rule-backtest" className="mt-3 border-t border-border pt-2 text-micro text-muted">
       Backtest{" "}
@@ -275,6 +286,19 @@ function BacktestLine({ bt }: { bt: BacktestSummary }) {
       <span className="tabular-nums">{fmtUnits(bt.profit_units)} flat (ROI {pct(bt.roi)})</span>
       {" · "}
       <span className="tabular-nums">{bt.coverage_start}–{bt.coverage_end}, {bt.bets} bets</span>
+      {bt.signal && bt.signal !== "unknown" && (
+        <>
+          {" · "}
+          <span data-testid="rule-signal" className={`font-semibold ${signalCls}`} title={signalHint}>
+            {bt.signal}
+            {bt.z_score != null && (
+              <span className="tabular-nums font-normal">
+                {" "}(z {bt.z_score > 0 ? "+" : "−"}{Math.abs(bt.z_score).toFixed(2)}, n={bt.decided})
+              </span>
+            )}
+          </span>
+        </>
+      )}
     </p>
   );
 }

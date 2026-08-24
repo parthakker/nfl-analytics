@@ -32,3 +32,11 @@ test("live-only rules show the tracking-since state", async ({ page }) => {
   await expect(nb).toBeVisible();
   await expect(nb).toContainText(/live-only signal, tracking since/);
 });
+
+test("a graded rule labels its signal strength and sample size", async ({ page }) => {
+  await openRules(page);
+  const sig = page.getByTestId("rule-signal").first();
+  await expect(sig).toBeVisible();
+  await expect(sig).toContainText(/noise|weak|strong/);
+  await expect(sig).toContainText(/z [+−]\d+\.\d{2}, n=\d+/);
+});

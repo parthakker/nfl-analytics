@@ -31,14 +31,14 @@
       "id": "short-week-road-fav-fade",
       "family": "situational",
       "label": "Road favorite on a short week: fade (home spread)",
-      "enabled": true,
+      "enabled": false,
       "bet": {"market": "spread", "side": "home"},
       "when": [
         {"field": "favorite", "op": "==", "value": "away"},
         {"field": "away_rest_days", "op": "<=", "value": 5}
       ],
       "scope": {"season_type": "REG"},
-      "notes": "Laying points on the road with <=5 days rest is the worst spot on the schedule grid."
+      "notes": "DISABLED 2026-08-23: the premise is backwards. Fading the road favorite on <=5 days rest went 50-64-4 (43.9%) 1999-2025, -15.7% ROI. Backing the road favorite instead returns +7.2%, but on 118 bets that is z=+0.80 against the 52.4% breakeven - inside noise, so it was not flipped. Kept as a record so the idea is not re-seeded."
     },
     {
       "id": "spread-steam-home",

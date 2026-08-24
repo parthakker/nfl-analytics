@@ -298,3 +298,28 @@ def test_backtest_per_season_rows():
     assert bt["seasons"][1]["bets"] == 2
     assert len(bt["hits"]) == 3
     assert {h["outcome"] for h in bt["hits"]} == {"win", "loss"}
+
+
+def test_significance_grades_by_sample_size():
+    # the same win rate is noise on a small sample and signal on a large one
+    assert R._significance(0.60, 25)[1] == "noise"
+    assert R._significance(0.60, 200)[1] == "weak"
+    assert R._significance(0.60, 700)[1] == "strong"
+    assert R._significance(None, 0) == (None, "unknown")
+    assert R._significance(R.BREAKEVEN, 500)[0] == 0.0
+
+
+def test_backtest_summary_carries_significance():
+    r = rule(when=WHEN_ALL, market="spread", side="home")
+    hist = facts(*[{"game_id": str(i), "season": 2024, "result": 10} for i in range(30)])
+    s = R.backtest(r, hist)["summary"]
+    assert s["decided"] == 30
+    assert s["z_score"] > 0 and s["signal"] == "strong"
+
+
+def test_moneyline_backtest_reports_no_z():
+    # variable prices mean a fixed-breakeven z would be a lie
+    r = rule(when=WHEN_ALL, market="moneyline", side="home")
+    hist = facts({"result": 10, "home_moneyline": -150})
+    s = R.backtest(r, hist)["summary"]
+    assert s["z_score"] is None and s["signal"] == "unknown"

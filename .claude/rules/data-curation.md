@@ -31,6 +31,12 @@ Rules on kalshi/line-movement fields are live-only: no backtest until
 snapshot history accrues (tracking since 2026-08). After editing: `pytest
 tests/unit/test_rules.py -q` (validates the file loads clean).
 
+Judge a backtest by its `signal`, not its ROI: the summary scores win rate in
+standard errors above breakeven and grades it noise / weak / strong, with the
+strong bar at z=2.6 so it survives having looked at the whole catalog. A rule
+the history kills stays in the file with `enabled: false` and a note saying
+what it went — deleting it just invites re-seeding the same idea.
+
 After editing stadiums/coaches_meta: run `nfl views` (rebuilds
 stadiums/game_venues + travel sanity checks) then `pytest
 tests/warehouse/test_venues.py tests/warehouse/test_travel.py -q`. An

@@ -121,6 +121,29 @@ _LIVE_ONLY_SIDES = frozenset({"cheap_side"})
 
 TRACKING_SINCE = "2026-08"  # line_snapshots / kalshi history starts 2026-08-03
 BREAKEVEN = 0.524  # -110 both ways
+
+# A rule's ROI means nothing without its sample size: +7% on 100 bets is a
+# coin that landed well, +7% on 700 is an edge. Score every backtest by how
+# many standard errors its win rate sits above breakeven, and grade it
+# conservatively — with ~6 backtestable rules in the catalog, a Bonferroni
+# correction puts the "this survives having looked at several rules" bar
+# near z=2.6, not the usual 1.96.
+Z_WEAK = 1.64  # below this the result is indistinguishable from noise
+Z_STRONG = 2.58  # multiple-comparison-safe across a catalog of this size
+
+
+def _significance(win_pct: float | None, decided: int) -> tuple[float | None, str]:
+    """Standard errors above breakeven, plus a plain-language grade."""
+    if win_pct is None or decided < 1:
+        return None, "unknown"
+    z = (win_pct - BREAKEVEN) / ((0.25 / decided) ** 0.5)
+    if abs(z) < Z_WEAK:
+        grade = "noise"
+    elif abs(z) < Z_STRONG:
+        grade = "weak"
+    else:
+        grade = "strong"
+    return round(z, 2), grade
 _VIG_PROFIT = 100.0 / 110.0
 
 FEE = 0.07  # kalshi fee factor: fee = 0.07 * P * (1-P)  (betting.py)
@@ -488,6 +511,15 @@ def backtest(rule: Rule, facts_hist: pd.DataFrame, include_hits: bool = False) -
             "coverage_end": int(gdf["season"].max()),
         }
     )
+    # moneyline pays variable prices, so a fixed-breakeven z would lie
+    z, grade = (
+        _significance(summary["win_pct"], summary["wins"] + summary["losses"])
+        if rule.market != "moneyline"
+        else (None, "unknown")
+    )
+    summary["decided"] = summary["wins"] + summary["losses"]
+    summary["z_score"] = z
+    summary["signal"] = grade
     out = {
         "summary": summary,
         "seasons": [
