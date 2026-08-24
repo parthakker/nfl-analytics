@@ -1,0 +1,492 @@
+{
+  "version": 1,
+  "_comment": "Chat analyst eval suite. 28 questions, 7 per moment. auto checks are cheap heuristics; evals/rubric.md is the human pass. expected_fail_until marks questions that document a known gap and should flip to passing when that phase lands.",
+  "questions": [
+    {
+      "id": "pre-01",
+      "moment": "pregame",
+      "question": "Break down the Chiefs' next game: recent form, rest and travel situation, weather outlook, referee if known, and the betting angle.",
+      "auto": {
+        "must_mention_any": [
+          "EPA",
+          "rest",
+          "travel"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "team_form",
+          "query_warehouse",
+          "betting_board"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "The flagship pregame question. Should compose multiple tools without being re-prompted."
+    },
+    {
+      "id": "pre-02",
+      "moment": "pregame",
+      "question": "Which week 1 games have the biggest rest or travel mismatches in 2026?",
+      "auto": {
+        "must_mention_any": [
+          "rest",
+          "travel",
+          "miles"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "v_team_games rest_days_sched + travel_miles; wants a ranked table, not prose."
+    },
+    {
+      "id": "pre-03",
+      "moment": "pregame",
+      "question": "How have the Eagles fared against the spread as home favorites since 2020?",
+      "auto": {
+        "must_mention_any": [
+          "ATS",
+          "cover",
+          "spread"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "spread_line sign convention (positive = home favored) is the trap; answer must state the record and the filter."
+    },
+    {
+      "id": "pre-04",
+      "moment": "pregame",
+      "question": "What does the model say about Bills vs Ravens, and how does that compare to the market?",
+      "auto": {
+        "must_mention_any": [
+          "win prob",
+          "probability",
+          "margin",
+          "Brier"
+        ],
+        "expect_tools_any": [
+          "predict_game"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "Must include the model's honesty caveat (loses to market), not present it as an oracle."
+    },
+    {
+      "id": "pre-05",
+      "moment": "pregame",
+      "question": "Which referees should over bettors want assigned this season, and why?",
+      "auto": {
+        "must_mention_any": [
+          "over",
+          "penalt"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "referee_stats",
+          "query_warehouse"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "ref_key aggregation; should mention sample size / games minimums."
+    },
+    {
+      "id": "pre-06",
+      "moment": "pregame",
+      "question": "Which of my betting rules fire for the upcoming week, and what's the historical record of each rule that fired?",
+      "auto": {
+        "expect_tools_any": [
+          "betting_rules"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "betting_rules tool (shipped 2026-08-09); composite rules+history answer earns the 150s cap"
+    },
+    {
+      "id": "pre-07",
+      "moment": "pregame",
+      "question": "Is there any Kalshi vs Vegas dislocation worth acting on right now after fees?",
+      "auto": {
+        "must_mention_any": [
+          "fee",
+          "dislocation",
+          "Kalshi"
+        ],
+        "expect_tools_any": [
+          "betting_board",
+          "kalshi_markets"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "Should respect the fee-adjusted 'actionable' concept, not raw gaps."
+    },
+    {
+      "id": "day-01",
+      "moment": "gameday",
+      "question": "What games are on today and which ones are closest on the spread?",
+      "auto": {
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse",
+          "betting_board"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "Offseason answer should gracefully pivot to the next scheduled slate instead of claiming games today."
+    },
+    {
+      "id": "day-02",
+      "moment": "gameday",
+      "question": "Who is officiating the Cowboys game this week and what should I expect from that crew?",
+      "auto": {
+        "must_mention_any": [
+          "penalt",
+          "crew",
+          "referee"
+        ],
+        "expect_tools_any": [
+          "referee_stats",
+          "query_warehouse"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "schedules.referee for upcoming games; if unassigned yet, should say so rather than invent."
+    },
+    {
+      "id": "day-03",
+      "moment": "gameday",
+      "question": "What's the current Kalshi price on the Chiefs winning the Super Bowl, and how has it moved lately?",
+      "auto": {
+        "must_mention_any": [
+          "Kalshi",
+          "price",
+          "prob"
+        ],
+        "expect_tools_any": [
+          "kalshi_markets",
+          "kalshi_price_history",
+          "kalshi_market_detail"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "Live market read + trend, with the snapshot timestamp cited."
+    },
+    {
+      "id": "day-04",
+      "moment": "gameday",
+      "question": "The wind is gusting 25 mph at the stadium today \u2014 historically what does that do to totals?",
+      "auto": {
+        "must_mention_any": [
+          "wind",
+          "total",
+          "under",
+          "over"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "v_game_weather join to results; dome exclusion matters."
+    },
+    {
+      "id": "day-05",
+      "moment": "gameday",
+      "question": "Any breaking news on the Bengals in the last day or two?",
+      "auto": {
+        "expect_tools_any": [
+          "news_search",
+          "league_news"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "Should cite recency of what it found (news store timestamps), not pretend to be live."
+    },
+    {
+      "id": "day-06",
+      "moment": "gameday",
+      "question": "Quick: 49ers last five games, straight up and against the spread.",
+      "auto": {
+        "must_mention_any": [
+          "ATS",
+          "cover",
+          "spread"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "team_form",
+          "query_warehouse"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "Speed question \u2014 a tight table beats an essay. Judge brevity in the rubric."
+    },
+    {
+      "id": "day-07",
+      "moment": "gameday",
+      "question": "Explain what a Cover 2 shell is and how offenses attack it \u2014 I keep hearing announcers say it.",
+      "auto": {
+        "must_mention_any": [
+          "safet",
+          "zone",
+          "middle"
+        ],
+        "expect_tools_any": [
+          "knowledge_lookup"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "Knowledge chapter exists (defensive-fronts-coverages) but chat can't read it yet."
+    },
+    {
+      "id": "post-01",
+      "moment": "postgame",
+      "question": "Why did the Chiefs' offense struggle in their worst game last season? Break it down by EPA.",
+      "auto": {
+        "must_mention_any": [
+          "EPA",
+          "pass",
+          "rush"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "Must find the game itself first (min EPA), then decompose \u2014 a two-step reasoning chain."
+    },
+    {
+      "id": "post-02",
+      "moment": "postgame",
+      "question": "Which coaches were the most aggressive on fourth down last season, and did it pay off?",
+      "auto": {
+        "must_mention_any": [
+          "fourth",
+          "4th",
+          "aggress"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "coach_profile",
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "v_coach_tendencies; 'did it pay off' needs EPA or conversion outcomes, not just attempt counts."
+    },
+    {
+      "id": "post-03",
+      "moment": "postgame",
+      "question": "Explain the difference between EPA and success rate, and when I should trust one over the other.",
+      "auto": {
+        "must_mention_any": [
+          "expected points",
+          "success",
+          "explosive"
+        ],
+        "expect_tools_any": [
+          "knowledge_lookup"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "analytics-primer chapter; today it answers from general knowledge without the project's own definitions (success = epa > 0)."
+    },
+    {
+      "id": "post-04",
+      "moment": "postgame",
+      "question": "Did travel direction actually hurt west coast teams playing early east coast games last season?",
+      "auto": {
+        "must_mention_any": [
+          "tz",
+          "time zone",
+          "east",
+          "body clock"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "One of Parth's original curiosity questions. tz_shift_hours + kickoff time; sample size honesty required."
+    },
+    {
+      "id": "post-05",
+      "moment": "postgame",
+      "question": "How did the officiating crew impact the Lions' closest loss last season?",
+      "auto": {
+        "must_mention_any": [
+          "penalt",
+          "referee",
+          "crew"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse",
+          "referee_stats"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "officials joins via old_game_id \u2014 the classic join trap. Wrong join = empty answer."
+    },
+    {
+      "id": "post-06",
+      "moment": "postgame",
+      "question": "Tell me the story of the Bills' season last year in five numbers.",
+      "auto": {
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse",
+          "team_form"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "Open-ended synthesis \u2014 rubric judges whether the five numbers are actually load-bearing."
+    },
+    {
+      "id": "post-07",
+      "moment": "postgame",
+      "question": "What is a 'mike' linebacker and why does the QB point at him before the snap?",
+      "auto": {
+        "must_mention_any": [
+          "protection",
+          "middle",
+          "blitz"
+        ],
+        "expect_tools_any": [
+          "knowledge_lookup"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "positions-defense / rules chapters; pure learning question."
+    },
+    {
+      "id": "fan-01",
+      "moment": "fantasy",
+      "question": "Who led running backs in touches per game over the last six weeks of last season?",
+      "auto": {
+        "must_mention_any": [
+          "touch",
+          "carr",
+          "target"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "carries + receptions composition; REG filter; weeks window stated."
+    },
+    {
+      "id": "fan-02",
+      "moment": "fantasy",
+      "question": "Which wide receivers had the biggest gap between target share and fantasy production last season \u2014 the buy-low candidates?",
+      "auto": {
+        "must_mention_any": [
+          "target share",
+          "PPR",
+          "expected"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "Two-metric reasoning; minimum-targets floor must be stated."
+    },
+    {
+      "id": "fan-03",
+      "moment": "fantasy",
+      "question": "Scout Bijan Robinson for me: usage trend, efficiency, and what his 2026 outlook looks like.",
+      "auto": {
+        "must_mention_any": [
+          "usage",
+          "EPA",
+          "yards"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "player_lookup",
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "player_lookup for the id bridge, then weekly trends. Outlook must be grounded, not vibes."
+    },
+    {
+      "id": "fan-04",
+      "moment": "fantasy",
+      "question": "Is there any recent injury news I should worry about for my fantasy RBs?",
+      "auto": {
+        "expect_tools_any": [
+          "news_search",
+          "league_news",
+          "player_news"
+        ],
+        "max_seconds": 120
+      },
+      "notes": "No Sleeper yet, so 'my RBs' is unanswerable as asked \u2014 the analyst should say so and offer the general RB injury sweep instead. Honesty check."
+    },
+    {
+      "id": "fan-05",
+      "moment": "fantasy",
+      "question": "Half-PPR: which tight ends were startable more than half of weeks last season?",
+      "auto": {
+        "must_mention_any": [
+          "half",
+          "TE",
+          "week"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "Needs a startable threshold definition stated up front (e.g. top-12 weekly finish)."
+    },
+    {
+      "id": "fan-06",
+      "moment": "fantasy",
+      "question": "Explain how fantasy scoring works for someone who has never played \u2014 what should a beginner know before drafting?",
+      "auto": {
+        "must_mention_any": [
+          "PPR",
+          "draft",
+          "waiver"
+        ],
+        "expect_tools_any": [
+          "knowledge_lookup"
+        ],
+        "max_seconds": 90
+      },
+      "notes": "fantasy-primer chapter."
+    },
+    {
+      "id": "fan-07",
+      "moment": "fantasy",
+      "question": "Which offenses funneled the most red zone work to a single player last season, and who are those players?",
+      "auto": {
+        "must_mention_any": [
+          "red zone",
+          "share",
+          "touch"
+        ],
+        "must_cite_filters": true,
+        "expect_tools_any": [
+          "query_warehouse"
+        ],
+        "max_seconds": 150
+      },
+      "notes": "v_redzone_usage_week aggregation \u2014 the view got invariants this week; now prove chat can use it."
+    }
+  ]
+}
