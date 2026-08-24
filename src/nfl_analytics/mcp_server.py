@@ -68,6 +68,17 @@ for _t in (
 # ---------- Group A: warehouse ----------
 
 
+# DuckDB table functions that read the local filesystem. A "read-only
+# SELECT" with read_text('CLAUDE.local.md') is a file disclosure, and the
+# chat product feeds this tool model-chosen SQL — evals caught it reading
+# repo files this way. Warehouse tables are the tool's whole job.
+_FS_FUNCS_RE = re.compile(
+    r"\b(read_(?:csv|csv_auto|json|json_auto|json_objects|ndjson|ndjson_auto"
+    r"|parquet|text|blob)|glob|parquet_scan|sniff_csv)\s*\(",
+    re.I,
+)
+
+
 @server.tool()
 def query_warehouse(sql: str, max_rows: int = 200) -> dict:
     """Run a read-only SELECT against the NFL warehouse (DuckDB). Multiple
@@ -77,6 +88,10 @@ def query_warehouse(sql: str, max_rows: int = 200) -> dict:
         return {"error": "single statement only"}
     if not re.match(r"^\s*(select|with|describe|show)\b", stripped, re.I):
         return {"error": "read-only: statement must start with SELECT/WITH"}
+    if _FS_FUNCS_RE.search(stripped):
+        return {
+            "error": "file-reading table functions are not available — query warehouse tables/views only"
+        }
     with read_conn(attach_kalshi=True) as con:
         try:
             return table_result(
@@ -207,6 +222,58 @@ def player_lookup(name_or_id: str, season: int = 0) -> dict:
             filters_applied=f"gsis_id={gsis} {season_filter}",
         )
     return {"matches": ident, "stats": stats}
+
+
+# ---------- Group D: knowledge ----------
+
+_KNOWLEDGE_DIR = ROOT / "docs" / "knowledge"
+_DICT_DIR = ROOT / "docs" / "dictionary"
+_KNOWLEDGE_CHAR_CAP = 20_000
+
+
+@server.tool()
+def knowledge_lookup(chapter: str = "") -> dict:
+    """The project's football knowledge book and table dictionaries. No arg:
+    the index of chapters (concepts, schemes, rules, analytics/betting/fantasy
+    primers) and dictionary docs. With chapter="analytics-primer" or
+    chapter="dict/schedules": that document's full markdown. Check here before
+    answering concept/scheme/rules questions from memory."""
+    import json as _json
+
+    try:
+        manifest = _json.loads((_KNOWLEDGE_DIR / "index.json").read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        manifest = []
+    dict_slugs = sorted(p.stem for p in _DICT_DIR.glob("*.md"))
+
+    if not chapter:
+        return {
+            "chapters": [{k: c[k] for k in ("slug", "title", "part", "summary")} for c in manifest],
+            "dictionaries": [f"dict/{s}" for s in dict_slugs],
+            "usage": "call again with chapter=<slug> or chapter=dict/<name>",
+        }
+
+    # manifest + dictionary listing are the whitelist — no path traversal
+    if chapter.startswith("dict/"):
+        stem = chapter[5:]
+        if stem not in dict_slugs:
+            return {"error": f"unknown dictionary '{stem}'", "available": dict_slugs}
+        path = _DICT_DIR / f"{stem}.md"
+    else:
+        if not any(c["slug"] == chapter for c in manifest):
+            return {
+                "error": f"unknown chapter '{chapter}'",
+                "available": [c["slug"] for c in manifest],
+            }
+        path = _KNOWLEDGE_DIR / f"{chapter}.md"
+
+    md = path.read_text(encoding="utf-8")
+    truncated = len(md) > _KNOWLEDGE_CHAR_CAP
+    return {
+        "chapter": chapter,
+        "markdown": md[:_KNOWLEDGE_CHAR_CAP],
+        "truncated": truncated,
+    }
 
 
 # ---------- Group B: model ----------
@@ -468,9 +535,23 @@ def referee_stats(name: str = "") -> dict:
 def betting_board(week: int = 0) -> dict:
     """Upcoming games: Vegas lines vs live Kalshi prices with dislocation
     flags (market-vs-market, fee-adjusted) and situational angles."""
+    from web.api.deps import current_schedule_season
     from web.api.routers.betting import board
 
-    return board(2026, week or None)
+    return board(current_schedule_season(), week or None)
+
+
+@server.tool()
+def betting_rules(week: int = 0, rule_id: str = "", backtest: bool = False) -> dict:
+    """Parth's hand-curated betting rules (data/betting_rules.json) evaluated
+    against real data. Default: every rule with this week's firing games and
+    its historical record. rule_id alone: just that rule. rule_id +
+    backtest=True: per-season backtest detail for that rule."""
+    from .rules import betting_rules_payload, rule_backtest_detail
+
+    if rule_id and backtest:
+        return rule_backtest_detail(rule_id)
+    return betting_rules_payload(week=week, rule_id=rule_id)
 
 
 # ---------- Group F: news ----------

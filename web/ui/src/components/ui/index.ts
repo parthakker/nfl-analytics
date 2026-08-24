@@ -7,6 +7,7 @@ export { default as Tabs } from "./Tabs";
 export { default as Select } from "./Select";
 export { default as StatTile } from "./StatTile";
 export { default as Chip } from "./Chip";
+export { default as AskAnalyst } from "./AskAnalyst";
 export type { ChipTone } from "./Chip";
 export { default as Tip } from "./Tip";
 export { default as PageHeader } from "./PageHeader";

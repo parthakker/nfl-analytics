@@ -29,6 +29,10 @@ the build scripts (enforced by permissions.deny).
   invariants) · `pytest -m api` (TestClient contracts) · `cd web/ui && npm run
   e2e` (Playwright vs live server). Prefer running single tests, not the whole
   suite. CI runs unit + fixture tiers (`NFL_TEST_USE_FIXTURE=1`).
+- Chat answer quality has its own suite: `python scripts/run_chat_evals.py`
+  (`evals/`, 28 questions × 4 moments). Costs real API budget and is manual —
+  re-run the affected `--moment` slice after editing CLAUDE.md, `mcp_server.py`
+  or `chat.py`, and `--compare` against the previous run dir.
 - UI rebuild after web/ui edits: `cd web/ui && npm run build`.
 - Jarvis (primary UI): "NFL Jarvis" shortcut or `python web/run_web.py` (:8000).
   Legacy Streamlit lives in `legacy/` — frozen, don't extend.
@@ -106,5 +110,10 @@ Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
   modeled) + `tz_shift_hours` (positive = east). Prefer `rest_days_sched`
   (populated wk 1) over `rest_days`.
 - Cite seasons/filters in every answer so results are reproducible.
+- Concept/scheme/rules/fantasy-basics questions: check `knowledge_lookup`
+  (chapters + table dictionaries) before writing SQL or answering from
+  memory — it carries this project's own definitions.
+- In chat, lead with the answer in 1-2 sentences, then compact support (a
+  small table for numbers); the reader is on a phone-width overlay.
 - Every new API endpoint gets a smoke CHECK + a tests/api case; every new
   view gets a dictionary entry + a tests/warehouse invariant.

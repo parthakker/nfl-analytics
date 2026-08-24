@@ -6,7 +6,7 @@ import { useMeta } from "../lib/MetaContext";
 import { useTeamTokens } from "../lib/useTeamTokens";
 import { LineChart } from "../components/charts";
 import {
-  Chip, DataTable, Field, PageHeader, Panel, PillGroup, Select, StatTile, Tip, Toolbar,
+  AskAnalyst, Chip, DataTable, Field, PageHeader, Panel, PillGroup, Select, StatTile, Tip, Toolbar,
 } from "../components/ui";
 import type { Column } from "../components/ui";
 
@@ -348,6 +348,9 @@ export default function TeamHUD() {
                 ) : "—"}
                 {" · "}{ov.season}
               </>
+            }
+            actions={
+              <AskAnalyst question={`State of the ${t.name}: recent form, injuries, and what matters most in their next game.`} />
             } />
           <div className="grid gap-2 sm:grid-cols-3">
             <StatTile label={`${ov.season} record`}

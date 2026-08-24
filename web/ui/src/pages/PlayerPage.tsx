@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api, type NewsItem } from "../lib/api";
 import { LineChart } from "../components/charts";
-import { DataTable, PageHeader, Panel, Select } from "../components/ui";
+import { AskAnalyst, DataTable, PageHeader, Panel, Select } from "../components/ui";
 import type { Column } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
 import { useTeamTokens } from "../lib/useTeamTokens";
@@ -88,6 +88,9 @@ export default function PlayerPage() {
               )}
               {info.rookie_season != null && <> · {info.rookie_season}–{info.last_season ?? "now"}</>}
             </>
+          }
+          actions={
+            <AskAnalyst question={`Scout ${info.name}: recent usage and efficiency trends, and this season's fantasy outlook.`} />
           }
         />
         </div>

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router-dom";
-import { Chip, Panel } from "../components/ui";
+import { AskAnalyst, Chip, Panel } from "../components/ui";
 import { LineChart } from "../components/charts";
 import { hexToRgba } from "../lib/color";
 import { useMeta } from "../lib/MetaContext";
@@ -149,6 +149,9 @@ export default function Matchup() {
               {d.venue.venue_name ?? "—"}{d.venue.venue_city ? ` · ${d.venue.venue_city}` : ""}
               {d.venue.is_international && <span style={{ color: "var(--color-accent)" }}> · international</span>}
               {d.venue.neutral_site && !d.venue.is_international && " · neutral site"}
+            </div>
+            <div className="mt-2">
+              <AskAnalyst question={`Break down ${ta?.name ?? d.game.away_team} @ ${th?.name ?? d.game.home_team}: edges, injuries, rest and travel, weather, referee, and the betting angle.`} />
             </div>
           </div>
           <Link to={`/team/${d.game.home_team}`} className="flex items-center gap-4 text-right">

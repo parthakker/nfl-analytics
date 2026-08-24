@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { LineChart } from "../components/charts";
-import { Chip, DataTable, PageHeader, Panel } from "../components/ui";
+import { AskAnalyst, Chip, DataTable, PageHeader, Panel } from "../components/ui";
 import type { Column } from "../components/ui";
 import { useApi } from "../lib/useApi";
 
@@ -83,10 +83,13 @@ export default function Referees() {
         <Panel
           title={`${detail.name} — season trends`}
           actions={
-            <button type="button" onClick={() => setDetailId(null)}
-                    className="text-label text-muted hover:text-ink">
-              close
-            </button>
+            <>
+              <AskAnalyst question={`What should I know about ${detail.name}'s crew tendencies for betting purposes?`} />
+              <button type="button" onClick={() => setDetailId(null)}
+                      className="text-label text-muted hover:text-ink">
+                close
+              </button>
+            </>
           }
         >
           <LineChart

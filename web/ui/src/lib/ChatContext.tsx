@@ -1,6 +1,8 @@
 import {
   createContext, useContext, useEffect, useRef, useState, type ReactNode,
 } from "react";
+import { useLocation } from "react-router-dom";
+import { startersFor } from "./starterQuestions";
 import { streamChat } from "./useChatStream";
 
 interface Msg { role: "user" | "assistant"; text: string }
@@ -44,6 +46,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
   const [startedAt, setStartedAt] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
+  // ChatProvider sits inside BrowserRouter (main.tsx), so the location is
+  // always available — the starter chips adapt to the page underneath.
+  const { pathname } = useLocation();
 
   // The overlay is modal, so Tab must cycle inside it rather than reach the
   // page underneath.
@@ -165,11 +170,22 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
             <div ref={listRef} className="min-h-40 flex-1 space-y-4 overflow-y-auto pr-2">
               {msgs.length === 0 && (
-                <p className="text-body text-muted">
-                  Direct line to your NFL analyst — full access to the warehouse,
-                  news, and market tracker. Answers take 20–60 seconds because it
-                  runs real queries. Try: <em>"Who led the league in rushing in 2025?"</em>
-                </p>
+                <div className="space-y-3">
+                  <p className="text-body text-muted">
+                    Direct line to your NFL analyst — full access to the warehouse,
+                    news, and market tracker. Answers take 20–60 seconds because it
+                    runs real queries. Start with one of these, or ask anything:
+                  </p>
+                  <div role="group" aria-label="Starter questions"
+                       className="flex flex-wrap gap-1.5">
+                    {startersFor(pathname).map((q) => (
+                      <button key={q} type="button" onClick={() => ask(q)}
+                        className="rounded-full border border-border px-3 py-1.5 text-left text-label text-muted transition-colors hover:border-accent/50 hover:bg-accent-bg hover:text-accent">
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
               {msgs.map((m, i) => (
                 <div key={i} className={m.role === "user" ? "text-right" : ""}>
