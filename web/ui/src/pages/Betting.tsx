@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Chip, Field, PageHeader, Panel, PillGroup, Select, Toolbar } from "../components/ui";
+import { AskAnalyst, Chip, Field, PageHeader, Panel, PillGroup, Select, Toolbar } from "../components/ui";
 import { useMeta } from "../lib/MetaContext";
 import { useApi } from "../lib/useApi";
+import BettingRules from "./BettingRules";
 
 interface BoardGame {
   game_id: string; date: string; away_team: string; home_team: string;
@@ -25,7 +26,7 @@ const pct = (v: number | null | undefined) =>
 export default function Betting() {
   const meta = useMeta();
   const [week, setWeek] = useState<number | undefined>();
-  const [tab, setTab] = useState<"board" | "situations">("board");
+  const [tab, setTab] = useState<"board" | "situations" | "rules">("board");
 
   const { data: board, error: boardError } = useApi<{ week: number; games: BoardGame[] }>(
     `/api/betting/board${week ? `?week=${week}` : ""}`);
@@ -44,15 +45,19 @@ export default function Betting() {
       <PageHeader
         title="Betting intelligence"
         subtitle="Vegas lines against live Kalshi prices. A dislocation flag means the two markets disagree by more than fees plus spread — market-vs-market only, no model opinions."
+        actions={
+          <AskAnalyst question="Walk this week's betting board: which games have actionable dislocations, and why?" />
+        }
         meta={<Chip tone="neutral">not betting advice</Chip>} />
 
       <Toolbar>
         <PillGroup
           ariaLabel="Betting view"
           options={[{ value: "board", label: "Board" },
-                    { value: "situations", label: "Situations" }]}
+                    { value: "situations", label: "Situations" },
+                    { value: "rules", label: "My Rules" }]}
           value={tab}
-          onChange={(v) => setTab(v as "board" | "situations")} />
+          onChange={(v) => setTab(v as "board" | "situations" | "rules")} />
         {tab === "board" && (
           <Field label="Week">
             <Select
@@ -148,6 +153,8 @@ export default function Betting() {
           })}
         </div>
       )}
+
+      {tab === "rules" && <BettingRules />}
 
       {tab === "situations" && sit && (
         <div className="grid gap-6 lg:grid-cols-3">

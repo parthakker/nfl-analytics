@@ -2,10 +2,11 @@
 paths:
   - "data/stadiums.json"
   - "data/coaches_meta.json"
+  - "data/betting_rules.json"
 ---
 # Hand-curated data rules
 
-Both files are HAND-EDITED and never overwritten by any refresh script. They
+These files are HAND-EDITED and never overwritten by any refresh script. They
 are the only files under data/ tracked in git — treat edits like code.
 
 **stadiums.json**: venue db powering game_venues/travel. `venue_id` reuses
@@ -21,7 +22,16 @@ new international seasons for the same bug before trusting names).
 from schedules at creation; OC/DC mostly unrecorded — fill freely as facts
 are learned.
 
-After editing either file: run `nfl views` (rebuilds stadiums/game_venues +
-travel sanity checks) then `pytest tests/warehouse/test_venues.py
-tests/warehouse/test_travel.py -q`. An unresolved-venue warning in the build
-output means a missing alias/override.
+**betting_rules.json**: the curated betting-rules catalog evaluated by
+`src/nfl_analytics/rules.py` (`/api/rules`). Fields, ops, markets and sides
+are a CLOSED namespace validated at load — an unknown anything is a hard
+error naming the rule id, and rule content is never interpolated into SQL.
+Add fields by extending `FIELDS` (and the facts SQL) in rules.py first.
+Rules on kalshi/line-movement fields are live-only: no backtest until
+snapshot history accrues (tracking since 2026-08). After editing: `pytest
+tests/unit/test_rules.py -q` (validates the file loads clean).
+
+After editing stadiums/coaches_meta: run `nfl views` (rebuilds
+stadiums/game_venues + travel sanity checks) then `pytest
+tests/warehouse/test_venues.py tests/warehouse/test_travel.py -q`. An
+unresolved-venue warning in the build output means a missing alias/override.

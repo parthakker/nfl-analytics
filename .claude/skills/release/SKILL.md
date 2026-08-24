@@ -14,5 +14,5 @@ disable-model-invocation: true
    docs/dictionary page still tell the truth about what changed? Fix drift now.
 6. Commit: conventional prefix (feat/fix/chore/test/docs/ci), imperative
    subject, body listing the what+why. NEVER commit *.duckdb files or data/
-   (except the two curated JSONs). `git status` must be clean after.
+   (except the three curated JSONs). `git status` must be clean after.
 7. Push only when Parth asked for a push.

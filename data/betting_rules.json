@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "_comment": "Hand-curated betting rules (like stadiums.json — never overwritten by refresh). Schema and the closed field/op namespace are enforced by src/nfl_analytics/rules.py; edits are validated at load and a bad rule fails loudly by id. See .claude/rules/data-curation.md.",
+  "rules": [
+    {
+      "id": "div-dog-plus7",
+      "family": "situational",
+      "label": "Division dog getting 7+: take the points",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "underdog"},
+      "when": [
+        {"field": "div_game", "op": "==", "value": true},
+        {"field": "spread_line", "op": "abs_gte", "value": 7}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "Familiarity compresses margins in division games; big favorites often win but don't cover."
+    },
+    {
+      "id": "rest-edge-3",
+      "family": "situational",
+      "label": "Rest edge 3+ days: back the rested side",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "rested"},
+      "when": [
+        {"field": "rest_edge_days", "op": "abs_gte", "value": 3}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "Mini-bye / post-bye edges vs a team on a normal or short week. Side resolves from the sign of rest_edge_days (home minus away, rest_days_sched)."
+    },
+    {
+      "id": "short-week-road-fav-fade",
+      "family": "situational",
+      "label": "Road favorite on a short week: fade (home spread)",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "home"},
+      "when": [
+        {"field": "favorite", "op": "==", "value": "away"},
+        {"field": "away_rest_days", "op": "<=", "value": 5}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "Laying points on the road with <=5 days rest is the worst spot on the schedule grid."
+    },
+    {
+      "id": "spread-steam-home",
+      "family": "line_movement",
+      "label": "Spread steamed 1.5+ toward home: follow (home)",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "home"},
+      "when": [
+        {"field": "spread_move", "op": ">=", "value": 1.5}
+      ],
+      "scope": {},
+      "notes": "Live-only (line_snapshots start 2026-08-03). spread_move = current - open; positive = market moving toward the home team (spread_line positive = home favored)."
+    },
+    {
+      "id": "spread-steam-away",
+      "family": "line_movement",
+      "label": "Spread steamed 1.5+ toward away: follow (away)",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "away"},
+      "when": [
+        {"field": "spread_move", "op": "<=", "value": -1.5}
+      ],
+      "scope": {},
+      "notes": "Mirror of spread-steam-home. Live-only until line snapshot history accrues."
+    },
+    {
+      "id": "total-drop-under",
+      "family": "line_movement",
+      "label": "Total dropped 2+ points: ride the under",
+      "enabled": true,
+      "bet": {"market": "total", "side": "under"},
+      "when": [
+        {"field": "total_move", "op": "<=", "value": -2}
+      ],
+      "scope": {},
+      "notes": "Live-only. Sharp under money and late weather news both show up as falling totals."
+    },
+    {
+      "id": "wind-under-15",
+      "family": "environment",
+      "label": "Outdoor wind 15+: take the under",
+      "enabled": true,
+      "bet": {"market": "total", "side": "under"},
+      "when": [
+        {"field": "wx_wind_mph", "op": ">=", "value": 15},
+        {"field": "wx_is_indoor", "op": "==", "value": false}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "Wind kills deep passing and kicking; totals historically don't drop far enough."
+    },
+    {
+      "id": "ref-over-lean",
+      "family": "environment",
+      "label": "Flag-happy over referee on a modest total: over",
+      "enabled": true,
+      "bet": {"market": "total", "side": "over"},
+      "when": [
+        {"field": "ref_over_rate", "op": ">=", "value": 0.55},
+        {"field": "ref_games", "op": ">=", "value": 30},
+        {"field": "total_line", "op": "<=", "value": 44}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "Ref stats are as-of PRIOR seasons only (no lookahead); 30-game minimum keeps the rate meaningful."
+    },
+    {
+      "id": "west-east-early-kick",
+      "family": "environment",
+      "label": "Team traveling 2+ zones east for an early kick: home spread",
+      "enabled": true,
+      "bet": {"market": "spread", "side": "home"},
+      "when": [
+        {"field": "away_tz_shift_hours", "op": ">=", "value": 2},
+        {"field": "kickoff_et_hour", "op": "<=", "value": 13}
+      ],
+      "scope": {"season_type": "REG"},
+      "notes": "A 1pm ET kick is 10am body-clock for a Pacific team. tz_shift_hours positive = traveling east (v_team_games convention)."
+    },
+    {
+      "id": "kalshi-dislocation",
+      "family": "dislocation",
+      "label": "Kalshi vs devigged Vegas gap survives the fee: cheap side",
+      "enabled": true,
+      "bet": {"market": "kalshi", "side": "cheap_side"},
+      "when": [
+        {"field": "dislocation_actionable", "op": "==", "value": true}
+      ],
+      "scope": {},
+      "notes": "Market-vs-market only (model paused). Actionable = |gap| > kalshi fee + half the bid/ask width (same math as the betting board)."
+    },
+    {
+      "id": "kalshi-gap-4pct",
+      "family": "dislocation",
+      "label": "Kalshi vs Vegas probability gap 4%+: cheap side",
+      "enabled": true,
+      "bet": {"market": "kalshi", "side": "cheap_side"},
+      "when": [
+        {"field": "dislocation_gap", "op": "abs_gte", "value": 0.04}
+      ],
+      "scope": {},
+      "notes": "Looser screen than kalshi-dislocation — a watchlist, not an auto-bet."
+    }
+  ]
+}

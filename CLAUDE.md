@@ -2,7 +2,7 @@
 
 **Repo:** https://github.com/parthakker/nfl-analytics (public, MIT). Local git
 identity is Parth's personal email (repo-local config). `data/*` (except the
-two hand-curated JSONs), `*.duckdb`, and `logs/` are gitignored — fresh clones
+three hand-curated JSONs), `*.duckdb`, and `logs/` are gitignored — fresh clones
 rebuild via `nfl refresh --bootstrap`. Commit when Parth asks; follow
 `/release` for the ritual.
 
@@ -60,8 +60,8 @@ model is built but PAUSED per Parth — don't surface it proactively.
 odds, refs). Weekly stats are v2-schema 2025+ — query `v_player_stats_week_all`
 for cross-era. Sidecars: `kalshi.duckdb` (market + Vegas line snapshots),
 `news.duckdb` (tagged news + FTS). Hand-curated (never overwritten by
-refresh): `data/stadiums.json`, `data/coaches_meta.json` — rules in
-`.claude/rules/data-curation.md`.
+refresh): `data/stadiums.json`, `data/coaches_meta.json`,
+`data/betting_rules.json` — rules in `.claude/rules/data-curation.md`.
 
 **Task Scheduler (5 jobs, one log line per run in `logs/*.log`):**
 `NFL-WeeklyRefresh` (Tue 08:00 → refresh_data.py), `NFL-NewsPoll` (6h),

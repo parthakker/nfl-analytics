@@ -115,6 +115,12 @@ CHECKS = {
     "/api/matchup/h2h/BUF/MIA": lambda js: (
         js.get("summary", {}).get("games", 0) >= 50 and len(js.get("games", [])) >= 50
     ),
+    # betting rules engine (2026-08): every rule carries a backtest verdict
+    "/api/rules": lambda js: (
+        len(js.get("rules", [])) >= 8
+        and all(isinstance(r.get("backtest_summary"), dict) for r in js["rules"])
+    ),
+    "/api/rules/wind-under-15/backtest": lambda js: len(js.get("seasons", [])) > 0,
     "/api/knowledge": lambda js: len(js.get("chapters", [])) >= 10,
     "/api/knowledge/analytics-primer": lambda js: len(js.get("markdown", "")) > 1000,
 }

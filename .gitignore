@@ -4,6 +4,7 @@
 data/*
 !data/stadiums.json
 !data/coaches_meta.json
+!data/betting_rules.json
 *.duckdb
 *.duckdb.wal
 logs/

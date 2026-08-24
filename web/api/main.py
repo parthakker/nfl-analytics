@@ -28,6 +28,7 @@ from .routers import (
     news,
     players,
     referees,
+    rules,
     schedule,
     teams,
 )
@@ -49,6 +50,7 @@ for _r in (
     betting,
     matchup,
     knowledge,
+    rules,
 ):
     app.include_router(_r.router)
 
