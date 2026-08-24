@@ -47,6 +47,18 @@ def test_null_session_id_streams_and_releases_lock(client, no_claude_cli):
     assert not chat_mod._lock.locked()
 
 
+def test_subprocess_surface_is_mcp_only(monkeypatch):
+    # the eval suite caught chat answering via "Bash(python *)" leaked from
+    # settings.local.json — the argv must pin the child to MCP tools only
+    monkeypatch.setattr(chat_mod.shutil, "which", lambda _: "C:/fake/claude.EXE")
+    cmd = chat_mod._claude_cmd(session_id=None, streaming=True)
+    assert "--disallowedTools" in cmd
+    disallowed = cmd[cmd.index("--disallowedTools") + 1]
+    for tool in ("Bash", "PowerShell", "Write", "Edit", "Read"):
+        assert tool in disallowed
+    assert cmd[cmd.index("--allowedTools") + 1] == "mcp__nfl"
+
+
 def test_rejects_shell_metachar_session_id(client):
     r = client.post(
         "/api/chat/stream",

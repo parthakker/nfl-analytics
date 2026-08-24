@@ -43,7 +43,19 @@ def _claude_cmd(session_id: str | None, streaming: bool) -> list[str] | None:
     exe = shutil.which("claude")
     if not exe:
         return None
-    cmd = [exe, "-p", "--allowedTools", "mcp__nfl"]
+    # --allowedTools ALLOWS but does not RESTRICT: interactive-session grants
+    # accumulated in .claude/settings.local.json (e.g. "Bash(python *)") leak
+    # into this headless child, and evals caught it answering via arbitrary
+    # python instead of the sanctioned read-only MCP tools. Chat input is
+    # web-driven, so pin the surface to MCP-only explicitly.
+    cmd = [
+        exe,
+        "-p",
+        "--allowedTools",
+        "mcp__nfl",
+        "--disallowedTools",
+        "Bash,PowerShell,Read,Write,Edit,NotebookEdit,Glob,Grep,WebFetch,WebSearch,Task,Agent,Skill,TodoWrite",
+    ]
     if streaming:
         cmd += ["--output-format", "stream-json", "--verbose", "--include-partial-messages"]
     else:
@@ -69,6 +81,8 @@ def _tool_hint(name: str) -> str:
         "player_news": "scanning news",
         "league_news": "scanning news",
         "data_status": "checking data freshness",
+        "knowledge_lookup": "consulting the playbook",
+        "betting_rules": "checking your betting rules",
     }
     short = name.replace("mcp__nfl__", "")
     return hints.get(short, f"using {short}")
@@ -102,6 +116,9 @@ async def _run_claude(message: str, session_id: str | None, streaming: bool):
             stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            # marks the child for .claude/hooks/stop_gate.py: chat sessions
+            # only read — they must not pay for (or narrate) the dev test gate
+            env={**os.environ, "NFL_CHAT_CHILD": "1"},
         )
     except Exception as e:
         yield {"event": "error", "data": json.dumps({"message": f"could not start claude: {e}"})}

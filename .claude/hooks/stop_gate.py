@@ -9,6 +9,7 @@ Exit 2 blocks the turn and feeds the failure tail back to Claude.
 NEVER add warehouse/api/e2e tiers here — they run nightly and in CI.
 """
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -28,6 +29,12 @@ def changed_files() -> list[str]:
 
 
 def main() -> int:
+    # The Jarvis chat product (and its eval runner) spawn headless claude
+    # children in this repo — they only read, never edit, and a dirty dev
+    # tree must not make every chat answer pay for a unit-test run (or leak
+    # test-runner commentary into user-facing answers, which happened).
+    if os.environ.get("NFL_CHAT_CHILD") == "1":
+        return 0
     try:
         files = changed_files()
     except Exception:
