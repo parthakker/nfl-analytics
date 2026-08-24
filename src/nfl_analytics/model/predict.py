@@ -28,6 +28,7 @@ def predict_game(
     rest_diff: float = 0.0,
     away_tz_shift: float | None = None,
     div_game: int | None = None,
+    d_qb_out: float | None = None,
 ) -> dict:
     """Predict an arbitrary matchup using current ratings.
 
@@ -68,6 +69,20 @@ def predict_game(
         "d_tz": away_tz_shift,
         "div_game": div_game,
     }
+    if "d_qb_out" in p["feature_cols"]:
+        if d_qb_out is None:
+            # live lookup: expected starter + current-week status, schedules-
+            # only path for upcoming games (see qb_flag.current_qb_out)
+            from .qb_flag import current_qb_out
+
+            try:
+                d_qb_out = float(
+                    current_qb_out(con, home_team)["qb_out"]
+                    - current_qb_out(con, away_team)["qb_out"]
+                )
+            except Exception:
+                d_qb_out = 0.0  # serving must not fail on a missing lookup
+        feats["d_qb_out"] = d_qb_out
     x = [feats[c] for c in p["feature_cols"]]
     z = p["win_intercept"] + sum(c * v for c, v in zip(p["win_coefs"], x, strict=False))
     margin = p["margin_intercept"] + sum(c * v for c, v in zip(p["margin_coefs"], x, strict=False))
@@ -78,6 +93,7 @@ def predict_game(
         "pred_margin": margin,  # positive = home by that many
         "inputs": feats,
         "model": {
+            "ratings_source": p.get("ratings_source", "ewma"),
             "half_life": p["half_life"],
             "carryover": p["carryover"],
             "holdout_brier": p["holdout_brier"],

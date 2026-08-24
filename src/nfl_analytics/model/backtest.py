@@ -8,10 +8,14 @@ from .features import FEATURE_COLS
 
 
 def walk_forward(
-    df: pd.DataFrame, first_target: int = 2012, last_target: int | None = None
+    df: pd.DataFrame,
+    first_target: int = 2012,
+    last_target: int | None = None,
+    feature_cols: list[str] | None = None,
 ) -> pd.DataFrame:
     """Fit on all seasons < s, predict season s, for each target season.
     Returns df restricted to predicted rows with p_home_win / pred_margin."""
+    cols = feature_cols if feature_cols is not None else FEATURE_COLS
     df = df.dropna(subset=["home_win"]).copy()
     last_target = last_target or int(df["season"].max())
     out = []
@@ -21,11 +25,11 @@ def walk_forward(
         if train.empty or test.empty:
             continue
         clf = LogisticRegression(C=1.0, max_iter=1000)
-        clf.fit(train[FEATURE_COLS], train["home_win"].astype(int))
-        test["p_home_win"] = clf.predict_proba(test[FEATURE_COLS])[:, 1]
+        clf.fit(train[cols], train["home_win"].astype(int))
+        test["p_home_win"] = clf.predict_proba(test[cols])[:, 1]
         reg = Ridge(alpha=1.0)
-        reg.fit(train[FEATURE_COLS], train["home_margin"])
-        test["pred_margin"] = reg.predict(test[FEATURE_COLS])
+        reg.fit(train[cols], train["home_margin"])
+        test["pred_margin"] = reg.predict(test[cols])
         out.append(test)
     return pd.concat(out, ignore_index=True)
 

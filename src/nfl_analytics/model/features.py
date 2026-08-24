@@ -1,14 +1,15 @@
 """Assemble game-level model features from ratings + game context.
 
 One row per completed game: rating diffs (home - away, four components),
-rest-day diff, timezone-shift diff, division flag; targets (home win, home
-margin); market reference (devigged home moneyline prob, closing spread).
+rest-day diff, timezone-shift diff, division flag, QB-availability diff;
+targets (home win, home margin); market reference (devigged home moneyline
+prob, closing spread).
 """
 
 import duckdb
 import pandas as pd
 
-FEATURE_COLS = [
+BASE_FEATURE_COLS = [
     "d_off_pass",
     "d_off_rush",
     "d_def_pass",
@@ -17,6 +18,28 @@ FEATURE_COLS = [
     "d_tz",
     "div_game",
 ]
+
+# FEATURE_COLS is the SHIPPED registry (what backtest defaults to and what
+# train_model persists). d_qb_out gated in per docs/model_report.md.
+FEATURE_COLS = BASE_FEATURE_COLS + ["d_qb_out"]
+
+RATINGS_SOURCES = ("ewma", "ridge")
+
+
+def compute_ratings_source(con, ratings_source: str = "ewma", **hyper):
+    """Switchable ratings backend. Both sources return the same two frames
+    (per-game entering ratings, current end-state) with identical columns,
+    so backtest.py and predict.py never care which one produced them."""
+    if ratings_source == "ewma":
+        from .ratings import compute_ratings
+
+        return compute_ratings(con, **hyper)
+    if ratings_source == "ridge":
+        from .ratings_ridge import compute_ratings_ridge
+
+        return compute_ratings_ridge(con, **hyper)
+    raise ValueError(f"ratings_source must be one of {RATINGS_SOURCES}, got {ratings_source!r}")
+
 
 GAME_CONTEXT_SQL = """
     WITH ctx AS (
@@ -45,7 +68,11 @@ def moneyline_prob(ml: float) -> float | None:
     return 100.0 / (ml + 100.0) if ml > 0 else -ml / (-ml + 100.0)
 
 
-def build_features(con: duckdb.DuckDBPyConnection, per_game_ratings: pd.DataFrame) -> pd.DataFrame:
+def build_features(
+    con: duckdb.DuckDBPyConnection,
+    per_game_ratings: pd.DataFrame,
+    qb_flags: pd.DataFrame | None = None,
+) -> pd.DataFrame:
     games = con.execute(GAME_CONTEXT_SQL).fetchdf()
     r = per_game_ratings
     home = r.rename(columns={c: f"h_{c}" for c in r.columns if c.startswith("r_")})
@@ -74,6 +101,22 @@ def build_features(con: duckdb.DuckDBPyConnection, per_game_ratings: pd.DataFram
     # defensive ratings: lower = better, so away - home puts "home advantage" positive
     for d in ("def_pass", "def_rush"):
         df[f"d_{d}"] = df[f"a_r_{d}"] - df[f"h_r_{d}"]
+
+    # QB availability: expected starter Out/Doubtful/reserve, causal (qb_flag.py)
+    if qb_flags is not None:
+        f = qb_flags[["game_id", "team", "qb_out"]]
+        df = df.merge(
+            f.rename(columns={"team": "home_team", "qb_out": "home_qb_out"}),
+            on=["game_id", "home_team"],
+            how="left",
+        ).merge(
+            f.rename(columns={"team": "away_team", "qb_out": "away_qb_out"}),
+            on=["game_id", "away_team"],
+            how="left",
+        )
+        df["d_qb_out"] = df["home_qb_out"].fillna(0) - df["away_qb_out"].fillna(0)
+    else:
+        df["d_qb_out"] = 0.0
 
     df["d_rest"] = df["home_rest"].fillna(7).clip(3, 14) - df["away_rest"].fillna(7).clip(3, 14)
     # away team traveling east = positive shift; home team is at home (shift 0)
