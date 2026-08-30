@@ -5,6 +5,7 @@ All logging goes to stderr; stdout is the MCP protocol channel.
 """
 
 import logging
+import os
 import re
 import sys
 
@@ -431,10 +432,35 @@ def kalshi_market_detail(ticker: str) -> dict:
         return {"error": f"kalshi api: {e}"}
 
 
+def _chat_child() -> bool:
+    """True inside the headless `claude -p` that Jarvis chat spawns.
+
+    Chat is granted every mcp__nfl tool by prefix, so the two tools that
+    WRITE (refresh_data, kalshi_snapshot_now) refuse there and point at the
+    /ops page instead — a maintenance job only ever starts from a human
+    click (an /ops card, `nfl <cmd>`, or a permission prompt in an
+    interactive Claude Code session)."""
+    return os.environ.get("NFL_CHAT_CHILD") == "1"
+
+
+def _chat_refusal(card: str) -> dict:
+    return {
+        "ran": False,
+        "message": (
+            f"Maintenance is never started from chat. Open Jarvis → More → Ops "
+            f"and press the '{card}' card (or run it from a terminal with nfl)."
+        ),
+        "status": ops.status_payload(),
+    }
+
+
 @server.tool()
 def kalshi_snapshot_now() -> dict:
     """Record a price snapshot of ALL open NFL markets into kalshi.duckdb
-    (adds to line-movement history). Also runs on the 6h schedule."""
+    (adds to line-movement history). Trigger-only: nothing schedules it;
+    from Jarvis chat this refuses and points at the /ops card."""
+    if _chat_child():
+        return _chat_refusal("Snapshot Kalshi")
     from .kalshi import snapshot
 
     try:
@@ -693,7 +719,10 @@ def refresh_data(full: bool = False) -> dict:
 
     Runs as a subprocess so the server holds no DB handle during the rebuild,
     and records into the same logs/ops_runs.jsonl the /ops page reads — so a
-    refresh started from chat shows up there too."""
+    refresh started here shows up there too. Trigger-only: from Jarvis chat
+    this refuses and points at the /ops card."""
+    if _chat_child():
+        return _chat_refusal("Refresh data")
     return ops.run_job_sync("refresh", "full" if full else "")
 
 

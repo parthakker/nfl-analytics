@@ -73,7 +73,8 @@ against the real server: `npm run e2e`.
   nflverse mislabels (all seven 2025 international games); curated files are
   version-controlled and never overwritten by refreshes.
 - **Verification built in** — row floors and sanity checks in the build,
-  invariant tests in CI, a smoke test and an AI health loop on the scheduler.
+  invariant tests in CI, a smoke test and an AI health check — both run by
+  hand from the `/ops` page; nothing is scheduled.
 - **Keep it simple** — one machine, no cloud dependencies, boring tools.
 
 ## Data credits

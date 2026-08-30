@@ -28,12 +28,3 @@ SLEEPER_LEAGUE_ID = os.environ.get("SLEEPER_LEAGUE_ID", "")
 NFLVERSE_RELEASE = "https://github.com/nflverse/nflverse-data/releases/download"
 NFLDATA_GAMES_URL = "https://github.com/nflverse/nfldata/raw/master/data/games.csv"
 
-# Windows Task Scheduler jobs (single source of truth — data_status reads this;
-# update here AND via schtasks when the schedule changes)
-SCHEDULED_TASKS = {
-    "NFL-NightlyHealth": "daily 06:45 (headless claude /health-check)",
-    "NFL-WeeklyRefresh": "Tuesdays 08:00",
-    "NFL-NewsPoll": "every 6h from 06:00",
-    "NFL-KalshiSnapshot": "every 6h from 06:30",
-    "NFL-SmokeTest": "daily 07:30",
-}

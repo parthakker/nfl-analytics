@@ -79,7 +79,9 @@ cards with live streamed output — or `nfl <cmd>` in a terminal. The registry i
 `src/nfl_analytics/ops.py::JOBS` (keyed to `cli.COMMANDS`); every run appends to
 `logs/ops_runs.jsonl`, which the `data_status` MCP tool and the page both read.
 Do NOT re-add a scheduled task without an `ExecutionTimeLimit`, `RunOnlyIfIdle`
-and `StartWhenAvailable=false`.
+and `StartWhenAvailable=false`. Jarvis chat cannot start a job either: the two
+writing MCP tools (`refresh_data`, `kalshi_snapshot_now`) refuse under
+`NFL_CHAT_CHILD=1` and point at the `/ops` card.
 
 **Perishable data:** Kalshi snapshots and the Vegas `line_snapshots` written by
 `refresh_data.py` are point-in-time captures — a window that passes without a
