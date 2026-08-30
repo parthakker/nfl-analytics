@@ -25,7 +25,7 @@ DB = ROOT / "nfl.duckdb"
 
 # Model artifacts written by scripts/train_model.py, not rebuildable from data/
 # — carried over from the previous warehouse so a rebuild never wipes them.
-MODEL_TABLES = ("model_params", "model_ratings", "model_predictions")
+MODEL_TABLES = ("model_params", "model_ratings", "model_predictions", "model_rating_history")
 
 # table name -> csv glob (relative to data/)
 TABLES = {
@@ -212,7 +212,27 @@ def build() -> int:
         for f in failures:
             print(f"  - {f}")
         return 1
-    os.replace(tmp, DB)
+    # Windows fails this rename with PermissionError while ANY process still
+    # holds the old file open — one read connection from the running Jarvis
+    # server, the MCP server, or an explore.cmd tab is enough, and the entire
+    # rebuild would be thrown away at the very last step. Sharing violations
+    # here are transient, so retry before giving up. (The /ops runner also
+    # drains in-flight readers first, but it can only speak for the web
+    # server, not for every process on the machine.)
+    for attempt in range(1, 6):
+        try:
+            os.replace(tmp, DB)
+            break
+        except PermissionError as e:
+            if attempt == 5:
+                tmp.unlink(missing_ok=True)
+                print(f"\nFAILED to swap in the rebuilt warehouse: {e}")
+                print("Something still has nfl.duckdb open. Close Jarvis, explore.cmd")
+                print("and any DuckDB session, then run this again.")
+                print("(The existing warehouse was left untouched.)")
+                return 1
+            print(f"  nfl.duckdb is busy, retrying the swap in 2s ({attempt}/5)")
+            time.sleep(2)
     print(f"\nWarehouse: {DB}  ({DB.stat().st_size / 1e9:.2f} GB)")
     print("All tables loaded, validation passed.")
     return 0

@@ -34,13 +34,16 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
 from nfl_analytics.model import backtest as bt  # noqa: E402
+from nfl_analytics.model import experiment as ex  # noqa: E402
 from nfl_analytics.model import qb_flag as qbf  # noqa: E402
 from nfl_analytics.model import ratings_ridge as rr  # noqa: E402
+from nfl_analytics.model.config import BONUS_SEASON, HOLDOUT_SEASONS, TUNE_SEASONS  # noqa: E402
 from nfl_analytics.model.features import BASE_FEATURE_COLS, build_features  # noqa: E402
 from nfl_analytics.model.ratings import compute_ratings  # noqa: E402
 
 DB = ROOT / "nfl.duckdb"
 REPORT = ROOT / "docs" / "model_report.md"
+
 
 def _wrap(text: str, width: int = 78) -> str:
     """The report is read as a diff, so generated prose is hard-wrapped."""
@@ -49,8 +52,8 @@ def _wrap(text: str, width: int = 78) -> str:
     return textwrap.fill(text, width=width)
 
 
-TUNE_SEASONS = (2012, 2018)
-HOLDOUT_SEASONS = (2019, 2024)
+# TUNE_SEASONS / HOLDOUT_SEASONS / BONUS_SEASON live in model/config.py so
+# the experiment loop, the API and the recap all agree with this script.
 EWMA_GRID = [(h, c) for h in (6.0, 8.0, 10.0, 12.0) for c in (0.4, 0.5, 0.6)]
 RIDGE_GRID = [
     (h, a, c) for h in (6.0, 9.0, 12.0) for a in (3.0, 10.0, 30.0) for c in (0.5, 0.7, 0.9)
@@ -171,11 +174,15 @@ def main() -> int:
 
     # ---- ONE holdout evaluation per configuration ----
     df_ewma = feats_cache[(eh, ec)]
-    pred_ewma = bt.walk_forward(df_ewma, TUNE_SEASONS[0], 2025, feature_cols=BASE_FEATURE_COLS)
+    pred_ewma = bt.walk_forward(
+        df_ewma, TUNE_SEASONS[0], BONUS_SEASON, feature_cols=BASE_FEATURE_COLS
+    )
     s_ewma = bt.summarize(pred_ewma, *HOLDOUT_SEASONS)
 
     df_ridge = build_features(con, pg_ridge, qb_flags)
-    pred_ridge = bt.walk_forward(df_ridge, TUNE_SEASONS[0], 2025, feature_cols=BASE_FEATURE_COLS)
+    pred_ridge = bt.walk_forward(
+        df_ridge, TUNE_SEASONS[0], BONUS_SEASON, feature_cols=BASE_FEATURE_COLS
+    )
     s_ridge = bt.summarize(pred_ridge, *HOLDOUT_SEASONS)
 
     gate1 = (
@@ -191,16 +198,16 @@ def main() -> int:
     if gate1:
         source = "ridge"
         df_ship, pred_ship, s_ship = df_ridge, pred_ridge, s_ridge
-        _, cur_ship = pg_ridge, cur_ridge
+        pg_ship, cur_ship = pg_ridge, cur_ridge
         src_hp = {"half_life": rh, "carryover": rc, "ridge_alpha": ra}
     else:
         source = "ewma"
         df_ship, pred_ship, s_ship = df_ewma, pred_ewma, s_ewma
-        _, cur_ship = compute_ratings(con, eh, ec)
+        pg_ship, cur_ship = compute_ratings(con, eh, ec)
         src_hp = {"half_life": eh, "carryover": ec, "ridge_alpha": None}
 
     # ---- step 2: QB flag on top of the step-1 shipped source ----
-    pred_qb = bt.walk_forward(df_ship, TUNE_SEASONS[0], 2025, feature_cols=QB_COLS)
+    pred_qb = bt.walk_forward(df_ship, TUNE_SEASONS[0], BONUS_SEASON, feature_cols=QB_COLS)
     s_qb = bt.summarize(pred_qb, *HOLDOUT_SEASONS)
     gate2 = (s_ship["brier_model"] - s_qb["brier_model"]) >= GATE2_IMPROVE
 
@@ -235,8 +242,11 @@ def main() -> int:
     cal_results = []
     for hl, win in CAL_GRID:
         pc = bt.walk_forward(
-            df_ship, *TUNE_SEASONS, feature_cols=ship_cols,
-            recency_half_life=hl, calibration_window=win,
+            df_ship,
+            *TUNE_SEASONS,
+            feature_cols=ship_cols,
+            recency_half_life=hl,
+            calibration_window=win,
         )
         ll = bt.log_loss_(pc["home_win"].astype(float), pc["p_home_win"])
         cal_results.append({"half_life": hl, "window": win, "logloss": ll})
@@ -246,8 +256,12 @@ def main() -> int:
     print(f"Best drift controls: recency_half_life={chl}, calibration_window={cwin}")
 
     pred_cal = bt.walk_forward(
-        df_ship, TUNE_SEASONS[0], 2025, feature_cols=ship_cols,
-        recency_half_life=chl, calibration_window=cwin,
+        df_ship,
+        TUNE_SEASONS[0],
+        2025,
+        feature_cols=ship_cols,
+        recency_half_life=chl,
+        calibration_window=cwin,
     )
     s_cal = bt.summarize(pred_cal, *HOLDOUT_SEASONS)
     gate3 = (s_final["brier_model"] - s_cal["brier_model"]) >= GATE3_IMPROVE
@@ -269,8 +283,8 @@ def main() -> int:
             "the Platt (a, b) to model_params and apply them in predict.py, then "
             "re-run. See the drift-control section of docs/model_report.md."
         )
-    s25 = bt.summarize(pred_final, 2025, 2025)
-    s25_cal = bt.summarize(pred_cal, 2025, 2025)
+    s25 = bt.summarize(pred_final, BONUS_SEASON, BONUS_SEASON)
+    s25_cal = bt.summarize(pred_cal, BONUS_SEASON, BONUS_SEASON)
 
     # ---- production fit of the gated-in configuration only ----
     done = df_ship.dropna(subset=["home_win"])
@@ -319,7 +333,31 @@ def main() -> int:
     ]
     mp = pred_final[keep]  # noqa: F841 — read by duckdb replacement scan below
     wcon.execute("CREATE OR REPLACE TABLE model_predictions AS SELECT * FROM mp")
+    # per-game ENTERING ratings for the shipped source — the Model Lab's
+    # rating-history chart; ~14k rows. Carried over by build_warehouse.
+    hist_cols = ["game_id", "season", "week", "team", "opponent"] + [
+        c for c in pg_ship.columns if c.startswith("r_")
+    ]
+    hist = pg_ship[hist_cols]  # noqa: F841 — read by duckdb replacement scan below
+    wcon.execute("CREATE OR REPLACE TABLE model_rating_history AS SELECT * FROM hist")
     wcon.close()
+
+    # the shipped result goes into the same log `nfl experiment` writes, so
+    # the Experiments tab always shows what the shipped model scored
+    ship_cfg = ex.ExperimentConfig(
+        features=tuple(ship_cols),
+        half_life=float(src_hp["half_life"]),
+        carryover=float(src_hp["carryover"]),
+        ratings_source=source,
+        ridge_alpha=src_hp["ridge_alpha"],
+        note="train: shipped configuration",
+    )
+    ex.append_log(
+        ex.to_record(
+            ex.ExperimentResult(ship_cfg, pred_final, s_final, s25, time.time() - t0),
+            source="train",
+        )
+    )
 
     # ---- report ----
     s = s_final

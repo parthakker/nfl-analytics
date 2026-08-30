@@ -144,6 +144,8 @@ def _significance(win_pct: float | None, decided: int) -> tuple[float | None, st
     else:
         grade = "strong"
     return round(z, 2), grade
+
+
 _VIG_PROFIT = 100.0 / 110.0
 
 FEE = 0.07  # kalshi fee factor: fee = 0.07 * P * (1-P)  (betting.py)
@@ -743,6 +745,11 @@ def build_facts_history(con, seasons: range | None = None) -> pd.DataFrame:
 
 _HIST_TTL_S = 3600.0
 _hist_cache: dict[str, tuple[float, pd.DataFrame]] = {}
+
+
+def clear_cache() -> None:
+    """Drop the cached backtest history after a warehouse write."""
+    _hist_cache.clear()
 
 
 def _history_cached(con) -> pd.DataFrame:

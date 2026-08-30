@@ -68,6 +68,42 @@ def moneyline_prob(ml: float) -> float | None:
     return 100.0 / (ml + 100.0) if ml > 0 else -ml / (-ml + 100.0)
 
 
+def feature_row(
+    home: dict,
+    away: dict,
+    rest_diff: float = 0.0,
+    away_tz_shift: float = 0.0,
+    div_game: int = 0,
+    d_qb_out: float = 0.0,
+) -> dict:
+    """The ONE definition of how ratings + context become model inputs.
+
+    `home` / `away` carry r_off_pass, r_off_rush, r_def_pass, r_def_rush.
+    Offense diffs are home - away. Defense ratings are "EPA allowed", so lower
+    is better — those diffs are away - home to keep positive = good for home
+    on every column. build_features() applies these same expressions
+    vectorised and predict.py calls this directly; tests/unit/
+    test_feature_parity.py pins the two equal.
+    """
+    return {
+        "d_off_pass": home["r_off_pass"] - away["r_off_pass"],
+        "d_off_rush": home["r_off_rush"] - away["r_off_rush"],
+        "d_def_pass": away["r_def_pass"] - home["r_def_pass"],
+        "d_def_rush": away["r_def_rush"] - home["r_def_rush"],
+        "d_rest": rest_diff,
+        "d_tz": away_tz_shift,
+        "div_game": int(div_game),
+        "d_qb_out": d_qb_out,
+    }
+
+
+def rest_clip(days) -> float:
+    """Rest days as the model sees them: unknown -> 7, clipped to 3-14."""
+    if days is None or pd.isna(days):
+        days = 7
+    return float(min(14, max(3, days)))
+
+
 def build_features(
     con: duckdb.DuckDBPyConnection,
     per_game_ratings: pd.DataFrame,
@@ -96,6 +132,7 @@ def build_features(
         .drop(columns="team")
     )
 
+    # vectorised twin of feature_row() — same expressions, same signs
     for d in ("off_pass", "off_rush"):
         df[f"d_{d}"] = df[f"h_r_{d}"] - df[f"a_r_{d}"]
     # defensive ratings: lower = better, so away - home puts "home advantage" positive
@@ -118,6 +155,11 @@ def build_features(
     else:
         df["d_qb_out"] = 0.0
 
+    # Rest comes from v_team_games.rest_days (the lag-computed one, NULL in
+    # week 1 and across a season boundary -> treated as 7). CLAUDE.md prefers
+    # rest_days_sched for analysis; the model has NOT been switched because
+    # that changes every training row — it is the canonical first experiment
+    # in docs/knowledge/model-primer.md. TODO(model-wave-2): evaluate the switch.
     df["d_rest"] = df["home_rest"].fillna(7).clip(3, 14) - df["away_rest"].fillna(7).clip(3, 14)
     # away team traveling east = positive shift; home team is at home (shift 0)
     df["d_tz"] = df["away_tz_shift"].fillna(0)

@@ -1,14 +1,20 @@
 """Smoke test: hit every Jarvis API endpoint and verify real data flows.
 
-Uses the running server on :8000 if present, otherwise starts a temporary
-one. Each check requires NON-EMPTY data, not just HTTP 200. One summary
-line per run goes to logs/smoke.log; failures list what broke.
+Uses the running server if one answers, otherwise starts a temporary one.
+Each check requires NON-EMPTY data, not just HTTP 200. One summary line per
+run goes to logs/smoke.log; failures list what broke.
 
-Run:  python scripts/smoke_test.py        (scheduled daily 07:30)
+Run:  python scripts/smoke_test.py     (or the Smoke test button on /ops)
+
+SMOKE_BASE_URL overrides the target. The /ops runner sets it to the socket
+the server actually bound, so running this from inside Jarvis reuses that
+server instead of trying to start a second one on an occupied port.
 """
 
+import os
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +22,7 @@ from pathlib import Path
 import httpx
 
 ROOT = Path(__file__).resolve().parent.parent
-BASE = "http://127.0.0.1:8000"
+BASE = os.environ.get("SMOKE_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 # endpoint -> predicate(json) that must be truthy for a PASS
 CHECKS = {
@@ -121,8 +127,30 @@ CHECKS = {
         and all(isinstance(r.get("backtest_summary"), dict) for r in js["rules"])
     ),
     "/api/rules/wind-under-15/backtest": lambda js: len(js.get("seasons", [])) > 0,
+    # Model Lab (2026-08): read-only over model_* tables; the fixture carries
+    # them, so `available` must be true everywhere
+    "/api/model/report": lambda js: (
+        js.get("available") is True
+        and isinstance(js["holdout"].get("brier_model"), float)
+        and len(js.get("calibration", [])) >= 8
+        and len(js.get("coefs", [])) >= 7
+    ),
+    "/api/model/ratings": lambda js: len(js.get("teams", [])) == 32,
+    "/api/model/week": lambda js: (
+        len(js.get("games", [])) > 0 and any(g.get("p_home_win") is not None for g in js["games"])
+    ),
+    "/api/model/experiments": lambda js: isinstance(js.get("runs"), list),
     "/api/knowledge": lambda js: len(js.get("chapters", [])) >= 10,
     "/api/knowledge/analytics-primer": lambda js: len(js.get("markdown", "")) > 1000,
+    # ops registry (2026-08, replaced the Task Scheduler jobs). Deliberately
+    # asserts only on the registry, never on log contents or live freshness:
+    # LOGS_DIR is not env-overridable, so a fixture run reads the real logs/.
+    "/api/ops/jobs": lambda js: (
+        len(js.get("jobs", [])) >= 10
+        and all(j.get("key") and j.get("script", "").startswith("scripts/") for j in js["jobs"])
+        and "freshness" in js
+        and "last_runs" in js
+    ),
 }
 
 
@@ -146,9 +174,19 @@ def run_checks(client: httpx.Client) -> list[str]:
 def main() -> int:
     client = httpx.Client()
     proc = None
+    spawn_log = None
+    print(f"target: {BASE}")
     try:
         client.get(BASE + "/api/health", timeout=3)
+        print("using the server already listening there")
     except Exception:
+        print("nothing listening — starting a temporary server")
+        # Capture the child's output to a real file rather than DEVNULL. When
+        # this spawn failed (a port already taken, an import error) the reason
+        # went straight to /dev/null and every check then reported a bare
+        # ConnectError, which is how a run once logged 0/36 with no clue why.
+        spawn_log = Path(tempfile.gettempdir()) / "nfl_smoke_uvicorn.log"
+        sink = open(spawn_log, "w+", encoding="utf-8")
         proc = subprocess.Popen(
             [
                 sys.executable,
@@ -161,16 +199,32 @@ def main() -> int:
                 "warning",
             ],
             cwd=str(ROOT),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=sink,
+            stderr=subprocess.STDOUT,
         )
+        up = False
         for _ in range(20):
             time.sleep(1)
+            if proc.poll() is not None:
+                break  # it died; no point waiting out the full 20s
             try:
                 client.get(BASE + "/api/health", timeout=2)
+                up = True
                 break
             except Exception:
                 pass
+        if not up:
+            why = ""
+            try:
+                sink.flush()
+                why = spawn_log.read_text(encoding="utf-8", errors="replace")[-1500:].strip()
+            except OSError:
+                pass
+            print(f"temporary server never came up (exit={proc.poll()})")
+            if why:
+                print("--- uvicorn output ---")
+                print(why)
+                print("----------------------")
 
     try:
         failures = run_checks(client)
@@ -179,12 +233,31 @@ def main() -> int:
             proc.kill()
 
     stamp = datetime.now().isoformat()
-    line = f"{stamp} smoke: {len(CHECKS) - len(failures)}/{len(CHECKS)} passed" + (
-        f" | FAILURES: {'; '.join(failures)}" if failures else ""
+    passed = len(CHECKS) - len(failures)
+
+    # The full list goes to stdout (the /ops console shows it live); the log
+    # line gets a bounded version. A run where every endpoint failed the same
+    # way used to append all 36 messages as one ~10 KB line, which is what
+    # made logs/smoke.log unreadable and the "last run" summary useless.
+    for f_ in failures:
+        print(f"  FAIL {f_}")
+    summary = "; ".join(failures)
+    if len(summary) > 400:
+        summary = summary[:400] + f" ... (+{len(failures)} failures, see stdout)"
+    line = f"{stamp} smoke: {passed}/{len(CHECKS)} passed" + (
+        f" | FAILURES: {summary}" if failures else ""
     )
     print(line)
+
     logs = ROOT / "logs"
     logs.mkdir(exist_ok=True)
+    try:
+        sys.path.insert(0, str(ROOT / "src"))
+        from nfl_analytics.ops import rotate_log
+
+        rotate_log(logs / "smoke.log", 128 * 1024)
+    except Exception:
+        pass  # rotation is housekeeping, never a reason to lose the result
     with open(logs / "smoke.log", "a", encoding="utf-8") as f:
         f.write(line + "\n")
     return 1 if failures else 0

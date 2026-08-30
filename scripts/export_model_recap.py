@@ -24,67 +24,51 @@ from openpyxl.utils import get_column_letter
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "src"))
 
+from nfl_analytics.model import backtest as bt  # noqa: E402
+from nfl_analytics.model import experiment as ex  # noqa: E402
+from nfl_analytics.model.config import HOLDOUT_SEASONS as HOLDOUT  # noqa: E402
+from nfl_analytics.model.config import NET_RATING_SQL  # noqa: E402
+from nfl_analytics.model.predict import upcoming_week  # noqa: E402
+
 REPORT = ROOT / "docs" / "model_report.md"
-HOLDOUT = (2019, 2024)
+
+
+def _predictions(con):
+    return con.execute("SELECT * FROM model_predictions").fetchdf()
 
 
 def per_season(con) -> list[dict]:
-    return (
-        con.execute(
-            """
-        SELECT season,
-               count(*) AS games,
-               round(avg(pow(p_home_win - home_win, 2)), 4) AS model_brier,
-               round(avg(pow(market_home_prob - home_win, 2)), 4) AS market_brier,
-               round(avg(pow(p_home_win - home_win, 2))
-                     - avg(pow(market_home_prob - home_win, 2)), 4) AS gap,
-               round(avg(abs(pred_margin - home_margin)), 2) AS margin_mae,
-               -- model-vs-spread record where the model disagrees with the
-               -- closing line by 3+ points (mirrors backtest.py: home covers
-               -- when actual margin beats the spread from home perspective)
-               sum(CASE WHEN pred_margin - spread_line >= 3
-                             AND home_margin > spread_line THEN 1
-                        WHEN spread_line - pred_margin >= 3
-                             AND home_margin < spread_line THEN 1
-                        ELSE 0 END) AS ats3_wins,
-               sum(CASE WHEN abs(pred_margin - spread_line) >= 3
-                             AND home_margin != spread_line THEN 1
-                        ELSE 0 END) AS ats3_bets
-        FROM model_predictions
-        WHERE market_home_prob IS NOT NULL
-        GROUP BY season ORDER BY season
-        """
-        )
-        .fetchdf()
-        .to_dict("records")
-    )
+    """Per-season rows via experiment.by_season — the same function the
+    Model Lab API uses, so the workbook cannot drift from the page."""
+    rows = ex.by_season(_predictions(con))
+    return [
+        {
+            "season": r["season"],
+            "games": r["games"],
+            "model_brier": r["brier_model"],
+            "market_brier": r["brier_market"],
+            "gap": r["gap"],
+            "margin_mae": r["margin_mae"],
+            "ats3_wins": r["ats3_wins"],
+            "ats3_bets": r["ats3_bets"],
+        }
+        for r in rows
+    ]
 
 
 def calibration(con) -> list[dict]:
-    return (
-        con.execute(
-            f"""
-        SELECT least(floor(p_home_win * 10), 9)::int AS bin,
-               count(*) AS n,
-               round(avg(p_home_win), 3) AS predicted,
-               round(avg(home_win), 3) AS actual,
-               round(avg(home_win) - avg(p_home_win), 3) AS gap
-        FROM model_predictions
-        WHERE season BETWEEN {HOLDOUT[0]} AND {HOLDOUT[1]}
-        GROUP BY 1 ORDER BY 1
-        """
-        )
-        .fetchdf()
-        .to_dict("records")
-    )
+    p = _predictions(con)
+    h = p[(p["season"] >= HOLDOUT[0]) & (p["season"] <= HOLDOUT[1])].dropna(subset=["home_win"])
+    t = bt.calibration_table(h["home_win"].astype(float), h["p_home_win"])
+    return t.round({"predicted": 3, "actual": 3, "gap": 3}).to_dict("records")
 
 
 def ratings(con) -> list[dict]:
     return (
         con.execute(
-            """
+            f"""
         SELECT team, r_off_pass, r_off_rush, r_def_pass, r_def_rush,
-               round(r_off_pass + r_off_rush - r_def_pass - r_def_rush, 4) AS net
+               round({NET_RATING_SQL}, 4) AS net
         FROM model_ratings ORDER BY net DESC
         """
         )
@@ -102,46 +86,27 @@ def params(con) -> dict:
 
 
 def upcoming(con) -> list[dict]:
-    from nfl_analytics.model.predict import predict_game
-
-    games = (
-        con.execute(
-            """
-        SELECT game_id, week, away_team, home_team, spread_line, total_line
-        FROM schedules
-        WHERE season = (SELECT max(season) FROM schedules)
-          AND week = (SELECT min(week) FROM schedules
-                      WHERE season = (SELECT max(season) FROM schedules)
-                        AND result IS NULL)
-          AND result IS NULL
-        ORDER BY gameday, gametime
-        """
-        )
-        .fetchdf()
-        .to_dict("records")
-    )
-    out = []
-    for g in games:
-        try:
-            p = predict_game(con, g["home_team"], g["away_team"])
-            out.append(
-                {
-                    "game": f"{g['away_team']} @ {g['home_team']}",
-                    "week": g["week"],
-                    "p_home_win": round(p["p_home_win"], 3),
-                    "pred_margin": round(p["pred_margin"], 1),
-                    "d_qb_out": p.get("inputs", {}).get("d_qb_out", 0),
-                    "spread_line": g["spread_line"],
-                    "total_line": g["total_line"],
-                }
-            )
-        except Exception as e:  # a single unpredictable game must not kill the export
-            out.append({"game": f"{g['away_team']} @ {g['home_team']}", "error": str(e)})
-    return out
+    wk = upcoming_week(con)
+    return [
+        {
+            "game": f"{g['away_team']} @ {g['home_team']}",
+            "week": wk["week"],
+            "p_home_win": None if g["p_home_win"] is None else round(g["p_home_win"], 3),
+            "pred_margin": None if g["pred_margin"] is None else round(g["pred_margin"], 1),
+            "d_qb_out": next(
+                (c["value"] for c in g.get("contributions", []) if c["feature"] == "d_qb_out"),
+                0,
+            ),
+            "spread_line": g["spread_line"],
+            "total_line": g["total_line"],
+            "error": g.get("error"),
+        }
+        for g in wk["games"]
+    ]
 
 
 def parse_report() -> dict:
-    """Gate table, QB-subset line, holdout block, 2025 OOS, tuning grids —
+    """Gate table, holdout block, 2025 OOS, tuning grids —
     from the training run's own report so the recap can't drift from it."""
     md = REPORT.read_text(encoding="utf-8")
 
@@ -168,11 +133,6 @@ def parse_report() -> dict:
         "ewma_grid": grid("Tuning grid.*EWMA"),
         "ridge_grid": grid("Tuning grid.*ridge"),
         "verdict": verdict,
-        "qb_subset": (
-            re.search(r"([^\n]*95[^\n]*qb[^\n]*|[^\n]*d_qb_out ≠ 0[^\n]*)", md, re.I) or [""]
-        )[0].strip()
-        if re.search(r"95", md)
-        else "",
     }
 
 
@@ -249,9 +209,6 @@ def main() -> None:
     gt = data["report"]["gate_table"]
     if gt:
         sheet(wb, "Gate story", gt[0], gt[1:])
-        if data["report"]["qb_subset"]:
-            wb["Gate story"].append([])
-            wb["Gate story"].append([data["report"]["qb_subset"]])
 
     sheet(
         wb,

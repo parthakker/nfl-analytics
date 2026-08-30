@@ -15,7 +15,7 @@ _tool = lambda t: t.fn if hasattr(t, "fn") else t  # noqa: E731
 def test_index_lists_chapters_and_dictionaries():
     out = _tool(mcp_server.knowledge_lookup)()
     slugs = [c["slug"] for c in out["chapters"]]
-    assert "analytics-primer" in slugs and len(slugs) == 15
+    assert "analytics-primer" in slugs and len(slugs) == 16
     assert "dict/schedules" in out["dictionaries"]
 
 

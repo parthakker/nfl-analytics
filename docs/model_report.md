@@ -1,6 +1,6 @@
 # Model Report (v2)
 
-Fitted 2026-08-23 22:36. Shipped configuration: **ewma ratings + QB flag** —
+Fitted 2026-08-29 02:21. Shipped configuration: **ewma ratings + QB flag** —
 opponent-adjusted EPA ratings via EWMA (half-life **8** games, season carryover **0.6**) -> logistic win prob + ridge margin + causal QB-availability flag (expected starter Out/Doubtful/reserve).
 Walk-forward by season; hyperparams tuned on 2012-2018 only; **2019-2024 is
 the untouched holdout**; 2025 reported as bonus. Causality asserts cover every

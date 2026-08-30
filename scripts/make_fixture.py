@@ -69,6 +69,11 @@ FULL_COPY = [
     "team_aliases",
     "officials",
     "weather_openmeteo",  # keyed by game_id, tiny
+    # model artifacts (train_model.py output) so /api/model/* has real shapes
+    # in CI; all four together are well under 1 MB
+    "model_params",
+    "model_ratings",
+    "model_predictions",  # full: the report card needs the 2019-2024 holdout
 ]
 
 # season-sliced tables. Deliberately absent (no test/endpoint consumes them
@@ -92,6 +97,7 @@ SLICED = [
     "advstats_week_rush",
     "advstats_week_rec",
     "advstats_week_def",
+    "model_rating_history",  # per team-game; the fixture seasons are plenty
 ]
 
 
@@ -118,6 +124,9 @@ def build_nfl_fixture(seasons: tuple[int, int]) -> Path:
     }
 
     for t in FULL_COPY:
+        if t not in have:
+            print(f"  (skip {t}: not in live db)")
+            continue
         con.execute(f"CREATE TABLE {t} AS SELECT * FROM live.{t}")
     lo, hi = seasons
     # rosters/schedules-adjacent tables also need the upcoming season
