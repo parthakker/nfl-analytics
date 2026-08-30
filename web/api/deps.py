@@ -54,6 +54,16 @@ def current_schedule_season() -> int:
     )
 
 
+def clear_season_cache() -> None:
+    """Drop the cached season lookups.
+
+    Called by the /ops runner after a job writes the warehouse: the TTL is an
+    hour, so without this the UI would keep reporting the pre-refresh season
+    long after the refresh finished.
+    """
+    _season_cache.clear()
+
+
 def rows_to_dicts(con, sql: str, params=None) -> list[dict]:
     cur = con.execute(sql, params or [])
     cols = [d[0] for d in cur.description]

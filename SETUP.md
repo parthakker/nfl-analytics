@@ -67,30 +67,39 @@ The repo ships its Claude Code config: opening it in Claude Code picks up
 the committed `.mcp.json` (approve it on first use). If you previously added
 the server manually, remove the duplicate: `claude mcp remove nfl -s local`.
 
-## 7. Automation (optional, Windows)
+## 7. Maintenance (manual)
 
-Five Task Scheduler jobs keep everything fresh — create what you want:
+Nothing is scheduled. Open Jarvis and go to **More → Ops** (`/ops`): every
+maintenance job is a card with a Run button and a live output console.
 
-| Task | Schedule | Runs |
-|---|---|---|
-| NFL-WeeklyRefresh | Tue 08:00 | `scripts\refresh_data.py` |
-| NFL-NewsPoll | every 6h | `scripts\poll_news.py` |
-| NFL-KalshiSnapshot | every 6h | `scripts\snapshot_kalshi.py` |
-| NFL-SmokeTest | daily 07:30 | `scripts\smoke_test.py` |
-| NFL-NightlyHealth | daily 06:45 | `scripts\nightly_health.cmd` (headless Claude `/health-check`; needs Claude Code installed) |
+| Job | What it does |
+|---|---|
+| Refresh data | Download the latest nflverse releases, rebuild warehouse + views |
+| Rebuild warehouse / Rebuild views | Rebuild from what is already in `data/` |
+| Fetch weather | Open-Meteo forecasts (`backfill` walks history) |
+| Poll news / Snapshot Kalshi | Refresh the sidecar stores |
+| Smoke test / Data audit | Verify endpoints and table completeness |
+| Model experiment / Model recap | One config through the holdout in seconds (logs a scorecard) / recap workbook to the Desktop |
+| Train model / Rebuild CI fixture | Maintainer jobs |
 
-Example:
-`schtasks /Create /TN NFL-WeeklyRefresh /SC WEEKLY /D TUE /ST 08:00 /TR "C:\PathTo\pythonw.exe C:\PathTo\repo\scripts\refresh_data.py"`
+Everything is also available as `nfl <cmd>` (see `--help`). One job runs at a
+time; a second request gets a 409. Runs are recorded in `logs/ops_runs.jsonl`.
 
-All jobs append one line per run to `logs\*.log`; the `data_status` MCP tool
-surfaces the tails.
+This project previously shipped five Task Scheduler jobs. They were removed —
+all of them used "run as soon as possible after a missed start" with no idle
+guard, so a laptop waking from sleep fired every overdue job simultaneously.
+If you re-create any, set an execution time limit and require idle first.
+
+> **Perishable:** Kalshi snapshots and Vegas line snapshots are point-in-time
+> captures. Skipping a game week loses that week's line movement permanently —
+> unlike the warehouse, which is always rebuildable from `data/`.
 
 ## 8. Maintainer bits
 
 - `nfl fixture` rebuilds the committed ~24 MB CI fixture DBs (do this a few
   times a season).
 - `nfl audit` regenerates `docs/data_audit.md`.
-- Model training (paused feature): `nfl train`.
+- Model: `nfl experiment` (one config, seconds, nothing persisted) · `nfl train` (full protocol, ~2-5 min, overwrites model_* tables) · `nfl recap` (workbook). The Model Lab page is at `/model`; how it works: `/knowledge/model-primer`.
 
 ## Troubleshooting
 

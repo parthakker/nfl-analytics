@@ -22,7 +22,9 @@ const MORE = [
   { to: "/refs", label: "Refs" },
   { to: "/h2h", label: "H2H" },
   { to: "/markets", label: "Markets" },
+  { to: "/model", label: "Model" },
   { to: "/news", label: "News" },
+  { to: "/ops", label: "Ops" },
 ] as const;
 
 const DENSITIES: { value: Density; label: string; title: string }[] = [

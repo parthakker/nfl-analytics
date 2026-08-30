@@ -15,6 +15,7 @@ from fastapi.staticfiles import StaticFiles
 from nfl_analytics.db import StoreBusyError
 
 from .deps import read_conn
+from .middleware import MaintenanceGate
 from .routers import (
     betting,
     chat,
@@ -25,7 +26,9 @@ from .routers import (
     markets,
     matchup,
     meta,
+    model,
     news,
+    ops,
     players,
     referees,
     rules,
@@ -34,6 +37,9 @@ from .routers import (
 )
 
 app = FastAPI(title="NFL Jarvis", docs_url="/api/docs", openapi_url="/api/openapi.json")
+
+# holds API reads off nfl.duckdb while an /ops job rebuilds it
+app.add_middleware(MaintenanceGate)
 
 for _r in (
     meta,
@@ -51,6 +57,8 @@ for _r in (
     matchup,
     knowledge,
     rules,
+    ops,
+    model,
 ):
     app.include_router(_r.router)
 

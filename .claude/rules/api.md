@@ -22,3 +22,10 @@ paths:
   tests/api case** — and the predicate must hold on the CI fixture (derive
   "current season" from the DB, relax live-data expectations via
   FIXTURE_RELAXED in test_smoke_contract.py if needed).
+- **`/api/ops/*` are the only mutating endpoints.** `POST /api/ops/run/{job}`
+  spawns a maintenance script, so it is gated harder than the rest: loopback
+  client only, `application/json` only (415), same-origin `Origin` (403), and
+  the job/variant must be a key in `nfl_analytics.ops.JOBS` — never build a
+  path or an argv entry from a caller string. One job at a time behind an
+  `asyncio.Lock`; release it in BOTH the generator `finally` and a
+  `BackgroundTask`, or a client that disconnects early wedges it at 409.

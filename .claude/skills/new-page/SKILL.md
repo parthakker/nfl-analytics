@@ -13,9 +13,9 @@ Build in this order — each step has a convention doc:
    `web/api/main.py` (import tuple + for-loop). Rules: `.claude/rules/api.md`.
 2. **Types/client** — shared endpoint → `web/ui/src/lib/api.ts`; single-page →
    local interface + fetch.
-3. **Page** `web/ui/src/pages/<Name>.tsx` — GlassPanel grid, h1 + muted
-   subcaption, theme vars. Route in `App.tsx`; top-level tabs also get a
-   `LINKS` tuple in `Shell.tsx`. Rules: `.claude/rules/frontend.md`.
+3. **Page** `web/ui/src/pages/<Name>.tsx` — `Panel` grid, h1 + muted
+   subcaption, theme vars. Route in `App.tsx`; top-level tabs go in the
+   `NAV` tuple in `Shell.tsx`, secondary pages in `MORE`. Rules: `.claude/rules/frontend.md`.
 4. **Verification (all four, not optional):**
    - smoke CHECK in `scripts/smoke_test.py` (fixture-compatible predicate)
    - tests/api case (shape + 404)

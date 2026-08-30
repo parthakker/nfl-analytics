@@ -18,6 +18,8 @@ import Matchup from "./pages/Matchup";
 import PlayerPage from "./pages/PlayerPage";
 import H2HExplorer from "./pages/H2HExplorer";
 import Knowledge from "./pages/Knowledge";
+import Ops from "./pages/Ops";
+import ModelLab from "./pages/ModelLab";
 
 /* Hubs are plural, details singular. Old paths redirect rather than 404 —
  * they are in Parth's history, in the knowledge markdown, and in shared links.
@@ -55,6 +57,9 @@ export default function App() {
             <Route path="/h2h/:a/:b" element={<H2HExplorer />} />
             <Route path="/matchup/:gameId" element={<Matchup />} />
 
+            <Route path="/ops" element={<Ops />} />
+            <Route path="/model" element={<ModelLab />} />
+            <Route path="/model-lab" element={<Navigate to="/model" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

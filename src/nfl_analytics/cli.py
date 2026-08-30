@@ -22,7 +22,12 @@ COMMANDS = {
     "audit": ("scripts/data_audit.py", "Data completeness audit -> docs/data_audit.md"),
     "smoke": ("scripts/smoke_test.py", "Hit every API endpoint, require real data"),
     "weather": ("scripts/fetch_weather.py", "Open-Meteo forecasts (--backfill for history)"),
-    "train": ("scripts/train_model.py", "Train + validate the (paused) prediction model"),
+    "train": ("scripts/train_model.py", "Full model protocol: tune, gate, persist (~5 min)"),
+    "experiment": (
+        "scripts/run_experiment.py",
+        "One model config through the holdout in seconds (--features, --half-life, ...)",
+    ),
+    "recap": ("scripts/export_model_recap.py", "Model recap workbook -> Desktop (--json path)"),
     "news": ("scripts/poll_news.py", "One news poll cycle -> news.duckdb"),
     "kalshi": ("scripts/snapshot_kalshi.py", "One Kalshi snapshot -> kalshi.duckdb"),
     "fixture": ("scripts/make_fixture.py", "Build tests/fixtures/*.duckdb from the real DBs"),

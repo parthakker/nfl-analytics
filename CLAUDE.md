@@ -52,7 +52,14 @@ Design system: tokens in `src/styles/tokens.css`, primitives in
 rgba() in a component** — `npm run lint` runs `scripts/check_tokens.mjs` and
 fails on it. Conventions in `.claude/rules/{frontend,api}.md` (auto-load when
 touching those dirs). Chat = SSE over `claude -p` (chat.py). The prediction
-model is built but PAUSED per Parth — don't surface it proactively.
+model has its own page — **Model Lab** `/model` (this week's model-vs-market
+with per-input reason bars, report card, power ratings, experiment log) — and
+a seconds-fast loop, `nfl experiment` (one config through the holdout, logs
+to `logs/model_experiments.jsonl`; `nfl train` is the full ~2-5 min protocol).
+Betting/Matchup pages stay market-only BY DESIGN: the model loses to the
+market (holdout Brier 0.2226 vs 0.2105). In chat, cite the model only when
+asked, always beside the market number with that caveat. How it works:
+`docs/knowledge/model-primer.md`; shared constants in `model/config.py`.
 
 ## Data & automation
 
@@ -63,11 +70,20 @@ for cross-era. Sidecars: `kalshi.duckdb` (market + Vegas line snapshots),
 refresh): `data/stadiums.json`, `data/coaches_meta.json`,
 `data/betting_rules.json` — rules in `.claude/rules/data-curation.md`.
 
-**Task Scheduler (5 jobs, one log line per run in `logs/*.log`):**
-`NFL-WeeklyRefresh` (Tue 08:00 → refresh_data.py), `NFL-NewsPoll` (6h),
-`NFL-KalshiSnapshot` (6h), `NFL-SmokeTest` (daily 07:30),
-`NFL-NightlyHealth` (daily 06:45 → headless `claude -p "/health-check"`).
-Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
+**Nothing is scheduled.** The five Task Scheduler jobs were deleted
+2026-08-28: all carried `StartWhenAvailable` with no idle guard or time limit,
+so waking the laptop fired every missed job at once (an 18-min headless Claude
+health check, a smoke test and two collectors, contending for the same DuckDB
+files). Maintenance now runs by hand from the **`/ops` page** in Jarvis — job
+cards with live streamed output — or `nfl <cmd>` in a terminal. The registry is
+`src/nfl_analytics/ops.py::JOBS` (keyed to `cli.COMMANDS`); every run appends to
+`logs/ops_runs.jsonl`, which the `data_status` MCP tool and the page both read.
+Do NOT re-add a scheduled task without an `ExecutionTimeLimit`, `RunOnlyIfIdle`
+and `StartWhenAvailable=false`.
+
+**Perishable data:** Kalshi snapshots and the Vegas `line_snapshots` written by
+`refresh_data.py` are point-in-time captures — a window that passes without a
+run cannot be backfilled. In-season, run Snapshot Kalshi regularly.
 
 ## Join keys
 
@@ -108,7 +124,8 @@ Manage via `schtasks /Query|/Run /TN <name>`; `data_status` MCP tool tails logs.
   was applied.
 - Travel: `v_team_games.travel_miles` (home-base haversine; internationals
   modeled) + `tz_shift_hours` (positive = east). Prefer `rest_days_sched`
-  (populated wk 1) over `rest_days`.
+  (populated wk 1) over `rest_days` (the model still trains on `rest_days`
+  — switching is a model change; see model-primer).
 - Cite seasons/filters in every answer so results are reproducible.
 - Concept/scheme/rules/fantasy-basics questions: check `knowledge_lookup`
   (chapters + table dictionaries) before writing SQL or answering from

@@ -75,8 +75,7 @@ def test_rule_backtest_detail(client):
 def test_backtested_rules_report_significance(rules_payload):
     """A backtest without its sample size invites reading noise as an edge."""
     graded = [
-        r for r in rules_payload["rules"]
-        if not r["backtest_summary"].get("insufficient_history")
+        r for r in rules_payload["rules"] if not r["backtest_summary"].get("insufficient_history")
     ]
     assert graded
     for r in graded:

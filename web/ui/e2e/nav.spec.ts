@@ -24,6 +24,16 @@ test("secondary sections live under More", async ({ page }) => {
   await expect(more).toHaveAttribute("aria-expanded", "true");
   await page.getByRole("navigation").getByRole("link", { name: "Refs" }).click();
   await expect(page.locator("h1")).toContainText(/referee/i);
+
+  // Ops replaced the Task Scheduler jobs; it lives under More too
+  await more.click();
+  await page.getByRole("navigation").getByRole("link", { name: "Ops" }).click();
+  await expect(page.locator("h1")).toContainText(/operations/i);
+
+  // the Model Lab (2026-08) — the model's own page; betting stays market-only
+  await more.click();
+  await page.getByRole("navigation").getByRole("link", { name: "Model" }).click();
+  await expect(page.locator("h1")).toContainText(/model lab/i);
 });
 
 test("old paths redirect instead of 404ing", async ({ page }) => {

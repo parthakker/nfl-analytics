@@ -49,6 +49,16 @@ def _kickoff_iso() -> str | None:
     return kickoff
 
 
+def clear_cache() -> None:
+    """Drop the kickoff lookup after a warehouse write (see deps.clear_season_cache).
+
+    _teams_payload is deliberately NOT cleared: its inputs are module
+    constants, so a rebuild cannot change it.
+    """
+    global _kickoff_cache
+    _kickoff_cache = None
+
+
 @router.get("/api/meta")
 def meta() -> dict:
     return {

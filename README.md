@@ -15,11 +15,11 @@ computed answers, not vibes.
 | Piece | What it does |
 |---|---|
 | **Warehouse** (`nfl.duckdb`) | 1.28M plays 1999–2025, schedules with odds through 2026, player/team stats across the v1/v2 nflverse eras, advanced stats, NGS, snap counts, depth charts, personnel/participation, FTN charting, combine, ESPN QBR — plus curated venue coordinates powering true travel distances |
-| **Jarvis web app** (`web/`) | FastAPI + React SPA: team HUDs, matchup cards (travel/rest/refs/coach-H2H/weather/market for any game 1999→upcoming), all-time H2H explorer, coaches with scheme fingerprints, referee intel, betting board (Vegas-vs-Kalshi dislocations), news, and a 15-chapter football Knowledge book |
+| **Jarvis web app** (`web/`) | FastAPI + React SPA: team HUDs, matchup cards (travel/rest/refs/coach-H2H/weather/market for any game 1999→upcoming), all-time H2H explorer, coaches with scheme fingerprints, referee intel, betting board (Vegas-vs-Kalshi dislocations), news, and a 16-chapter football Knowledge book |
 | **Derived views** | SQL views for the common questions: team-game workhorse with haversine travel miles, H2H series with relocations merged, referee tendencies 1999+, coach PROE/4th-down aggression, one unified weather answer per game |
 | **News engine** (`news.duckdb`) | ESPN + team feeds polled 6-hourly, categorized, player-tagged by gsis_id, full-text searchable |
 | **Kalshi tracker** (`kalshi.duckdb`) | Market snapshots 6-hourly + Vegas line history per game |
-| **Prediction model** | Trained and validated, deliberately paused — betting surfaces are market-vs-market only |
+| **Prediction model** | Trained, validated and surfaced on its own Model Lab page (`/model`: this week's model-vs-market with per-input reasons, report card, power ratings, experiment log) plus a seconds-fast `nfl experiment` loop. Betting surfaces stay market-vs-market — the model loses to the market on the holdout and says so |
 | **MCP server** | Tools (`query_warehouse`, `betting_board`, `coach_profile`, `referee_stats`, `news_search`…) exposing all of it to Claude |
 | **Legacy dashboard** (`legacy/`) | The original Streamlit UI, kept for friends — frozen |
 

@@ -22,11 +22,13 @@ const PAGES: { label: string; path: string; hint: string }[] = [
   { label: "Stat leaders", path: "/leaders", hint: "league leaders by stat family" },
   { label: "Betting board", path: "/betting", hint: "Vegas vs Kalshi, dislocations" },
   { label: "Prediction markets", path: "/markets", hint: "live Kalshi prices" },
+  { label: "Model Lab", path: "/model", hint: "how the prediction model thinks, and how it scores" },
   { label: "Learn", path: "/knowledge", hint: "the NFL knowledge book" },
   { label: "Coaches", path: "/coaches", hint: "head coaches and coordinators" },
   { label: "Referees", path: "/refs", hint: "crew tendencies and bias" },
   { label: "Head-to-head", path: "/h2h", hint: "any two franchises, every meeting" },
   { label: "News", path: "/news", hint: "the league wire" },
+  { label: "Ops & jobs", path: "/ops", hint: "run maintenance by hand" },
 ];
 
 /** Ctrl-K. Three modes so one keystroke covers navigate / do / ask:

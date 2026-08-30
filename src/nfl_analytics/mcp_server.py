@@ -6,12 +6,12 @@ All logging goes to stderr; stdout is the MCP protocol channel.
 
 import logging
 import re
-import subprocess
 import sys
 
 from mcp.server.mcpserver import MCPServer
 
-from .config import LOGS_DIR, ROOT, SCHEDULED_TASKS
+from . import ops
+from .config import ROOT
 from .db import read_conn, table_result
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
@@ -338,16 +338,17 @@ def predict_game(home_team: str, away_team: str) -> dict:
 def power_ratings(top: int = 32) -> dict:
     """Current model power ratings for all teams (EPA/play units; ratings
     entering the next game). net = mean(off) - mean(def); lower def is better."""
+    from .model.config import NET_RATING_SQL
+
     with read_conn() as con:
         return table_result(
             con,
-            """
+            f"""
             SELECT team,
-                   round((r_off_pass + r_off_rush)/2 - (r_def_pass + r_def_rush)/2, 4) AS net,
+                   round({NET_RATING_SQL}, 4) AS net,
                    round(r_off_pass, 4) AS off_pass, round(r_off_rush, 4) AS off_rush,
                    round(r_def_pass, 4) AS def_pass, round(r_def_rush, 4) AS def_rush,
-                   rank() OVER (ORDER BY (r_off_pass + r_off_rush)/2
-                                       - (r_def_pass + r_def_rush)/2 DESC) AS rank
+                   rank() OVER (ORDER BY {NET_RATING_SQL} DESC) AS rank
             FROM model_ratings ORDER BY net DESC LIMIT ?
         """,
             [top],
@@ -653,8 +654,11 @@ def league_news(team: str = "", days: int = 2) -> dict:
 
 @server.tool()
 def data_status() -> dict:
-    """Coverage and staleness: latest season/week per core table, last
-    refresh-log lines, and whether a refresh looks needed."""
+    """Coverage and staleness: latest season/week per core table, when each
+    maintenance job last ran, and whether a refresh looks needed.
+
+    Nothing is scheduled any more — jobs run from the /ops page in Jarvis or
+    via `nfl <cmd>`, so "last run" records manual runs, not a timetable."""
     with read_conn(attach_kalshi=True) as con:
         cov = table_result(
             con,
@@ -675,35 +679,22 @@ def data_status() -> dict:
             ).fetchone()
         except Exception:
             snaps = (0, None)
-    tails = {}
-    for name in ("refresh", "news", "kalshi", "smoke", "health", "jarvis"):
-        lf = LOGS_DIR / f"{name}.log"
-        tails[name] = (
-            "\n".join(lf.read_text(encoding="utf-8").splitlines()[-3:])
-            if lf.exists()
-            else "never run"
-        )
     return {
         "coverage": cov,
         "kalshi_snapshots": {"count": snaps[0], "latest": str(snaps[1]) if snaps[1] else None},
-        "scheduled_jobs": SCHEDULED_TASKS,
-        "log_tails": tails,
+        "last_runs": ops.last_runs(),
+        "log_tails": ops.log_tails(),
     }
 
 
 @server.tool()
 def refresh_data(full: bool = False) -> dict:
     """Download latest nflverse data and rebuild the warehouse (~1-2 min).
-    Runs as a subprocess so the server holds no DB handle during rebuild."""
-    cmd = [sys.executable, str(ROOT / "scripts" / "refresh_data.py")]
-    if full:
-        cmd.append("--full")
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
-    return {
-        "exit_code": r.returncode,
-        "output_tail": r.stdout[-3000:],
-        "errors": r.stderr[-1000:] if r.returncode else "",
-    }
+
+    Runs as a subprocess so the server holds no DB handle during the rebuild,
+    and records into the same logs/ops_runs.jsonl the /ops page reads — so a
+    refresh started from chat shows up there too."""
+    return ops.run_job_sync("refresh", "full" if full else "")
 
 
 def main() -> None:
