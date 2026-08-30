@@ -250,9 +250,13 @@ def refresh(full: bool, rebuild: bool, bootstrap: bool = False) -> int:
     LOGS.mkdir(exist_ok=True)
     with open(LOGS / "refresh.log", "a", encoding="utf-8") as f:
         mode = "bootstrap" if bootstrap else ("full" if full else "weekly")
+        # name the misses: the 2026-08-23 `failures=1` was undiagnosable from
+        # the count alone (it turned out to be transient)
+        misses = "".join(f"\n    failed: {x}" for x in failures)
         f.write(
             f"{datetime.now().isoformat()} mode={mode} "
-            f"fetched={len(fetched)} failures={len(failures)} line_snap={line_snap} rc={rc}\n"
+            f"fetched={len(fetched)} failures={len(failures)} line_snap={line_snap} rc={rc}"
+            f"{misses}\n"
         )
     return rc
 
