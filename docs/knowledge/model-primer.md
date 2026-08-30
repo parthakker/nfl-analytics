@@ -121,7 +121,7 @@ Three good first experiments, each of which teaches something:
 
 1. **Drop the QB flag** (`--features -d_qb_out`). Brier should get worse by about 0.001 — the size of one shipped input. Notice how small "important" is.
 2. **Half-life 4 vs 16.** Fast memory versus slow. Watch Brier *and* the 2025 bonus line: settings that win on the holdout and lose on the bonus season are a warning.
-3. **Switch rest to the schedule's rest days.** The model currently trains on the lag-computed `rest_days`, which is unknown in week 1 (treated as 7). The warehouse also carries `rest_days_sched`, populated from week 1. Wiring it in (`features.py`, one line, then `--features +d_rest_sched,-d_rest`) is the first real modelling change to make — and it changes every training row, which is why it has not been done casually.
+3. **Switch rest to the schedule's rest days — done, and it changed nothing.** The model trains on the lag-computed `rest_days`, unknown in week 1 (treated as 7). The warehouse also carries `rest_days_sched`, populated from week 1, and `build_features` now emits it as `d_rest_sched`. Run 2026-08-29 (`nfl experiment --features +d_rest_sched,-d_rest`, or the *rest-sched* variant on `/ops`): holdout Brier 0.2226 → 0.2226, delta +0.0000. The warehouse explains why — the two columns disagree on only 34 regular-season games since 2006, and every week-1 `rest_days_sched` is 7, the exact fill value the model already assumes. The shipped model keeps `d_rest`; the experiment column stays available for anyone who wants to re-check after a schema change.
 
 When something clears the gate, the path to shipping it is the training script: add it to the registry there, let the protocol gate it on the holdout once, and it becomes the new 0.2226.
 

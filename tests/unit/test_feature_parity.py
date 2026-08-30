@@ -35,9 +35,9 @@ def _warehouse():
     con.execute("""
         CREATE TABLE v_team_games AS
         SELECT '2024_05_AAA_HHH' AS game_id, 'HHH' AS team, 10 AS rest_days,
-               0.0 AS tz_shift_hours, true AS is_home
+               9 AS rest_days_sched, 0.0 AS tz_shift_hours, true AS is_home
         UNION ALL
-        SELECT '2024_05_AAA_HHH', 'AAA', 6, 2.0, false
+        SELECT '2024_05_AAA_HHH', 'AAA', 6, 6, 2.0, false
     """)
     con.execute("""
         CREATE TABLE schedules AS SELECT '2024_05_AAA_HHH' AS game_id,
@@ -75,9 +75,12 @@ def test_build_features_equals_feature_row_on_every_feature():
         away_tz_shift=2.0,
         div_game=1,
         d_qb_out=0 - 1,
+        rest_diff_sched=rest_clip(9) - rest_clip(6),
     )
-    for c in FEATURE_COLS:
+    for c in FEATURE_COLS + ["d_rest_sched"]:
         assert trained[c] == pytest.approx(served[c]), c
+    assert trained["d_rest"] == 4 and trained["d_rest_sched"] == 3
+    assert feature_row(HOME, AWAY, rest_diff=2.0)["d_rest_sched"] == 2.0
 
 
 def test_defense_sign_flip_puts_better_home_defense_positive():

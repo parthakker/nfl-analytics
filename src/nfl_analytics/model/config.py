@@ -53,6 +53,10 @@ FEATURE_LABELS: dict[str, tuple[str, str]] = {
         "Rest edge (days)",
         "Home rest days minus away rest days, each clipped to 3-14; unknown = 7.",
     ),
+    "d_rest_sched": (
+        "Rest edge, schedule-derived (days)",
+        "Same as the rest edge but from rest_days_sched (known in week 1). Experiment column.",
+    ),
     "d_tz": (
         "Away time-zone shift (hours)",
         "How many hours the away team travelled east (positive) or west (negative).",

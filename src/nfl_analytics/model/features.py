@@ -43,7 +43,7 @@ def compute_ratings_source(con, ratings_source: str = "ewma", **hyper):
 
 GAME_CONTEXT_SQL = """
     WITH ctx AS (
-        SELECT game_id, team, rest_days, tz_shift_hours, is_home
+        SELECT game_id, team, rest_days, rest_days_sched, tz_shift_hours, is_home
         FROM v_team_games
     )
     SELECT g.game_id, g.season, g.week, g.season_type,
@@ -53,6 +53,7 @@ GAME_CONTEXT_SQL = """
                 WHEN g.home_score < g.away_score THEN 0 ELSE NULL END AS home_win,
            g.div_game, g.spread_line,
            h.rest_days AS home_rest, a.rest_days AS away_rest,
+           h.rest_days_sched AS home_rest_sched, a.rest_days_sched AS away_rest_sched,
            coalesce(a.tz_shift_hours, 0) AS away_tz_shift,
            s.home_moneyline, s.away_moneyline
     FROM games g
@@ -75,6 +76,7 @@ def feature_row(
     away_tz_shift: float = 0.0,
     div_game: int = 0,
     d_qb_out: float = 0.0,
+    rest_diff_sched: float | None = None,
 ) -> dict:
     """The ONE definition of how ratings + context become model inputs.
 
@@ -84,6 +86,11 @@ def feature_row(
     on every column. build_features() applies these same expressions
     vectorised and predict.py calls this directly; tests/unit/
     test_feature_parity.py pins the two equal.
+
+    `d_rest_sched` is the same rest edge computed from the schedule's
+    rest_days_sched instead of the lag-computed rest_days (an experiment
+    column, not in FEATURE_COLS). At serve time the caller has one rest
+    number, so it defaults to rest_diff.
     """
     return {
         "d_off_pass": home["r_off_pass"] - away["r_off_pass"],
@@ -91,6 +98,7 @@ def feature_row(
         "d_def_pass": away["r_def_pass"] - home["r_def_pass"],
         "d_def_rush": away["r_def_rush"] - home["r_def_rush"],
         "d_rest": rest_diff,
+        "d_rest_sched": rest_diff if rest_diff_sched is None else rest_diff_sched,
         "d_tz": away_tz_shift,
         "div_game": int(div_game),
         "d_qb_out": d_qb_out,
@@ -156,11 +164,14 @@ def build_features(
         df["d_qb_out"] = 0.0
 
     # Rest comes from v_team_games.rest_days (the lag-computed one, NULL in
-    # week 1 and across a season boundary -> treated as 7). CLAUDE.md prefers
-    # rest_days_sched for analysis; the model has NOT been switched because
-    # that changes every training row — it is the canonical first experiment
-    # in docs/knowledge/model-primer.md. TODO(model-wave-2): evaluate the switch.
+    # week 1 and across a season boundary -> treated as 7). d_rest_sched is the
+    # same edge from rest_days_sched (schedule-derived, populated week 1) so an
+    # experiment can swap them with `--features +d_rest_sched,-d_rest`. The
+    # shipped model trains on d_rest — see docs/knowledge/model-primer.md.
     df["d_rest"] = df["home_rest"].fillna(7).clip(3, 14) - df["away_rest"].fillna(7).clip(3, 14)
+    df["d_rest_sched"] = df["home_rest_sched"].fillna(7).clip(3, 14) - df["away_rest_sched"].fillna(
+        7
+    ).clip(3, 14)
     # away team traveling east = positive shift; home team is at home (shift 0)
     df["d_tz"] = df["away_tz_shift"].fillna(0)
     df["div_game"] = df["div_game"].fillna(0).astype(int)

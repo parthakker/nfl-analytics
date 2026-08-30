@@ -27,4 +27,3 @@ SLEEPER_LEAGUE_ID = os.environ.get("SLEEPER_LEAGUE_ID", "")
 
 NFLVERSE_RELEASE = "https://github.com/nflverse/nflverse-data/releases/download"
 NFLDATA_GAMES_URL = "https://github.com/nflverse/nfldata/raw/master/data/games.csv"
-

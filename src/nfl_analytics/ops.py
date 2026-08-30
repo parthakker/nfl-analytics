@@ -167,6 +167,12 @@ JOBS: dict[str, Job] = {
             "no-qb": ("--features", "-d_qb_out", "--note", "ops: without QB flag"),
             "no-rest": ("--features", "-d_rest", "--note", "ops: without rest edge"),
             "hl12": ("--half-life", "12", "--note", "ops: half-life 12"),
+            "rest-sched": (
+                "--features",
+                "+d_rest_sched,-d_rest",
+                "--note",
+                "ops: schedule rest instead of lag rest",
+            ),
             "drift": ("--recency", "6", "--calib-window", "6", "--note", "ops: drift controls"),
         },
     ),

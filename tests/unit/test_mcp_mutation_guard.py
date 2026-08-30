@@ -16,7 +16,9 @@ _tool = lambda t: t.fn if hasattr(t, "fn") else t  # noqa: E731
 
 def _arm(monkeypatch, chat: bool):
     calls = []
-    monkeypatch.setattr(mcp_server.ops, "run_job_sync", lambda *a: calls.append(("refresh", a)) or {"ran": True})
+    monkeypatch.setattr(
+        mcp_server.ops, "run_job_sync", lambda *a: calls.append(("refresh", a)) or {"ran": True}
+    )
     monkeypatch.setattr(mcp_server.ops, "status_payload", lambda: {"stub": True})
     import nfl_analytics.kalshi as kalshi
 
