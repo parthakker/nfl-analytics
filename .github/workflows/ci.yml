@@ -9,7 +9,7 @@ jobs:
   python:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
@@ -23,7 +23,7 @@ jobs:
     env:
       NFL_TEST_USE_FIXTURE: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: "3.12"
@@ -36,7 +36,7 @@ jobs:
       run:
         working-directory: web/ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -66,7 +66,7 @@ jobs:
       KALSHI_DB: ${{ github.workspace }}/tests/fixtures/kalshi_fixture.duckdb
       NEWS_DB: ${{ github.workspace }}/tests/fixtures/news_fixture.duckdb
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v5
         with: { python-version: "3.12" }
       - uses: actions/setup-node@v4
